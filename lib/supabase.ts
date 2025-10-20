@@ -2,8 +2,20 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+// Client for regular operations (respects RLS)
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+// Admin client for server-side operations (bypasses RLS)
+export const supabaseAdmin = supabaseServiceKey
+  ? createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    })
+  : supabase; // Fallback to regular client if service key not available
 
 export type PlanTier = 'basic' | 'pro' | 'enterprise';
 export type SubscriptionStatus = 'active' | 'canceled' | 'past_due' | 'trialing';

@@ -1,10 +1,11 @@
-import { auth } from '@clerk/nextjs/server';
+import { auth, clerkClient } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
-import { supabase } from '@/lib/supabase';
+import { supabase, supabaseAdmin } from '@/lib/supabase';
 import { getActiveRegulatoryDocuments, buildRegulatoryContext } from '@/lib/regulatory-documents';
 import { sendEmail } from '@/lib/resend';
 import { generateAnalysisResultEmail } from '@/lib/email-templates';
+import { preprocessImage } from '@/lib/image-processing';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -18,14 +19,55 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: user } = await supabase
+    let user = await supabase
       .from('users')
       .select('id, email')
       .eq('clerk_user_id', userId)
-      .maybeSingle();
+      .maybeSingle()
+      .then(res => res.data);
 
+    // If user doesn't exist in Supabase, create them (fallback for webhook issues)
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      try {
+        const client = await clerkClient();
+        const clerkUser = await client.users.getUser(userId);
+        const userEmail = clerkUser?.emailAddresses?.[0]?.emailAddress || '';
+
+        if (!userEmail) {
+          console.error('No email found for Clerk user:', userId);
+          return NextResponse.json({ error: 'User email not found' }, { status: 400 });
+        }
+
+        // Use admin client to bypass RLS when creating user
+        const { data: newUser, error: createError } = await supabaseAdmin
+          .from('users')
+          .insert({
+            clerk_user_id: userId,
+            email: userEmail,
+          })
+          .select('id, email')
+          .single();
+
+        if (createError) {
+          console.error('Error creating user in Supabase:', createError);
+          return NextResponse.json({
+            error: `Failed to create user record: ${createError.message}`
+          }, { status: 500 });
+        }
+
+        if (!newUser) {
+          console.error('User creation returned no data');
+          return NextResponse.json({ error: 'Failed to create user record' }, { status: 500 });
+        }
+
+        user = newUser;
+        console.log('Successfully created user:', newUser.id);
+      } catch (err: any) {
+        console.error('Exception creating user:', err);
+        return NextResponse.json({
+          error: `Failed to create user: ${err.message}`
+        }, { status: 500 });
+      }
     }
 
     const currentMonth = new Date().toISOString().slice(0, 7);
@@ -96,16 +138,20 @@ export async function POST(request: NextRequest) {
 
     const bytes = await imageFile.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    const base64Image = buffer.toString('base64');
 
-    const mediaType = imageFile.type as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp';
+    // Preprocess the image to improve readability
+    const processedBuffer = await preprocessImage(buffer);
+    const base64Image = processedBuffer.toString('base64');
+
+    // Use JPEG as media type since preprocessing converts to JPEG
+    const mediaType = 'image/jpeg' as const;
 
     const regulatoryDocuments = await getActiveRegulatoryDocuments();
     const regulatoryContext = buildRegulatoryContext(regulatoryDocuments);
 
     const message = await anthropic.messages.create({
       model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 3072,
+      max_tokens: 4096,
       messages: [
         {
           role: 'user',
@@ -122,7 +168,20 @@ export async function POST(request: NextRequest) {
               type: 'text',
               text: `${regulatoryContext}
 
-Analyze this food label image and evaluate it against the regulatory requirements provided above. Return your response as a JSON object with the following structure:
+Analyze this food label image and evaluate it against the regulatory requirements provided above.
+
+IMPORTANT INSTRUCTIONS FOR READING THE IMAGE:
+- The text on this label may be very small, difficult to read, or have poor contrast
+- Text may be oriented vertically, sideways, or even upside-down
+- If you encounter rotated text, mentally rotate the image to read it correctly
+- Look very carefully at all text, including fine print and small ingredient lists
+- If text is blurry or unclear, use context clues from surrounding text to decipher it
+- Pay special attention to ingredient lists which are often in very small font
+- Some labels may have text on dark backgrounds or vice versa - adjust your reading accordingly
+- Take your time to examine every section of the label thoroughly
+- If certain information is genuinely illegible, note that in your analysis
+
+Return your response as a JSON object with the following structure:
 {
   "product_name": "Name of the product",
   "summary": "A brief summary of the overall nutritional profile and healthiness (2-3 sentences)",

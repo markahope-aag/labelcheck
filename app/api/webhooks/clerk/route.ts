@@ -1,7 +1,7 @@
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { Webhook } from 'svix';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 
 export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
@@ -50,23 +50,25 @@ export async function POST(req: Request) {
         (email: any) => email.id === primary_email_address_id
       );
 
-      const { error } = await supabase.from('users').insert({
+      const { data: newUser, error } = await supabaseAdmin.from('users').insert({
         clerk_user_id: id,
         email: primaryEmail?.email_address || '',
-      });
+      }).select().single();
 
       if (error) {
         console.error('Error creating user in database:', error);
         return NextResponse.json({ error: 'Database error' }, { status: 500 });
       }
 
-      const currentMonth = new Date().toISOString().slice(0, 7);
-      await supabase.from('usage_tracking').insert({
-        user_id: id,
-        month: currentMonth,
-        analyses_used: 0,
-        analyses_limit: 5,
-      });
+      if (newUser) {
+        const currentMonth = new Date().toISOString().slice(0, 7);
+        await supabaseAdmin.from('usage_tracking').insert({
+          user_id: newUser.id,
+          month: currentMonth,
+          analyses_used: 0,
+          analyses_limit: 5,
+        });
+      }
 
       console.log(`User created: ${id}`);
     }
@@ -76,7 +78,7 @@ export async function POST(req: Request) {
         (email: any) => email.id === primary_email_address_id
       );
 
-      const { error } = await supabase
+      const { error } = await supabaseAdmin
         .from('users')
         .update({
           email: primaryEmail?.email_address || '',
@@ -93,7 +95,7 @@ export async function POST(req: Request) {
     }
 
     if (eventType === 'user.deleted') {
-      const { error } = await supabase
+      const { error } = await supabaseAdmin
         .from('users')
         .delete()
         .eq('clerk_user_id', id);

@@ -16,22 +16,58 @@ export default function AnalyzePage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string>('');
   const [result, setResult] = useState<any>(null);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const processFile = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      setError('Please select a valid image file');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setError('Image size must be less than 10MB');
+      return;
+    }
+    setSelectedFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+    setError('');
+    setResult(null);
+  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (!file.type.startsWith('image/')) {
-        setError('Please select a valid image file');
-        return;
-      }
-      if (file.size > 10 * 1024 * 1024) {
-        setError('Image size must be less than 10MB');
-        return;
-      }
-      setSelectedFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
-      setError('');
-      setResult(null);
+      processFile(file);
+    }
+  };
+
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Only set to false if we're leaving the drop zone entirely
+    if (e.currentTarget === e.target) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      processFile(files[0]);
     }
   };
 
@@ -106,7 +142,17 @@ export default function AnalyzePage() {
               <CardContent>
                 <div className="space-y-6">
                   {!previewUrl ? (
-                    <div className="border-2 border-dashed border-slate-300 rounded-lg p-12 text-center hover:border-blue-500 transition-colors">
+                    <div
+                      onDragEnter={handleDragEnter}
+                      onDragLeave={handleDragLeave}
+                      onDragOver={handleDragOver}
+                      onDrop={handleDrop}
+                      className={`border-2 border-dashed rounded-lg p-12 text-center transition-all ${
+                        isDragging
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-slate-300 hover:border-blue-400'
+                      }`}
+                    >
                       <input
                         type="file"
                         accept="image/*"
@@ -114,12 +160,16 @@ export default function AnalyzePage() {
                         className="hidden"
                         id="file-upload"
                       />
-                      <label htmlFor="file-upload" className="cursor-pointer">
-                        <div className="flex flex-col items-center">
-                          <div className="bg-blue-100 p-4 rounded-full mb-4">
+                      <label htmlFor="file-upload" className="cursor-pointer block">
+                        <div className="flex flex-col items-center pointer-events-none">
+                          <div className={`p-4 rounded-full mb-4 transition-colors ${
+                            isDragging ? 'bg-blue-200' : 'bg-blue-100'
+                          }`}>
                             <Upload className="h-8 w-8 text-blue-600" />
                           </div>
-                          <p className="text-lg font-medium text-slate-900 mb-2">Click to upload or drag and drop</p>
+                          <p className="text-lg font-medium text-slate-900 mb-2">
+                            {isDragging ? 'Drop image here' : 'Click to upload or drag and drop'}
+                          </p>
                           <p className="text-sm text-slate-500">PNG, JPG or JPEG up to 10MB</p>
                         </div>
                       </label>

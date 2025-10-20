@@ -1,16 +1,20 @@
+import { auth } from '@clerk/nextjs/server';
+import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { Navigation } from '@/components/navigation';
-import { Footer } from '@/components/footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { CheckCircle2, Upload, Zap, Shield, FileCheck, TrendingUp } from 'lucide-react';
 
-export default function Home() {
-  return (
-    <div className="min-h-screen flex flex-col">
-      <Navigation />
+export default async function Home() {
+  const { userId } = await auth();
 
-      <main className="flex-1">
+  // Redirect logged-in users to dashboard
+  if (userId) {
+    redirect('/dashboard');
+  }
+
+  return (
+    <div className="flex flex-col">
         <section className="bg-gradient-to-b from-blue-50 to-white py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-3xl mx-auto">
@@ -248,9 +252,6 @@ export default function Home() {
             </Link>
           </div>
         </section>
-      </main>
-
-      <Footer />
     </div>
   );
 }

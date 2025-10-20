@@ -2,8 +2,6 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { Navigation } from '@/components/navigation';
-import { Footer } from '@/components/footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check } from 'lucide-react';
@@ -69,10 +67,7 @@ export default function PricingPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navigation />
-
-      <main className="flex-1">
+    <div className="flex flex-col">
         <section className="py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
@@ -202,9 +197,6 @@ export default function PricingPage() {
             </div>
           </div>
         </section>
-      </main>
-
-      <Footer />
     </div>
   );
 }
