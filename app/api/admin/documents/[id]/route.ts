@@ -48,14 +48,15 @@ export async function DELETE(
 
     const { id } = params;
 
+    // Actually delete the document from the database
     const { error } = await supabase
       .from('regulatory_documents')
-      .update({ is_active: false })
+      .delete()
       .eq('id', id);
 
     if (error) {
-      console.error('Error deactivating document:', error);
-      return NextResponse.json({ error: 'Failed to deactivate document' }, { status: 500 });
+      console.error('Error deleting document:', error);
+      return NextResponse.json({ error: 'Failed to delete document' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });

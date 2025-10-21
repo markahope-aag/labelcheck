@@ -135,7 +135,7 @@ export default function AdminDocumentsPage() {
   };
 
   const handleDeactivate = async (id: string) => {
-    if (!confirm('Are you sure you want to deactivate this document?')) return;
+    if (!confirm('Are you sure you want to permanently delete this document? This cannot be undone.')) return;
 
     try {
       const response = await fetch(`/api/admin/documents/${id}`, {
