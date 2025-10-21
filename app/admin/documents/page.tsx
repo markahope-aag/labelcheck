@@ -13,21 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-
-interface RegulatoryDocument {
-  id: string;
-  title: string;
-  description: string;
-  content: string;
-  document_type: string;
-  jurisdiction: string;
-  source: string;
-  effective_date: string;
-  version: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
+import { RegulatoryDocument } from '@/lib/supabase';
 
 export default function AdminDocumentsPage() {
   const { userId } = useAuth();
