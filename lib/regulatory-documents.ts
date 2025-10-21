@@ -1,20 +1,6 @@
 import { supabase } from './supabase';
 
-export interface RegulatoryDocument {
-  id: string;
-  title: string;
-  description?: string;
-  content: string;
-  document_type: 'federal_law' | 'state_regulation' | 'guideline' | 'standard' | 'policy' | 'other';
-  jurisdiction?: string;
-  source?: string;
-  effective_date?: string;
-  version?: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at?: string;
-  created_by?: string;
-}
+import { RegulatoryDocument } from './supabase';
 
 export interface DocumentCategory {
   id: string;

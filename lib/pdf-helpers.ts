@@ -1,6 +1,3 @@
-import * as pdfParse from 'pdf-parse';
-const pdf = (pdfParse as any).default || pdfParse;
-
 /**
  * Extract text content from a PDF buffer
  * @param buffer - PDF file as a Buffer
@@ -8,6 +5,7 @@ const pdf = (pdfParse as any).default || pdfParse;
  */
 export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   try {
+    const pdf = require('pdf-parse-fork');
     const data = await pdf(buffer);
     return data.text;
   } catch (error) {
@@ -29,6 +27,7 @@ export async function extractPDFMetadata(buffer: Buffer): Promise<{
   creator?: string;
 }> {
   try {
+    const pdf = require('pdf-parse-fork');
     const data = await pdf(buffer);
     return {
       pages: data.numpages,

@@ -55,10 +55,7 @@ export async function POST(request: NextRequest) {
 
     const { data: document, error } = await supabase
       .from('regulatory_documents')
-      .insert({
-        ...body,
-        created_by: userId,
-      })
+      .insert(body)
       .select()
       .single();
 
