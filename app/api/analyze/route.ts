@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
 
     const message = await anthropic.messages.create({
       model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 4096,
+      max_tokens: 8192,
       messages: [
         {
           role: 'user',
@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
               type: 'text',
               text: `${regulatoryContext}
 
-Analyze this food label image and evaluate it against the regulatory requirements provided above.
+You are a food labeling regulatory compliance expert. Analyze this food label image and provide a comprehensive evaluation of its compliance with FDA and USDA labeling requirements based on the regulatory documents provided above.
 
 IMPORTANT INSTRUCTIONS FOR READING THE IMAGE:
 - The text on this label may be very small, difficult to read, or have poor contrast
@@ -181,33 +181,127 @@ IMPORTANT INSTRUCTIONS FOR READING THE IMAGE:
 - Take your time to examine every section of the label thoroughly
 - If certain information is genuinely illegible, note that in your analysis
 
+ANALYSIS STRUCTURE REQUIREMENTS:
+
+Your analysis must follow this exact structure and evaluate each regulatory category:
+
+1. **General Labeling Requirements**: Evaluate the label against basic FDA/USDA requirements
+   - Statement of Identity (Name of Food): Is the product name clear, prominent, and on the principal display panel?
+   - Net Quantity of Contents: Is it properly declared in both US Customary and metric units? Is it in the bottom 30% of the display panel?
+   - Name and Address of Manufacturer/Distributor: Is the manufacturer or distributor clearly listed with complete address? Are qualifying phrases like "distributed by" used correctly?
+
+2. **Ingredient Labeling**: Review ingredient declaration compliance
+   - List and Order: Are ingredients listed in descending order of predominance by weight?
+   - Flavor Declaration: Are artificial flavors, natural flavors, and spices properly declared?
+   - Specific Ingredient Requirements: Are colors specifically named? Are preservatives listed with their function?
+
+3. **Food Allergen Labeling Requirements (FALCPA/FASTER Act)**: Critical compliance check
+   - Major Food Allergens (MFAs): The nine major allergens are: Milk, Egg, Fish, Crustacean shellfish, Tree nuts, Wheat, Peanuts, Soybeans, and Sesame
+   - Allergen Declaration Requirement: Is there a "Contains" statement OR are allergens declared parenthetically in the ingredient list?
+   - Evaluation of Ingredients: Analyze each ingredient (especially flavors, additives) for potential MFA content
+   - **CRITICAL**: Use conditional language - "IF ingredient X contains [allergen], THEN declaration is required"
+   - Determine if the label is compliant or potentially non-compliant based on missing allergen declarations
+
+4. **Nutrition Labeling and Claims**: Assess nutrition facts panel requirements and exemptions
+   - Mandatory Nutrition Labeling: Is a Nutrition Facts panel required for this product type?
+   - **Exemptions**: Does this product qualify for exemption (e.g., coffee, spices, foods of no nutritional significance)?
+   - Evaluation of Claims: Are there any nutrient content claims (NCCs) or health claims that would trigger mandatory nutrition labeling?
+   - **Important**: Consider exemptions for foods with insignificant amounts of all required nutrients
+   - If nutrition panel is missing but product qualifies for exemption, mark as COMPLIANT with explanation
+
+5. **Additional Regulatory Considerations**: Evaluate any other applicable requirements
+   - Fortification Policy: Are essential nutrients added? Are there fortification claims?
+   - Special Labeling: Date labeling, caffeine disclosure, organic claims, etc.
+   - Product-Specific Requirements: Based on product type (beverage, coffee, meat, etc.)
+
+6. **Summary Compliance Table**: Provide a structured summary
+
 Return your response as a JSON object with the following structure:
 {
-  "product_name": "Name of the product",
-  "summary": "A brief summary of the overall nutritional profile and healthiness (2-3 sentences)",
-  "ingredients": ["ingredient1", "ingredient2", ...],
-  "nutrition_facts": {
-    "calories": "value with unit",
-    "total_fat": "value with unit",
-    "saturated_fat": "value with unit",
-    "cholesterol": "value with unit",
-    "sodium": "value with unit",
-    "total_carbohydrate": "value with unit",
-    "dietary_fiber": "value with unit",
-    "total_sugars": "value with unit",
-    "protein": "value with unit"
+  "product_name": "Name of the product from the label",
+  "product_type": "Type of product (e.g., 'Coffee', 'Snack Food', 'Beverage', 'Packaged Meal')",
+  "general_labeling": {
+    "statement_of_identity": {
+      "status": "compliant|non_compliant|not_applicable",
+      "details": "Detailed explanation of findings",
+      "regulation_citation": "Specific regulation (e.g., '21 CFR 101.3')"
+    },
+    "net_quantity": {
+      "status": "compliant|non_compliant|not_applicable",
+      "details": "Detailed explanation",
+      "regulation_citation": "Specific regulation"
+    },
+    "manufacturer_address": {
+      "status": "compliant|non_compliant|not_applicable",
+      "details": "Detailed explanation",
+      "regulation_citation": "Specific regulation"
+    }
   },
-  "health_score": 75,
-  "recommendations": ["recommendation1", "recommendation2", ...]
+  "ingredient_labeling": {
+    "status": "compliant|non_compliant|not_applicable",
+    "ingredients_list": ["ingredient1", "ingredient2", ...],
+    "details": "Analysis of ingredient declaration compliance including order, naming, sub-ingredients",
+    "regulation_citation": "21 CFR 101.4"
+  },
+  "allergen_labeling": {
+    "status": "compliant|potentially_non_compliant|not_applicable",
+    "details": "Detailed analysis with conditional statements about potential allergen-containing ingredients",
+    "potential_allergens": ["List of ingredients that may contain MFAs"],
+    "has_contains_statement": true|false,
+    "risk_level": "low|medium|high",
+    "regulation_citation": "FALCPA Section 403(w), FASTER Act"
+  },
+  "nutrition_labeling": {
+    "status": "compliant|non_compliant|not_applicable",
+    "panel_present": true|false,
+    "exemption_applicable": true|false,
+    "exemption_reason": "Explanation if exemption applies (e.g., 'Foods of no nutritional significance')",
+    "details": "Full explanation of nutrition labeling compliance or exemption",
+    "regulation_citation": "21 CFR 101.9"
+  },
+  "additional_requirements": {
+    "fortification": {
+      "status": "compliant|non_compliant|not_applicable",
+      "details": "Analysis of fortification compliance"
+    },
+    "other_requirements": [
+      {
+        "requirement": "Name of requirement (e.g., 'Caffeine Disclosure')",
+        "status": "compliant|non_compliant|not_applicable",
+        "details": "Explanation"
+      }
+    ]
+  },
+  "overall_assessment": {
+    "primary_compliance_status": "compliant|likely_compliant|potentially_non_compliant|non_compliant",
+    "confidence_level": "high|medium|low",
+    "summary": "2-3 sentence overall summary of compliance status",
+    "key_findings": ["Finding 1", "Finding 2", "Finding 3"]
+  },
+  "compliance_table": [
+    {
+      "element": "Labeling Element Name",
+      "status": "Compliant|Potentially Non-compliant|Non-compliant|Not Applicable",
+      "rationale": "Brief rationale or condition for compliance"
+    }
+  ],
+  "recommendations": [
+    {
+      "priority": "critical|high|medium|low",
+      "recommendation": "Specific actionable recommendation",
+      "regulation": "Relevant regulation citation"
+    }
+  ]
 }
 
-Important:
-- health_score should be a number from 0-100 based on overall nutritional quality AND regulatory compliance
-- Include 3-5 specific, actionable recommendations based on both nutrition and regulatory requirements
-- Identify any regulatory violations or compliance issues based on the documents provided
-- Be specific about concerning ingredients or nutrients
-- Only include nutrition facts that are visible in the image
-- Reference specific regulations when identifying compliance issues`,
+**CRITICAL REQUIREMENTS**:
+1. Use conditional language for potential violations (e.g., "IF artificial cream flavor contains milk protein, THEN...")
+2. Always consider exemptions before marking nutrition labeling as non-compliant
+3. Provide specific regulation citations (CFR sections, act names) for every finding
+4. Distinguish between "non-compliant" (definite violation) and "potentially non-compliant" (conditional on information not visible)
+5. For coffee, spices, and similar products: they are typically EXEMPT from Nutrition Facts panels
+6. Base compliance status on visible information; use "potentially non-compliant" when ingredient composition is unknown
+7. In the compliance_table, provide a clear summary similar to the NotebookLM format`,
             },
           ],
         },
@@ -219,17 +313,32 @@ Important:
       throw new Error('No text response from AI');
     }
 
+    console.log('=== AI Response (first 500 chars) ===');
+    console.log(textContent.text.substring(0, 500));
+    console.log('=== End preview ===');
+
     let analysisData;
     try {
       const jsonMatch = textContent.text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
+        console.error('No JSON found in AI response. Full response:');
+        console.error(textContent.text);
         throw new Error('No JSON found in response');
       }
       analysisData = JSON.parse(jsonMatch[0]);
+      console.log('Successfully parsed analysis data');
     } catch (parseError) {
       console.error('Error parsing AI response:', parseError);
+      console.error('Raw text content (first 1000 chars):', textContent.text.substring(0, 1000));
       throw new Error('Failed to parse AI response');
     }
+
+    // Determine compliance status from the new analysis structure
+    const complianceStatus = analysisData.overall_assessment?.primary_compliance_status || 'unknown';
+    const dbComplianceStatus =
+      complianceStatus === 'compliant' || complianceStatus === 'likely_compliant' ? 'compliant' :
+      complianceStatus === 'potentially_non_compliant' ? 'minor_issues' :
+      'major_violations';
 
     const { data: analysis, error: insertError } = await supabase
       .from('analyses')
@@ -238,8 +347,8 @@ Important:
         image_url: `data:${mediaType};base64,${base64Image.substring(0, 100)}...`,
         image_name: imageFile.name,
         analysis_result: analysisData,
-        compliance_status: analysisData.health_score >= 80 ? 'compliant' : analysisData.health_score >= 60 ? 'minor_issues' : 'major_violations',
-        issues_found: analysisData.recommendations?.length || 0,
+        compliance_status: dbComplianceStatus,
+        issues_found: analysisData.recommendations?.filter((r: any) => r.priority === 'critical' || r.priority === 'high')?.length || 0,
       })
       .select()
       .single();
@@ -262,10 +371,12 @@ Important:
     try {
       const emailHtml = generateAnalysisResultEmail({
         productName: analysisData.product_name || 'Unknown Product',
-        summary: analysisData.summary || 'Analysis completed successfully.',
-        healthScore: analysisData.health_score || 0,
+        summary: analysisData.overall_assessment?.summary || 'Analysis completed successfully.',
+        healthScore: 0, // No longer using health score
         complianceStatus: analysis.compliance_status,
-        recommendations: analysisData.recommendations || [],
+        recommendations: analysisData.recommendations?.map((r: any) =>
+          `[${r.priority.toUpperCase()}] ${r.recommendation} (${r.regulation})`
+        ) || [],
         analyzedAt: analysis.created_at,
       });
 
@@ -279,7 +390,12 @@ Important:
     }
 
     return NextResponse.json({
-      ...analysis,
+      id: analysis.id,
+      image_name: analysis.image_name,
+      compliance_status: analysis.compliance_status,
+      issues_found: analysis.issues_found,
+      created_at: analysis.created_at,
+      ...analysisData,
       usage: {
         used: currentUsage.analyses_used + 1,
         limit: currentUsage.analyses_limit,

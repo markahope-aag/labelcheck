@@ -27,16 +27,16 @@ export default async function Home() {
                 Ensure your products meet all requirements before hitting the market.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link href="/sign-up">
-                  <Button size="lg" className="text-lg px-8">
+                <Button size="lg" className="text-lg px-8" asChild>
+                  <Link href="/sign-up">
                     Start Free Analysis
-                  </Button>
-                </Link>
-                <Link href="/pricing">
-                  <Button size="lg" variant="outline" className="text-lg px-8">
+                  </Link>
+                </Button>
+                <Button size="lg" variant="outline" className="text-lg px-8" asChild>
+                  <Link href="/pricing">
                     View Pricing
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               </div>
               <p className="text-sm text-gray-500 mt-4">
                 No credit card required • Get started in 2 minutes
@@ -245,11 +245,11 @@ export default async function Home() {
             <p className="text-xl text-blue-100 mb-8">
               Start analyzing your food labels today. No credit card required.
             </p>
-            <Link href="/sign-up">
-              <Button size="lg" variant="secondary" className="text-lg px-8">
+            <Button size="lg" variant="secondary" className="text-lg px-8" asChild>
+              <Link href="/sign-up">
                 Get Started Free
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
         </section>
     </div>

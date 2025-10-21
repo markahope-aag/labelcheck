@@ -26,7 +26,7 @@ The project currently has no test suite configured. When adding tests, consider 
 - **Clerk** handles all authentication (sign-in/sign-up)
 - Clerk webhooks (`/api/webhooks/clerk`) sync user data to Supabase `users` table
 - All authenticated routes are protected via `middleware.ts` using `clerkMiddleware`
-- Public routes: `/`, `/pricing`, `/sign-in`, `/sign-up`, and webhook endpoints
+- Public routes: `/`, `/pricing`, `/sign-in`, `/sign-up`, `/share/[token]`, and webhook endpoints
 
 ### Database Architecture (Supabase)
 The database uses PostgreSQL with Row Level Security (RLS) enabled on all tables:
@@ -34,7 +34,7 @@ The database uses PostgreSQL with Row Level Security (RLS) enabled on all tables
 - **users**: Synced from Clerk, stores `stripe_customer_id`
 - **subscriptions**: Tracks plan tier (basic/pro/enterprise), Stripe subscription details
 - **usage_tracking**: Monthly usage limits, keyed by `user_id` + `month` (YYYY-MM format)
-- **analyses**: Stores analysis results with truncated image previews (not full images)
+- **analyses**: Stores analysis results with truncated image previews (not full images), includes `share_token` for public sharing
 - **regulatory_documents**: FDA/USDA regulations used for AI analysis context
 - **organizations** + **organization_members**: Team collaboration features
 - **user_settings**: User preferences (notifications, theme, timezone)
@@ -63,11 +63,12 @@ Key implementation in `app/api/analyze/route.ts`:
 5. Subscription changes update `subscriptions` table and trigger `usage_tracking` limit updates
 
 ### Helper Libraries Organization
-- `lib/supabase.ts`: Supabase client + TypeScript interfaces
+- `lib/supabase.ts`: Supabase client + TypeScript interfaces (exports both `supabase` and `supabaseAdmin`)
 - `lib/subscription-helpers.ts`: Subscription/usage query helpers
 - `lib/regulatory-documents.ts`: Document fetching and context building
 - `lib/export-helpers.ts`: PDF/CSV/JSON export utilities using jsPDF
 - `lib/email-templates.ts`: HTML email template generation
+- `lib/image-processing.ts`: Sharp-based image preprocessing for AI analysis
 - `lib/constants.ts`: Plan limits, pricing, and feature definitions
 
 ### Path Aliases
@@ -86,6 +87,11 @@ import { Button } from '@/components/ui/button';
 - Check in `app/api/analyze/route.ts` enforces limits before analysis
 
 ### Image Handling
+- Images are preprocessed using Sharp (`lib/image-processing.ts`) before AI analysis:
+  - Auto-rotates based on EXIF orientation
+  - Upscales if too small (min 1500px on longest side)
+  - Enhances contrast and sharpness for better text recognition
+  - Validates file size (max 10MB by default)
 - Images are NOT permanently stored in cloud storage
 - Only first 100 characters of base64 string stored for preview purposes
 - Full image sent to Claude API but discarded after analysis
@@ -107,6 +113,23 @@ Both Clerk and Stripe webhooks verify signatures:
 - Three formats: PDF (formatted report), CSV (spreadsheet), JSON (raw data)
 - Exports are tracked in `analysis_exports` table
 - Individual analysis PDFs vs. batch monthly reports supported
+
+### Share Functionality
+- Users can generate shareable public links to analysis reports via `/api/share`
+- Share tokens are 16-byte random hex strings stored in `analyses.share_token` column
+- Tokens are generated on-demand (only when user clicks Share button)
+- Once generated, share URLs remain permanent for that analysis
+- Public share page at `/share/[token]` displays full compliance report without authentication
+- Share dialog modal shows the URL with copy-to-clipboard functionality
+- Available on both analyze page (after analysis completes) and analysis detail page (`/analysis/[id]`)
+
+### History Page Features
+- **Search**: Filter analyses by product name, product type, or summary text
+- **Status Filter**: Filter by compliance status (All, Compliant, Non-Compliant, Minor Issues)
+- **Sort Options**: Newest First (default), Oldest First, Name (A-Z)
+- **Results Counter**: Shows "Showing X of Y analyses"
+- All filtering and sorting happens client-side for instant results
+- Maintains backward compatibility with old and new analysis data formats
 
 ## Environment Variables Required
 
@@ -181,13 +204,20 @@ const { data: user } = await supabase
 1. **User IDs**: Clerk's `userId` ≠ Supabase `user.id`. Always map via `clerk_user_id` column.
 2. **Usage Limits**: Enterprise plan uses `-1` for unlimited, not a large number.
 3. **Month Format**: Usage tracking uses `YYYY-MM` string format, not Date objects.
-4. **RLS Policies**: All Supabase queries require proper user context for RLS to work.
-5. **Webhook Timing**: User must exist in Supabase before other operations (Clerk webhook must fire first).
+4. **RLS Policies**: All Supabase queries require proper user context for RLS to work. Use `supabaseAdmin` from `lib/supabase.ts` to bypass RLS when needed (e.g., creating users).
+5. **Webhook Timing**: User must exist in Supabase before other operations. The `/api/analyze` endpoint has a fallback to auto-create users if the Clerk webhook hasn't fired yet.
 6. **Base64 Image Storage**: Only truncated preview stored, not full image data.
+7. **Image Processing**: Images are preprocessed before analysis but the original is not stored. If preprocessing fails, the original buffer is used as fallback.
+8. **Share Tokens**: All existing analyses have NULL `share_token` until user clicks Share button. Share tokens are generated on-demand and persist permanently once created.
 
 ## Key Files to Reference
 
 - `middleware.ts` - Route protection and public route configuration
 - `app/api/analyze/route.ts` - Core AI analysis logic
+- `app/api/share/route.ts` - Share link generation endpoint
+- `app/share/[token]/page.tsx` - Public share page for viewing shared analyses
+- `app/analysis/[id]/page.tsx` - Authenticated analysis detail page
+- `app/history/page.tsx` - Analysis history with search/filter features
 - `lib/subscription-helpers.ts` - Usage and subscription queries
+- `lib/export-helpers.ts` - PDF/CSV/JSON export functions
 - `SETUP_GUIDE.md` - Comprehensive setup and testing documentation

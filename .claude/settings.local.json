@@ -5,7 +5,14 @@
       "Bash(npm install:*)",
       "Bash(npm run dev:*)",
       "Bash(taskkill:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(tasklist:*)",
+      "Bash(findstr:*)",
+      "Bash(Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue)",
+      "Bash(timeout /t 10)",
+      "Bash(curl:*)",
+      "Bash(supabase --version:*)",
+      "Bash(git config:*)"
     ],
     "deny": [],
     "ask": []

@@ -55,30 +55,30 @@ export function Navigation() {
           <div className="flex items-center gap-4">
             {isSignedIn ? (
               <>
-                <Link href="/settings">
-                  <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/settings">
                     Settings
-                  </Button>
-                </Link>
-                <Link href="/billing">
-                  <Button variant="ghost" size="sm">
+                  </Link>
+                </Button>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/billing">
                     Billing
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
                 <UserButton afterSignOutUrl="/" />
               </>
             ) : (
               <>
-                <Link href="/sign-in">
-                  <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/sign-in">
                     Sign In
-                  </Button>
-                </Link>
-                <Link href="/sign-up">
-                  <Button size="sm">
+                  </Link>
+                </Button>
+                <Button size="sm" asChild>
+                  <Link href="/sign-up">
                     Get Started
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               </>
             )}
           </div>

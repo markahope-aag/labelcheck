@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
-import { Search, Calendar, TrendingUp, TrendingDown, Minus, Download } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Search, Calendar, Download, Eye, FileText, Filter, X } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/lib/supabase';
 import { exportAnalysesAsCSV, exportAnalysesAsJSON, exportAnalysesAsPDF } from '@/lib/export-helpers';
@@ -14,13 +16,72 @@ import { useToast } from '@/hooks/use-toast';
 export default function HistoryPage() {
   const { user } = useUser();
   const { toast } = useToast();
+  const router = useRouter();
   const [analyses, setAnalyses] = useState<any[]>([]);
+  const [filteredAnalyses, setFilteredAnalyses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [exportFormat, setExportFormat] = useState<'pdf' | 'csv' | 'json'>('pdf');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<'date-desc' | 'date-asc' | 'name'>('date-desc');
 
   useEffect(() => {
     loadAnalyses();
   }, [user]);
+
+  useEffect(() => {
+    filterAndSortAnalyses();
+  }, [analyses, searchQuery, statusFilter, sortBy]);
+
+  function filterAndSortAnalyses() {
+    let filtered = [...analyses];
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter((analysis) => {
+        const result = analysis.analysis_result;
+        const productName = (result.product_name || '').toLowerCase();
+        const productType = (result.product_type || '').toLowerCase();
+        const summary = (result.overall_assessment?.summary || result.summary || '').toLowerCase();
+
+        return productName.includes(query) ||
+               productType.includes(query) ||
+               summary.includes(query);
+      });
+    }
+
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter((analysis) => {
+        const status = analysis.analysis_result.overall_assessment?.primary_compliance_status || analysis.compliance_status;
+
+        if (statusFilter === 'compliant') {
+          return status === 'compliant' || status === 'likely_compliant';
+        } else if (statusFilter === 'non-compliant') {
+          return status === 'potentially_non_compliant' || status === 'non_compliant' || status === 'major_violations';
+        }
+
+        return analysis.compliance_status === statusFilter;
+      });
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      if (sortBy === 'date-desc') {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      } else if (sortBy === 'date-asc') {
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      } else if (sortBy === 'name') {
+        const nameA = (a.analysis_result.product_name || '').toLowerCase();
+        const nameB = (b.analysis_result.product_name || '').toLowerCase();
+        return nameA.localeCompare(nameB);
+      }
+      return 0;
+    });
+
+    setFilteredAnalyses(filtered);
+  }
 
   async function loadAnalyses() {
     if (!user) return;
@@ -93,18 +154,6 @@ export default function HistoryPage() {
     }
   }
 
-  const getHealthScoreColor = (score: number) => {
-    if (score >= 70) return 'text-green-600 bg-green-50 border-green-200';
-    if (score >= 40) return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-    return 'text-red-600 bg-red-50 border-red-200';
-  };
-
-  const getHealthScoreIcon = (score: number) => {
-    if (score >= 70) return <TrendingUp className="h-4 w-4" />;
-    if (score >= 40) return <Minus className="h-4 w-4" />;
-    return <TrendingDown className="h-4 w-4" />;
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
@@ -148,14 +197,64 @@ export default function HistoryPage() {
 
           {analyses && analyses.length > 0 ? (
             <div className="space-y-6">
+              {/* Search and Filter Bar */}
+              <Card className="border-slate-200">
+                <CardContent className="pt-6">
+                  <div className="flex flex-col lg:flex-row gap-4">
+                    <div className="flex-1 relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <Input
+                        type="text"
+                        placeholder="Search by product name, type, or summary..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10 pr-10"
+                      />
+                      {searchQuery && (
+                        <button
+                          onClick={() => setSearchQuery('')}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger className="w-full lg:w-48">
+                        <Filter className="h-4 w-4 mr-2" />
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Status</SelectItem>
+                        <SelectItem value="compliant">Compliant</SelectItem>
+                        <SelectItem value="non-compliant">Non-Compliant</SelectItem>
+                        <SelectItem value="minor_issues">Minor Issues</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                      <SelectTrigger className="w-full lg:w-48">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="date-desc">Newest First</SelectItem>
+                        <SelectItem value="date-asc">Oldest First</SelectItem>
+                        <SelectItem value="name">Name (A-Z)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardContent>
+              </Card>
+
               <div className="flex items-center justify-between">
                 <p className="text-sm text-slate-600">
-                  Showing <span className="font-semibold text-slate-900">{analyses.length}</span> analysis{analyses.length !== 1 ? 'es' : ''}
+                  Showing <span className="font-semibold text-slate-900">{filteredAnalyses.length}</span> of <span className="font-semibold text-slate-900">{analyses.length}</span> analysis{analyses.length !== 1 ? 'es' : ''}
                 </p>
               </div>
 
               <div className="grid grid-cols-1 gap-6">
-                {analyses.map((analysis) => {
+                {filteredAnalyses.map((analysis) => {
                   const result = analysis.analysis_result || {};
                   return (
                     <Card key={analysis.id} className="border-slate-200 hover:shadow-lg transition-shadow">
@@ -183,35 +282,41 @@ export default function HistoryPage() {
                               </div>
                             </div>
                           </div>
-                          {result.health_score !== null && result.health_score !== undefined && (
-                            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${getHealthScoreColor(result.health_score)}`}>
-                              {getHealthScoreIcon(result.health_score)}
-                              <span className="font-semibold">{result.health_score}/100</span>
+                          {result.overall_assessment?.primary_compliance_status && (
+                            <div>
+                              <span className={`inline-block px-3 py-1.5 rounded-lg text-sm font-semibold ${
+                                result.overall_assessment.primary_compliance_status === 'compliant' ? 'bg-green-100 text-green-800 border-green-200 border' :
+                                result.overall_assessment.primary_compliance_status === 'likely_compliant' ? 'bg-green-50 text-green-700 border-green-200 border' :
+                                result.overall_assessment.primary_compliance_status === 'potentially_non_compliant' ? 'bg-yellow-100 text-yellow-800 border-yellow-200 border' :
+                                'bg-red-100 text-red-800 border-red-200 border'
+                              }`}>
+                                {result.overall_assessment.primary_compliance_status.replace(/_/g, ' ').toUpperCase()}
+                              </span>
                             </div>
                           )}
                         </div>
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-4">
-                          {result.summary && (
+                          {(result.overall_assessment?.summary || result.summary) && (
                             <div>
                               <h4 className="text-sm font-semibold text-slate-700 mb-2">Summary</h4>
-                              <p className="text-slate-600 leading-relaxed">{result.summary}</p>
+                              <p className="text-slate-600 leading-relaxed">{result.overall_assessment?.summary || result.summary}</p>
                             </div>
                           )}
 
-                          {result.ingredients && result.ingredients.length > 0 && (
+                          {((result.ingredient_labeling?.ingredients_list || result.ingredients)?.length > 0) && (
                             <div>
                               <h4 className="text-sm font-semibold text-slate-700 mb-2">Ingredients</h4>
                               <div className="flex flex-wrap gap-2">
-                                {result.ingredients.slice(0, 8).map((ingredient: string, index: number) => (
+                                {(result.ingredient_labeling?.ingredients_list || result.ingredients).slice(0, 8).map((ingredient: string, index: number) => (
                                   <Badge key={index} variant="secondary" className="bg-slate-100 text-slate-700 hover:bg-slate-200">
                                     {ingredient}
                                   </Badge>
                                 ))}
-                                {result.ingredients.length > 8 && (
+                                {(result.ingredient_labeling?.ingredients_list || result.ingredients).length > 8 && (
                                   <Badge variant="secondary" className="bg-slate-100 text-slate-700">
-                                    +{result.ingredients.length - 8} more
+                                    +{(result.ingredient_labeling?.ingredients_list || result.ingredients).length - 8} more
                                   </Badge>
                                 )}
                               </div>
@@ -238,15 +343,48 @@ export default function HistoryPage() {
                             <div>
                               <h4 className="text-sm font-semibold text-slate-700 mb-2">Top Recommendations</h4>
                               <ul className="space-y-1">
-                                {result.recommendations.slice(0, 3).map((rec: string, index: number) => (
-                                  <li key={index} className="flex items-start gap-2 text-sm text-slate-600">
-                                    <span className="text-blue-600 mt-0.5">•</span>
-                                    <span>{rec}</span>
-                                  </li>
-                                ))}
+                                {result.recommendations.slice(0, 3).map((rec: any, index: number) => {
+                                  // Handle both old string format and new object format
+                                  const recText = typeof rec === 'string' ? rec : rec.recommendation;
+                                  const priority = typeof rec === 'object' ? rec.priority : null;
+
+                                  return (
+                                    <li key={index} className="flex items-start gap-2 text-sm text-slate-600">
+                                      {priority && (
+                                        <span className={`px-1.5 py-0.5 rounded text-xs font-semibold ${
+                                          priority === 'critical' ? 'bg-red-100 text-red-800' :
+                                          priority === 'high' ? 'bg-orange-100 text-orange-800' :
+                                          priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                                          'bg-blue-100 text-blue-800'
+                                        }`}>
+                                          {priority.toUpperCase()}
+                                        </span>
+                                      )}
+                                      <span className="flex-1">{recText}</span>
+                                    </li>
+                                  );
+                                })}
                               </ul>
                             </div>
                           )}
+
+                          <div className="flex gap-2 pt-4 border-t border-slate-200">
+                            <Button
+                              onClick={() => router.push(`/analysis/${analysis.id}`)}
+                              className="flex-1 gap-2"
+                              variant="default"
+                            >
+                              <Eye className="h-4 w-4" />
+                              View Full Report
+                            </Button>
+                            <Button
+                              onClick={() => router.push(`/analysis/${analysis.id}`)}
+                              className="gap-2"
+                              variant="outline"
+                            >
+                              <FileText className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
