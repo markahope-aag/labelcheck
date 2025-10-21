@@ -69,6 +69,7 @@ Key implementation in `app/api/analyze/route.ts`:
 - `lib/export-helpers.ts`: PDF/CSV/JSON export utilities using jsPDF
 - `lib/email-templates.ts`: HTML email template generation
 - `lib/image-processing.ts`: Sharp-based image preprocessing for AI analysis
+- `lib/pdf-helpers.ts`: PDF text extraction utilities using pdf-parse-fork
 - `lib/constants.ts`: Plan limits, pricing, and feature definitions
 
 ### Path Aliases
@@ -120,6 +121,47 @@ The admin panel (`/admin`) provides comprehensive management tools for administr
 - **Pricing** (`/admin/pricing`): Manage pricing plans and tiers
 
 **Important**: All admin API routes (`/api/admin/*`) must use `supabaseAdmin` instead of `supabase` to bypass Row Level Security (RLS) policies and access data across all users. Regular `supabase` client respects RLS and will only return data for the authenticated user.
+
+### Regulatory Document Management
+The admin panel includes comprehensive regulatory document management features:
+
+#### Database Schema
+The `regulatory_documents` table includes the following fields:
+- `id`: UUID primary key
+- `title`: Document title (required)
+- `description`: Brief description of the document
+- `content`: Full text content of the regulation (required)
+- `document_type`: Type of regulation - `federal_law`, `state_regulation`, `guideline`, `standard`, `policy`, or `other`
+- `jurisdiction`: Geographic area where regulation applies (e.g., "United States", "California")
+- `source`: Citation or reference (e.g., "FDA 21 CFR 101.9")
+- `source_url`: URL to original document
+- `effective_date`: Date when the regulation became effective (DATE type)
+- `version`: Version number or identifier
+- `category_id`: Foreign key to document categories
+- `is_active`: Boolean flag for active/inactive status
+- `created_at`: Timestamp of creation
+- `updated_at`: Timestamp of last update
+
+#### PDF Upload Feature
+Admins can upload PDF versions of regulatory documents:
+- Upload endpoint: `/api/admin/documents/extract-pdf`
+- Uses `pdf-parse-fork` library for text extraction (CommonJS compatible with Next.js)
+- Maximum file size: 10MB
+- Extracts both text content and metadata (title, author, subject, creator, page count)
+- Auto-fills form fields with extracted data while preserving user-entered values
+- Handles PDF processing errors gracefully with user feedback
+
+Implementation in `lib/pdf-helpers.ts`:
+```typescript
+export async function extractTextFromPDF(buffer: Buffer): Promise<string>
+export async function extractPDFMetadata(buffer: Buffer): Promise<{...}>
+export function cleanExtractedText(text: string): string
+```
+
+#### Data Validation and Sanitization
+- **Empty Date Handling**: The `effective_date` field is a PostgreSQL DATE type that cannot accept empty strings. The PUT endpoint (`/api/admin/documents/[id]/route.ts`) automatically converts empty strings to `null` before saving.
+- **Document Type Validation**: Database enforces check constraint for valid document types
+- **Admin-Only Operations**: All document management endpoints require admin role verification
 
 ### Export Functionality
 - PDF exports use `jspdf` + `jspdf-autotable` libraries
@@ -218,11 +260,14 @@ const { data: user } = await supabase
 1. **User IDs**: Clerk's `userId` ≠ Supabase `user.id`. Always map via `clerk_user_id` column.
 2. **Usage Limits**: Enterprise plan uses `-1` for unlimited, not a large number.
 3. **Month Format**: Usage tracking uses `YYYY-MM` string format, not Date objects.
-4. **RLS Policies**: All Supabase queries require proper user context for RLS to work. Use `supabaseAdmin` from `lib/supabase.ts` to bypass RLS when needed (e.g., creating users).
+4. **RLS Policies**: All Supabase queries require proper user context for RLS to work. Use `supabaseAdmin` from `lib/supabase.ts` to bypass RLS when needed (e.g., admin operations, creating users).
 5. **Webhook Timing**: User must exist in Supabase before other operations. The `/api/analyze` endpoint has a fallback to auto-create users if the Clerk webhook hasn't fired yet.
 6. **Base64 Image Storage**: Only truncated preview stored, not full image data.
 7. **Image Processing**: Images are preprocessed before analysis but the original is not stored. If preprocessing fails, the original buffer is used as fallback.
 8. **Share Tokens**: All existing analyses have NULL `share_token` until user clicks Share button. Share tokens are generated on-demand and persist permanently once created.
+9. **PDF Parsing Library**: Use `pdf-parse-fork` instead of `pdf-parse` for Next.js compatibility. The original `pdf-parse` has ESM/CommonJS issues with Next.js webpack.
+10. **Date Field Validation**: PostgreSQL DATE columns cannot accept empty strings. Always convert empty date strings to `null` before saving (e.g., `effective_date: value === '' ? null : value`).
+11. **Admin API Routes**: All `/api/admin/*` endpoints must use `supabaseAdmin` client to bypass RLS and access cross-user data. Using regular `supabase` client will only return current user's data.
 
 ## Key Files to Reference
 
@@ -232,6 +277,12 @@ const { data: user } = await supabase
 - `app/share/[token]/page.tsx` - Public share page for viewing shared analyses
 - `app/analysis/[id]/page.tsx` - Authenticated analysis detail page
 - `app/history/page.tsx` - Analysis history with search/filter features
+- `app/admin/documents/page.tsx` - Admin regulatory document management UI with PDF upload
+- `app/api/admin/documents/route.ts` - Admin document listing and creation endpoint
+- `app/api/admin/documents/[id]/route.ts` - Admin document update and delete endpoint
+- `app/api/admin/documents/extract-pdf/route.ts` - PDF text extraction endpoint
 - `lib/subscription-helpers.ts` - Usage and subscription queries
 - `lib/export-helpers.ts` - PDF/CSV/JSON export functions
+- `lib/pdf-helpers.ts` - PDF text extraction and metadata parsing utilities
+- `supabase-migrations/add-regulatory-document-fields.sql` - Database migration for regulatory document fields
 - `SETUP_GUIDE.md` - Comprehensive setup and testing documentation
