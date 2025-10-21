@@ -25,7 +25,9 @@
       "Bash(netstat:*)",
       "Bash(timeout:*)",
       "Bash(cmd /c \"for /f \"\"tokens=2\"\" %i in (''tasklist ^| findstr node.exe'') do @taskkill /F /PID %i\")",
-      "Bash(powershell -Command \"Get-Process node | ForEach-Object { Stop-Process -Id $_Id -Force }\")"
+      "Bash(powershell -Command \"Get-Process node | ForEach-Object { Stop-Process -Id $_Id -Force }\")",
+      "Bash(npm run build:*)",
+      "Bash(git fetch:*)"
     ],
     "deny": [],
     "ask": []

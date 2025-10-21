@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth, useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import { Plus, Edit, Trash2, Search, Filter, FileText, Calendar, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Filter, FileText, Calendar, CheckCircle, XCircle, Upload } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -52,6 +52,10 @@ export default function AdminDocumentsPage() {
     version: '',
     is_active: true,
   });
+
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [isProcessingPDF, setIsProcessingPDF] = useState(false);
+  const [pdfError, setPdfError] = useState('');
 
   const isAdmin = user?.publicMetadata?.role === 'admin';
 
@@ -158,6 +162,55 @@ export default function AdminDocumentsPage() {
       version: '',
       is_active: true,
     });
+    setPdfFile(null);
+    setPdfError('');
+  };
+
+  const handlePDFUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== 'application/pdf') {
+      setPdfError('Please upload a PDF file');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) { // 10MB limit
+      setPdfError('PDF file must be less than 10MB');
+      return;
+    }
+
+    setPdfFile(file);
+    setPdfError('');
+    setIsProcessingPDF(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('pdf', file);
+
+      const response = await fetch('/api/admin/documents/extract-pdf', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to extract text from PDF');
+      }
+
+      const data = await response.json();
+
+      // Auto-fill form with extracted data
+      setFormData((prev) => ({
+        ...prev,
+        title: data.metadata.title || file.name.replace('.pdf', ''),
+        content: data.text,
+        source: data.metadata.author || prev.source,
+      }));
+    } catch (err: any) {
+      setPdfError(err.message);
+    } finally {
+      setIsProcessingPDF(false);
+    }
   };
 
   const filteredDocuments = documents.filter((doc) => {
@@ -217,8 +270,49 @@ export default function AdminDocumentsPage() {
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     />
                   </div>
+
+                  <div className="border-t border-b border-slate-200 py-4 my-4">
+                    <Label htmlFor="pdf-upload" className="text-base font-semibold mb-2 block">
+                      Upload PDF (Optional)
+                    </Label>
+                    <p className="text-sm text-slate-600 mb-3">
+                      Upload a PDF to automatically extract the regulatory text, or manually enter content below.
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="relative"
+                        disabled={isProcessingPDF}
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        {isProcessingPDF ? 'Processing...' : pdfFile ? 'Change PDF' : 'Choose PDF'}
+                        <input
+                          id="pdf-upload"
+                          type="file"
+                          accept="application/pdf"
+                          onChange={handlePDFUpload}
+                          className="absolute inset-0 opacity-0 cursor-pointer"
+                          disabled={isProcessingPDF}
+                        />
+                      </Button>
+                      {pdfFile && (
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-blue-600" />
+                          <span className="text-sm text-slate-700">{pdfFile.name}</span>
+                        </div>
+                      )}
+                    </div>
+                    {pdfError && (
+                      <p className="text-sm text-red-600 mt-2">{pdfError}</p>
+                    )}
+                  </div>
+
                   <div>
                     <Label htmlFor="content">Content *</Label>
+                    <p className="text-sm text-slate-600 mb-2">
+                      {pdfFile ? 'Review and edit the extracted text below:' : 'Enter regulatory text manually:'}
+                    </p>
                     <Textarea
                       id="content"
                       value={formData.content}
@@ -226,6 +320,7 @@ export default function AdminDocumentsPage() {
                       rows={8}
                       required
                       className="font-mono text-sm"
+                      placeholder="Paste or type regulatory requirements here..."
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
