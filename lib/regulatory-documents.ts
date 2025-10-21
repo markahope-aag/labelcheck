@@ -26,7 +26,7 @@ export interface DocumentCategory {
 export async function getActiveRegulatoryDocuments(): Promise<RegulatoryDocument[]> {
   const { data, error } = await supabase
     .from('regulatory_documents')
-    .select('id, title, content')
+    .select('*')
     .eq('is_active', true)
     .limit(10);
 
@@ -41,7 +41,7 @@ export async function getActiveRegulatoryDocuments(): Promise<RegulatoryDocument
 export async function getRegulatoryDocumentsByCategory(categoryName: string): Promise<RegulatoryDocument[]> {
   const { data, error } = await supabase
     .from('regulatory_documents')
-    .select('id, title, content')
+    .select('*')
     .eq('is_active', true)
     .limit(10);
 
@@ -105,7 +105,7 @@ export async function deactivateDocument(id: string): Promise<{ error: any }> {
 export async function searchDocuments(query: string): Promise<RegulatoryDocument[]> {
   const { data, error } = await supabase
     .from('regulatory_documents')
-    .select('id, title, content')
+    .select('*')
     .eq('is_active', true)
     .or(`title.ilike.%${query}%,content.ilike.%${query}%`)
     .limit(10);
