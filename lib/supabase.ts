@@ -32,15 +32,18 @@ export interface User {
 export interface RegulatoryDocument {
   id: string;
   title: string;
+  description?: string;
   content: string;
   document_type: 'federal_law' | 'state_regulation' | 'guideline' | 'standard' | 'policy' | 'other';
   jurisdiction?: string;
   source?: string;
+  source_url?: string | null;
   effective_date?: string;
   version?: string;
+  category_id?: string | null;
   is_active: boolean;
   created_at: string;
-  updated_at?: string;
+  updated_at: string;
 }
 
 export interface Subscription {

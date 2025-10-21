@@ -48,6 +48,7 @@ export default function AdminDocumentsPage() {
     document_type: 'guideline',
     jurisdiction: 'United States',
     source: '',
+    source_url: '',
     effective_date: '',
     version: '',
     is_active: true,
@@ -123,8 +124,9 @@ export default function AdminDocumentsPage() {
       description: doc.description || '',
       content: doc.content,
       document_type: doc.document_type,
-      jurisdiction: doc.jurisdiction,
+      jurisdiction: doc.jurisdiction || 'United States',
       source: doc.source || '',
+      source_url: doc.source_url || '',
       effective_date: doc.effective_date || '',
       version: doc.version || '',
       is_active: doc.is_active,
@@ -158,6 +160,7 @@ export default function AdminDocumentsPage() {
       document_type: 'guideline',
       jurisdiction: 'United States',
       source: '',
+      source_url: '',
       effective_date: '',
       version: '',
       is_active: true,
@@ -199,12 +202,12 @@ export default function AdminDocumentsPage() {
 
       const data = await response.json();
 
-      // Auto-fill form with extracted data
+      // Auto-fill form with extracted data (preserve user-entered title)
       setFormData((prev) => ({
         ...prev,
-        title: data.metadata.title || file.name.replace('.pdf', ''),
+        title: prev.title || data.metadata.title || file.name.replace('.pdf', ''),
         content: data.text,
-        source: data.metadata.author || prev.source,
+        source: prev.source || data.metadata.author || '',
       }));
     } catch (err: any) {
       setPdfError(err.message);
@@ -268,6 +271,7 @@ export default function AdminDocumentsPage() {
                       id="description"
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      placeholder="Brief description of this regulation"
                     />
                   </div>
 
@@ -349,6 +353,7 @@ export default function AdminDocumentsPage() {
                         id="jurisdiction"
                         value={formData.jurisdiction}
                         onChange={(e) => setFormData({ ...formData, jurisdiction: e.target.value })}
+                        placeholder="e.g., United States, California"
                       />
                     </div>
                   </div>
@@ -368,17 +373,30 @@ export default function AdminDocumentsPage() {
                         id="version"
                         value={formData.version}
                         onChange={(e) => setFormData({ ...formData, version: e.target.value })}
+                        placeholder="e.g., 2024.1"
                       />
                     </div>
                   </div>
-                  <div>
-                    <Label htmlFor="effective_date">Effective Date</Label>
-                    <Input
-                      id="effective_date"
-                      type="date"
-                      value={formData.effective_date}
-                      onChange={(e) => setFormData({ ...formData, effective_date: e.target.value })}
-                    />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="effective_date">Effective Date</Label>
+                      <Input
+                        id="effective_date"
+                        type="date"
+                        value={formData.effective_date}
+                        onChange={(e) => setFormData({ ...formData, effective_date: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="source_url">Source URL (Optional)</Label>
+                      <Input
+                        id="source_url"
+                        value={formData.source_url}
+                        onChange={(e) => setFormData({ ...formData, source_url: e.target.value })}
+                        placeholder="e.g., https://www.fda.gov/..."
+                        type="url"
+                      />
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <input
