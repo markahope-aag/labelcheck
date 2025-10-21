@@ -53,9 +53,23 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
+    // Only include fields that exist in the database schema
+    const documentData: any = {
+      title: body.title,
+      content: body.content,
+      document_type: body.document_type,
+      is_active: body.is_active,
+    };
+
+    // Add optional fields only if they have values
+    if (body.jurisdiction) documentData.jurisdiction = body.jurisdiction;
+    if (body.source) documentData.source = body.source;
+    if (body.effective_date) documentData.effective_date = body.effective_date;
+    if (body.version) documentData.version = body.version;
+
     const { data: document, error } = await supabase
       .from('regulatory_documents')
-      .insert(body)
+      .insert(documentData)
       .select()
       .single();
 

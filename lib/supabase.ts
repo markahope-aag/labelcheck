@@ -32,7 +32,6 @@ export interface User {
 export interface RegulatoryDocument {
   id: string;
   title: string;
-  description?: string;
   content: string;
   document_type: 'federal_law' | 'state_regulation' | 'guideline' | 'standard' | 'policy' | 'other';
   jurisdiction?: string;
