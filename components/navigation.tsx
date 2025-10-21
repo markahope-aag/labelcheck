@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 
 export function Navigation() {
   const pathname = usePathname();
-  const { isSignedIn } = useUser();
+  const { isSignedIn, user } = useUser();
+  const isAdmin = user?.publicMetadata?.role === 'admin';
 
   const navItems = isSignedIn
     ? [
@@ -17,8 +18,7 @@ export function Navigation() {
         { href: '/history', label: 'History' },
         { href: '/reports', label: 'Reports' },
         { href: '/team', label: 'Team' },
-        { href: '/pricing', label: 'Pricing' },
-        { href: '/admin/documents', label: 'Admin', adminOnly: true },
+        { href: '/admin', label: 'Admin', adminOnly: true },
       ]
     : [
         { href: '/', label: 'Home' },
@@ -36,19 +36,22 @@ export function Navigation() {
             </Link>
 
             <div className="hidden md:flex items-center gap-1">
-              {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    pathname === item.href
-                      ? 'bg-blue-50 text-blue-600'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              ))}
+              {navItems
+                .filter((item: any) => !item.adminOnly || isAdmin)
+                .map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => console.log('Clicked:', item.label, 'href:', item.href)}
+                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      pathname === item.href
+                        ? 'bg-blue-50 text-blue-600'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
             </div>
           </div>
 

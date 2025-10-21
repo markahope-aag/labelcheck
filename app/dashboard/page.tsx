@@ -13,17 +13,26 @@ export default async function DashboardPage() {
     redirect('/sign-in');
   }
 
-  const { data: analyses } = await supabase
+  // Get internal Supabase user ID from Clerk user ID
+  const { data: user, error } = await supabase
+    .from('users')
+    .select('id')
+    .eq('clerk_user_id', userId)
+    .maybeSingle();
+
+  // If user doesn't exist in database yet, show empty dashboard
+  // (The Clerk webhook should create them soon)
+  const analyses = user ? (await supabase
     .from('analyses')
     .select('*')
-    .eq('user_id', userId)
+    .eq('user_id', user.id)
     .order('created_at', { ascending: false })
-    .limit(3);
+    .limit(3)).data : null;
 
-  const { count: totalAnalyses } = await supabase
+  const totalAnalyses = user ? (await supabase
     .from('analyses')
     .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId);
+    .eq('user_id', user.id)).count : 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
