@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@clerk/nextjs';
+import { useAuth, useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { Plus, Edit, Trash2, Search, Filter, FileText, Calendar, CheckCircle, XCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,6 +31,7 @@ interface RegulatoryDocument {
 
 export default function AdminDocumentsPage() {
   const { userId } = useAuth();
+  const { user } = useUser();
   const router = useRouter();
   const [documents, setDocuments] = useState<RegulatoryDocument[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -52,13 +53,21 @@ export default function AdminDocumentsPage() {
     is_active: true,
   });
 
+  const isAdmin = user?.publicMetadata?.role === 'admin';
+
   useEffect(() => {
     if (!userId) {
       router.push('/sign-in');
       return;
     }
-    loadDocuments();
-  }, [userId]);
+    if (!isAdmin && user) {
+      router.push('/dashboard');
+      return;
+    }
+    if (isAdmin) {
+      loadDocuments();
+    }
+  }, [userId, isAdmin, user]);
 
   const loadDocuments = async () => {
     try {
@@ -153,8 +162,8 @@ export default function AdminDocumentsPage() {
 
   const filteredDocuments = documents.filter((doc) => {
     const matchesSearch =
-      doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      doc.content.toLowerCase().includes(searchQuery.toLowerCase());
+      doc.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      doc.content?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesType = filterType === 'all' || doc.document_type === filterType;
     return matchesSearch && matchesType;
   });
@@ -377,7 +386,7 @@ export default function AdminDocumentsPage() {
                             </Badge>
                           )}
                           <Badge variant="outline" className="capitalize">
-                            {doc.document_type.replace('_', ' ')}
+                            {doc.document_type?.replace('_', ' ') || 'Unknown'}
                           </Badge>
                         </div>
                         {doc.description && <CardDescription>{doc.description}</CardDescription>}

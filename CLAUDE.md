@@ -104,9 +104,22 @@ Both Clerk and Stripe webhooks verify signatures:
 - Always verify signatures before processing webhook data
 
 ### Role-Based Access Control
-- Admin routes (`/admin/documents`) require `role: "admin"` in Clerk public metadata
+- Admin routes (`/admin/*`) require `role: "admin"` in Clerk public metadata
 - Organization roles: owner, admin, member, viewer (stored in `organization_members`)
 - RLS policies enforce data isolation between users/orgs
+
+### Admin Panel
+The admin panel (`/admin`) provides comprehensive management tools for administrators:
+
+- **Dashboard** (`/admin`): Overview stats including total users, active subscriptions, analyses, and monthly revenue
+- **Users** (`/admin/users`): View all users with subscription status and analysis counts
+- **Subscriptions** (`/admin/subscriptions`): Manage all customer subscriptions with plan details and billing periods
+- **Analytics** (`/admin/analytics`): Usage analytics and trends
+- **Documents** (`/admin/documents`): Manage regulatory documents used for AI analysis
+- **Settings** (`/admin/settings`): System configuration and settings
+- **Pricing** (`/admin/pricing`): Manage pricing plans and tiers
+
+**Important**: All admin API routes (`/api/admin/*`) must use `supabaseAdmin` instead of `supabase` to bypass Row Level Security (RLS) policies and access data across all users. Regular `supabase` client respects RLS and will only return data for the authenticated user.
 
 ### Export Functionality
 - PDF exports use `jspdf` + `jspdf-autotable` libraries
@@ -155,6 +168,7 @@ STRIPE_PRICE_ID_ENTERPRISE=
 # Supabase Database
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
 
 # Optional: Email Notifications
 RESEND_API_KEY=
