@@ -9,8 +9,8 @@ import { Footer } from '@/components/footer';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'LabelCheck - AI-Powered Food Label Analysis',
-  description: 'Analyze food packaging labels for FDA and USDA regulatory compliance using advanced AI technology.',
+  title: 'LabelCheck - AI-Powered Label Analysis',
+  description: 'Analyze packaging labels for FDA and USDA regulatory compliance using advanced AI technology.',
 };
 
 export default function RootLayout({

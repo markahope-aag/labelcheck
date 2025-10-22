@@ -241,7 +241,7 @@ export default function SharePage() {
                 )}
 
                 <div className="pt-6 border-t border-slate-200 text-center">
-                  <p className="text-sm text-slate-500 mb-2">Want to analyze your own food labels?</p>
+                  <p className="text-sm text-slate-500 mb-2">Want to analyze your own labels?</p>
                   <a href="/" className="text-blue-600 hover:text-blue-700 font-medium text-sm">
                     Try LabelCheck Free →
                   </a>

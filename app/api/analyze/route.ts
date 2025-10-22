@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
               type: 'text',
               text: `${regulatoryContext}
 
-You are a food labeling regulatory compliance expert. Analyze this food label image and provide a comprehensive evaluation of its compliance with FDA and USDA labeling requirements based on the regulatory documents provided above.
+You are a labeling regulatory compliance expert. Analyze this label image and provide a comprehensive evaluation of its compliance with FDA and USDA labeling requirements based on the regulatory documents provided above.
 
 IMPORTANT INSTRUCTIONS FOR READING THE IMAGE:
 - The text on this label may be very small, difficult to read, or have poor contrast
@@ -382,7 +382,7 @@ Return your response as a JSON object with the following structure:
 
       await sendEmail({
         to: user.email,
-        subject: `Food Label Analysis Complete: ${analysisData.product_name || 'Your Product'}`,
+        subject: `Label Analysis Complete: ${analysisData.product_name || 'Your Product'}`,
         html: emailHtml,
       });
     } catch (emailError) {

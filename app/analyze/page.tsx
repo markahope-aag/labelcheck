@@ -196,8 +196,8 @@ export default function AnalyzePage() {
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-4xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-4xl font-bold text-slate-900 mb-2">Analyze Food Label</h1>
-            <p className="text-slate-600">Upload a photo of any food label to get instant nutritional insights</p>
+            <h1 className="text-4xl font-bold text-slate-900 mb-2">Analyze Label</h1>
+            <p className="text-slate-600">Upload a photo of any label to get instant nutritional insights</p>
           </div>
 
           {error && (

@@ -1,8 +1,8 @@
-# Food Label Compliance Checker - Setup Guide
+# Label Compliance Checker - Setup Guide
 
 ## Overview
 
-This is a comprehensive SaaS application for analyzing food packaging labels for FDA and USDA regulatory compliance using AI.
+This is a comprehensive SaaS application for analyzing packaging labels for FDA and USDA regulatory compliance using AI.
 
 ## ✅ Completed Components
 
@@ -202,7 +202,7 @@ Visit `http://localhost:3000`
 3. Sign in and verify navigation works
 
 #### Analysis Flow:
-1. Upload a food label image on `/analyze`
+1. Upload a label image on `/analyze`
 2. View the AI analysis results with regulatory compliance
 3. Check `analyses` table for saved results
 4. Verify `usage_tracking` increments

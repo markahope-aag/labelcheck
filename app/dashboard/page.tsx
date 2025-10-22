@@ -98,7 +98,7 @@ export default async function DashboardPage() {
           <Card className="border-slate-200">
             <CardHeader>
               <CardTitle className="text-xl font-semibold text-slate-900">Recent Analyses</CardTitle>
-              <CardDescription>Your latest food label scans</CardDescription>
+              <CardDescription>Your latest label scans</CardDescription>
             </CardHeader>
             <CardContent>
               {analyses && analyses.length > 0 ? (
@@ -157,7 +157,7 @@ export default async function DashboardPage() {
                   </div>
                   <div className="flex-1">
                     <h4 className="font-semibold text-slate-900 mb-1">Upload a Label</h4>
-                    <p className="text-sm text-slate-600">Take a photo or upload an image of any food label to get started</p>
+                    <p className="text-sm text-slate-600">Take a photo or upload an image of any label to get started</p>
                   </div>
                 </div>
 

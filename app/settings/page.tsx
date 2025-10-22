@@ -171,7 +171,7 @@ export default function SettingsPage() {
                 <div className="space-y-0.5">
                   <Label htmlFor="analysis-complete">Analysis Complete</Label>
                   <p className="text-sm text-muted-foreground">
-                    Get notified when your food label analysis is complete
+                    Get notified when your label analysis is complete
                   </p>
                 </div>
                 <Switch

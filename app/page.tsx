@@ -19,11 +19,11 @@ export default async function Home() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-3xl mx-auto">
               <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-                AI-Powered Food Label
+                AI-Powered Label
                 <span className="text-blue-600"> Compliance Checking</span>
               </h1>
               <p className="text-xl text-gray-600 mb-8">
-                Analyze food packaging labels for FDA and USDA regulatory compliance in seconds.
+                Analyze packaging labels for FDA and USDA regulatory compliance in seconds.
                 Ensure your products meet all requirements before hitting the market.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -64,7 +64,7 @@ export default async function Home() {
                   </div>
                   <h3 className="text-xl font-semibold mb-2">1. Upload Label</h3>
                   <p className="text-gray-600">
-                    Simply upload a photo or image of your food packaging label.
+                    Simply upload a photo or image of your packaging label.
                     We accept JPG, PNG, and other common formats.
                   </p>
                 </CardContent>
@@ -106,7 +106,7 @@ export default async function Home() {
                 Why Choose LabelCheck?
               </h2>
               <p className="text-lg text-gray-600">
-                The most comprehensive food label compliance solution
+                The most comprehensive label compliance solution
               </p>
             </div>
 
@@ -116,7 +116,7 @@ export default async function Home() {
                 <div>
                   <h3 className="font-semibold mb-2">FDA & USDA Compliance</h3>
                   <p className="text-gray-600 text-sm">
-                    Comprehensive checks against all FDA and USDA food labeling requirements
+                    Comprehensive checks against all FDA and USDA labeling requirements
                   </p>
                 </div>
               </div>
@@ -243,7 +243,7 @@ export default async function Home() {
               Ready to Ensure Label Compliance?
             </h2>
             <p className="text-xl text-blue-100 mb-8">
-              Start analyzing your food labels today. No credit card required.
+              Start analyzing your labels today. No credit card required.
             </p>
             <Button size="lg" variant="secondary" className="text-lg px-8" asChild>
               <Link href="/sign-up">

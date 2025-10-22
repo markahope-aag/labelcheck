@@ -32,7 +32,7 @@ export function generateAnalysisResultEmail(data: AnalysisEmailData): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Food Label Analysis Results</title>
+  <title>Label Analysis Results</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f9fafb;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; padding: 40px 20px;">
@@ -42,7 +42,7 @@ export function generateAnalysisResultEmail(data: AnalysisEmailData): string {
           <tr>
             <td style="padding: 40px;">
               <h1 style="margin: 0 0 24px 0; font-size: 28px; font-weight: 700; color: #111827; text-align: center;">
-                Food Label Analysis Complete
+                Label Analysis Complete
               </h1>
 
               <div style="background-color: #f3f4f6; border-radius: 8px; padding: 24px; margin-bottom: 32px;">
@@ -106,7 +106,7 @@ export function generateAnalysisResultEmail(data: AnalysisEmailData): string {
                 LabelCheck
               </p>
               <p style="margin: 0; font-size: 12px; color: #9ca3af;">
-                Ensuring food safety and regulatory compliance through AI-powered analysis
+                Ensuring product safety and regulatory compliance through AI-powered analysis
               </p>
             </td>
           </tr>
@@ -164,7 +164,7 @@ export function generateInvitationEmail(data: InvitationEmailData): string {
                 By joining this organization, you'll be able to:
               </p>
               <ul style="margin: 0 0 24px 0; padding-left: 24px; font-size: 14px; line-height: 1.8; color: #6b7280;">
-                <li>Collaborate on food label analyses</li>
+                <li>Collaborate on label analyses</li>
                 <li>Share compliance reports with your team</li>
                 <li>Access organization-wide analysis history</li>
               </ul>
@@ -183,7 +183,7 @@ export function generateInvitationEmail(data: InvitationEmailData): string {
                 LabelCheck
               </p>
               <p style="margin: 0; font-size: 12px; color: #9ca3af;">
-                Ensuring food safety and regulatory compliance through AI-powered analysis
+                Ensuring product safety and regulatory compliance through AI-powered analysis
               </p>
             </td>
           </tr>

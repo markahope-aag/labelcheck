@@ -291,7 +291,7 @@ export default function TeamPage() {
                 <CardTitle>Create Your Organization</CardTitle>
               </div>
               <CardDescription>
-                Set up your team workspace to collaborate on food label analyses
+                Set up your team workspace to collaborate on label analyses
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">

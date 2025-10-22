@@ -12,7 +12,7 @@ export function Footer() {
               <span className="font-semibold text-lg">LabelCheck</span>
             </div>
             <p className="text-gray-600 text-sm max-w-md">
-              AI-powered food label analysis and regulatory compliance.
+              AI-powered label analysis and regulatory compliance.
               Ensure your products meet all regulatory requirements.
             </p>
           </div>

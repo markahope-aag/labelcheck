@@ -106,7 +106,7 @@ export async function searchDocuments(query: string): Promise<RegulatoryDocument
 
 export function buildRegulatoryContext(documents: RegulatoryDocument[]): string {
   if (!documents || documents.length === 0) {
-    return 'No specific regulatory documents provided. Use general FDA food labeling knowledge.';
+    return 'No specific regulatory documents provided. Use general FDA labeling knowledge.';
   }
 
   const context = documents
@@ -120,5 +120,5 @@ ${doc.content}
     })
     .join('\n\n---\n\n');
 
-  return `Use the following regulatory documents and requirements to evaluate this food label:\n\n${context}`;
+  return `Use the following regulatory documents and requirements to evaluate this label:\n\n${context}`;
 }

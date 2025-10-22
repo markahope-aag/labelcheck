@@ -72,13 +72,13 @@ export function downloadFile(content: string, filename: string, mimeType: string
 export function exportAnalysesAsCSV(analyses: AnalysisData[]) {
   const csv = generateCSV(analyses);
   const timestamp = new Date().toISOString().split('T')[0];
-  downloadFile(csv, `food-label-analyses-${timestamp}.csv`, 'text/csv');
+  downloadFile(csv, `label-analyses-${timestamp}.csv`, 'text/csv');
 }
 
 export function exportAnalysesAsJSON(analyses: AnalysisData[]) {
   const json = generateJSON(analyses);
   const timestamp = new Date().toISOString().split('T')[0];
-  downloadFile(json, `food-label-analyses-${timestamp}.json`, 'application/json');
+  downloadFile(json, `label-analyses-${timestamp}.json`, 'application/json');
 }
 
 export async function exportAnalysesAsPDF(analyses: AnalysisData[]) {
@@ -89,7 +89,7 @@ export async function exportAnalysesAsPDF(analyses: AnalysisData[]) {
   const timestamp = new Date().toLocaleDateString();
 
   doc.setFontSize(20);
-  doc.text('Food Label Compliance Report', 14, 20);
+  doc.text('Label Compliance Report', 14, 20);
 
   doc.setFontSize(10);
   doc.text(`Generated: ${timestamp}`, 14, 28);
@@ -171,7 +171,7 @@ export async function exportAnalysesAsPDF(analyses: AnalysisData[]) {
   });
 
   const pdfTimestamp = new Date().toISOString().split('T')[0];
-  doc.save(`food-label-compliance-report-${pdfTimestamp}.pdf`);
+  doc.save(`label-compliance-report-${pdfTimestamp}.pdf`);
 }
 
 export async function exportSingleAnalysisAsPDF(analysis: AnalysisData) {
@@ -187,7 +187,7 @@ export async function exportSingleAnalysisAsPDF(analysis: AnalysisData) {
 
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(24);
-  doc.text(result.product_name || 'Food Label Compliance Analysis', 14, 20);
+  doc.text(result.product_name || 'Label Compliance Analysis', 14, 20);
 
   doc.setFontSize(11);
   doc.text(result.product_type || 'Regulatory Analysis', 14, 28);

@@ -173,7 +173,7 @@ export default function HistoryPage() {
           <div className="mb-8 flex items-start justify-between">
             <div>
               <h1 className="text-4xl font-bold text-slate-900 mb-2">Analysis History</h1>
-              <p className="text-slate-600">Review all your past food label analyses</p>
+              <p className="text-slate-600">Review all your past label analyses</p>
             </div>
             {analyses && analyses.length > 0 && (
               <div className="flex items-center gap-3">
@@ -400,7 +400,7 @@ export default function HistoryPage() {
                     <Search className="h-8 w-8 text-slate-400" />
                   </div>
                   <h3 className="text-lg font-semibold text-slate-900 mb-2">No analyses yet</h3>
-                  <p className="text-slate-600 mb-6">Start analyzing food labels to see your history here</p>
+                  <p className="text-slate-600 mb-6">Start analyzing labels to see your history here</p>
                   <a href="/analyze" className="inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
                     Analyze Your First Label
                   </a>
