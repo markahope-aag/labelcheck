@@ -41,6 +41,7 @@ interface User {
   email: string;
   stripe_customer_id: string | null;
   created_at: string;
+  is_system_admin: boolean;
   subscription?: {
     plan_tier: string;
     status: string;
@@ -87,6 +88,24 @@ export default function AdminUsersPage() {
   const handleDeleteClick = (user: User) => {
     setUserToDelete(user);
     setDeleteDialogOpen(true);
+  };
+
+  const handleToggleAdmin = async (user: User) => {
+    try {
+      const response = await fetch(`/api/admin/users/${user.id}/toggle-admin`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to toggle admin status');
+      }
+
+      // Reload users to reflect the change
+      await loadUsers();
+    } catch (err: any) {
+      alert(err.message);
+    }
   };
 
   const handleDeleteConfirm = async () => {
@@ -192,6 +211,7 @@ export default function AdminUsersPage() {
                     <TableHead>User</TableHead>
                     <TableHead>Plan</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Role</TableHead>
                     <TableHead>Analyses</TableHead>
                     <TableHead>Joined</TableHead>
                     <TableHead>Actions</TableHead>
@@ -214,6 +234,13 @@ export default function AdminUsersPage() {
                       <TableCell>{getPlanBadge(user.subscription?.plan_tier)}</TableCell>
                       <TableCell>{getStatusBadge(user.subscription?.status)}</TableCell>
                       <TableCell>
+                        {user.is_system_admin && (
+                          <Badge variant="destructive" className="bg-purple-600">
+                            System Admin
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
                         <div className="flex items-center gap-2">
                           <FileText className="h-4 w-4 text-gray-400" />
                           <span>{user.analyses_count || 0}</span>
@@ -234,6 +261,13 @@ export default function AdminUsersPage() {
                           >
                             <Eye className="h-4 w-4 mr-1" />
                             View
+                          </Button>
+                          <Button
+                            variant={user.is_system_admin ? "secondary" : "default"}
+                            size="sm"
+                            onClick={() => handleToggleAdmin(user)}
+                          >
+                            {user.is_system_admin ? 'Remove Admin' : 'Make Admin'}
                           </Button>
                           <Button
                             variant="destructive"
