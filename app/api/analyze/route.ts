@@ -191,7 +191,17 @@ export async function POST(request: NextRequest) {
 
 You are a labeling regulatory compliance expert. Analyze this label ${isPdf ? 'PDF document' : 'image'} and provide a comprehensive evaluation of its compliance with FDA and USDA labeling requirements based on the regulatory documents provided above.
 
-IMPORTANT INSTRUCTIONS FOR READING THE IMAGE:
+${isPdf ? `IMPORTANT INSTRUCTIONS FOR READING THE PDF:
+This is a PDF of a label design mockup. READ THE TEXT from this PDF carefully and analyze it for compliance. The PDF may have complex design elements:
+- Text in various orientations (rotated, vertical, sideways, upside-down)
+- Small fonts (ingredient lists, fine print, legal text)
+- Text on complex backgrounds or with overlays
+- Multiple colors and fonts with varying contrast
+- Poor contrast or faded text
+- Text wrapping around design elements
+- Decorative fonts that may be harder to read
+
+Extract all visible text from the PDF and analyze for regulatory compliance. Take your time to examine every section of the label design thoroughly, including any rotated or vertically-oriented text.` : `IMPORTANT INSTRUCTIONS FOR READING THE IMAGE:
 - The text on this label may be very small, difficult to read, or have poor contrast
 - Text may be oriented vertically, sideways, or even upside-down
 - If you encounter rotated text, mentally rotate the image to read it correctly
@@ -200,7 +210,7 @@ IMPORTANT INSTRUCTIONS FOR READING THE IMAGE:
 - Pay special attention to ingredient lists which are often in very small font
 - Some labels may have text on dark backgrounds or vice versa - adjust your reading accordingly
 - Take your time to examine every section of the label thoroughly
-- If certain information is genuinely illegible, note that in your analysis
+- If certain information is genuinely illegible, note that in your analysis`}
 
 ANALYSIS STRUCTURE REQUIREMENTS:
 
