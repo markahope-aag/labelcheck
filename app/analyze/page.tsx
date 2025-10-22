@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from '@/components/ui/input';
 import { exportSingleAnalysisAsPDF } from '@/lib/export-helpers';
 import { useToast } from '@/hooks/use-toast';
+import { AnalysisChat } from '@/components/AnalysisChat';
 
 export default function AnalyzePage() {
   const { userId } = useAuth();
@@ -26,6 +27,7 @@ export default function AnalyzePage() {
   const [shareUrl, setShareUrl] = useState('');
   const [copied, setCopied] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   const processFile = (file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -347,8 +349,8 @@ export default function AnalyzePage() {
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                           <button
-                            disabled
-                            className="flex items-center gap-3 p-4 bg-white border-2 border-blue-200 rounded-lg hover:border-blue-300 transition-all opacity-60 cursor-not-allowed"
+                            onClick={() => setIsChatOpen(true)}
+                            className="flex items-center gap-3 p-4 bg-white border-2 border-blue-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-all"
                           >
                             <div className="p-2 bg-blue-100 rounded">
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -357,7 +359,7 @@ export default function AnalyzePage() {
                             </div>
                             <div className="text-left">
                               <div className="font-semibold text-slate-900">Ask AI Questions</div>
-                              <div className="text-xs text-slate-600">Coming soon</div>
+                              <div className="text-xs text-slate-600">Get expert help</div>
                             </div>
                           </button>
 
@@ -780,6 +782,15 @@ export default function AnalyzePage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Chat Interface */}
+      {sessionId && (
+        <AnalysisChat
+          sessionId={sessionId}
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+        />
+      )}
     </div>
   );
 }
