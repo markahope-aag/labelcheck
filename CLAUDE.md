@@ -178,6 +178,42 @@ export function cleanExtractedText(text: string): string
 - Share dialog modal shows the URL with copy-to-clipboard functionality
 - Available on both analyze page (after analysis completes) and analysis detail page (`/analysis/[id]`)
 
+### Team/Organization Invitation Flow
+The application supports team collaboration through organization invitations:
+
+#### Database Tables
+- **organizations**: Team workspace details (name, slug, plan_tier, max_members)
+- **organization_members**: Active members with roles (owner, admin, member, viewer)
+- **pending_invitations**: Invitations awaiting acceptance (includes invitation_token, expires_at, accepted_at)
+
+#### Invitation Process
+1. **Sending Invitations** (`/api/organizations/members` POST):
+   - Checks if invitee email exists in `users` table
+   - If user exists: Adds directly to `organization_members`
+   - If user doesn't exist: Creates record in `pending_invitations` with secure token
+   - Sends email via Resend with invitation link containing token
+   - Invitation expires after 7 days
+
+2. **Accepting Invitations** (`/api/accept-invitation` POST):
+   - Validates invitation token from `pending_invitations` table
+   - Fetches user's email from Clerk (source of truth) using `clerkClient()`
+   - **Email validation is informational only** - logs mismatch but doesn't block acceptance
+   - Checks if user is already a member (prevents duplicates)
+   - Adds user to `organization_members` table
+   - Marks invitation as accepted (`accepted_at` timestamp)
+
+3. **Fetching Team Members** (`/api/organizations/members` GET):
+   - Uses `supabaseAdmin` to bypass RLS policies
+   - Fetches both active members and pending invitations
+   - Specifies exact foreign key relationship: `users!organization_members_user_id_fkey`
+   - Returns combined data for frontend display
+
+#### Important Implementation Notes
+- **RLS Bypass Required**: Team member queries must use `supabaseAdmin` to access organization-wide data
+- **Foreign Key Ambiguity**: The `organization_members` table has TWO relationships to `users` (via `user_id` and `invited_by`). Always specify the exact relationship name in Supabase queries to avoid PGRST201 errors
+- **Email Flexibility**: Invitations can be accepted even if the signed-in user's email doesn't exactly match the invitation email (e.g., email aliases). The invitation token serves as the authorization mechanism
+- **Same User Limitation**: A user can only be a member of an organization once. If already a member, invitation acceptance returns a 200 status with "already a member" message
+
 ### History Page Features
 - **Search**: Filter analyses by product name, product type, or summary text
 - **Status Filter**: Filter by compliance status (All, Compliant, Non-Compliant, Minor Issues)
@@ -268,6 +304,9 @@ const { data: user } = await supabase
 9. **PDF Parsing Library**: Use `pdf-parse-fork` instead of `pdf-parse` for Next.js compatibility. The original `pdf-parse` has ESM/CommonJS issues with Next.js webpack.
 10. **Date Field Validation**: PostgreSQL DATE columns cannot accept empty strings. Always convert empty date strings to `null` before saving (e.g., `effective_date: value === '' ? null : value`).
 11. **Admin API Routes**: All `/api/admin/*` endpoints must use `supabaseAdmin` client to bypass RLS and access cross-user data. Using regular `supabase` client will only return current user's data.
+12. **Organization Member Queries**: When querying `organization_members` with a join to `users`, always specify the exact foreign key relationship (`users!organization_members_user_id_fkey`) to avoid ambiguity errors, since the table has multiple foreign keys to `users` (via `user_id` and `invited_by`).
+13. **Invitation Email Validation**: Invitation acceptance does NOT enforce strict email matching between the invitation email and the signed-in user's email. The invitation token is the authorization mechanism, allowing email aliases to work correctly.
+14. **Team Member API**: Always use `/api/organizations/members` GET endpoint (which uses `supabaseAdmin`) instead of client-side Supabase queries to fetch team members, as RLS policies prevent cross-user data access.
 
 ## Key Files to Reference
 
@@ -277,6 +316,10 @@ const { data: user } = await supabase
 - `app/share/[token]/page.tsx` - Public share page for viewing shared analyses
 - `app/analysis/[id]/page.tsx` - Authenticated analysis detail page
 - `app/history/page.tsx` - Analysis history with search/filter features
+- `app/team/page.tsx` - Team management page for viewing members and sending invitations
+- `app/accept-invitation/page.tsx` - Invitation acceptance page
+- `app/api/accept-invitation/route.ts` - Invitation acceptance endpoint with email validation
+- `app/api/organizations/members/route.ts` - Team member listing (GET) and invitation creation (POST)
 - `app/admin/documents/page.tsx` - Admin regulatory document management UI with PDF upload
 - `app/api/admin/documents/route.ts` - Admin document listing and creation endpoint
 - `app/api/admin/documents/[id]/route.ts` - Admin document update and delete endpoint
@@ -284,5 +327,6 @@ const { data: user } = await supabase
 - `lib/subscription-helpers.ts` - Usage and subscription queries
 - `lib/export-helpers.ts` - PDF/CSV/JSON export functions
 - `lib/pdf-helpers.ts` - PDF text extraction and metadata parsing utilities
+- `lib/email-templates.ts` - Email template generation including invitation emails
 - `supabase-migrations/add-regulatory-document-fields.sql` - Database migration for regulatory document fields
 - `SETUP_GUIDE.md` - Comprehensive setup and testing documentation
