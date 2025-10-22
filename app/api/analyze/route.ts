@@ -6,6 +6,7 @@ import { getActiveRegulatoryDocuments, buildRegulatoryContext } from '@/lib/regu
 import { sendEmail } from '@/lib/resend';
 import { generateAnalysisResultEmail } from '@/lib/email-templates';
 import { preprocessImage } from '@/lib/image-processing';
+import { createSession, addIteration } from '@/lib/session-helpers';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -131,9 +132,34 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData();
     const imageFile = formData.get('image') as File;
+    const existingSessionId = formData.get('sessionId') as string | null;
 
     if (!imageFile) {
       return NextResponse.json({ error: 'No image provided' }, { status: 400 });
+    }
+
+    // Handle session creation or use existing session
+    let sessionId = existingSessionId;
+    let session = null;
+
+    if (!sessionId) {
+      // Create a new session for this analysis
+      const productHint = imageFile.name.replace(/\.[^/.]+$/, ''); // Remove extension
+      const { data: newSession, error: sessionError } = await createSession(
+        user.id,
+        `Analysis: ${productHint}`,
+        true // use admin
+      );
+
+      if (sessionError || !newSession) {
+        console.error('Error creating session:', sessionError);
+        // Don't fail the analysis if session creation fails
+        // The analysis will work without a session (backward compatible)
+      } else {
+        session = newSession;
+        sessionId = newSession.id;
+        console.log('Created new session:', sessionId);
+      }
     }
 
     const bytes = await imageFile.arrayBuffer();
@@ -349,6 +375,7 @@ Return your response as a JSON object with the following structure:
         analysis_result: analysisData,
         compliance_status: dbComplianceStatus,
         issues_found: analysisData.recommendations?.filter((r: any) => r.priority === 'critical' || r.priority === 'high')?.length || 0,
+        session_id: sessionId || null,
       })
       .select()
       .single();
@@ -366,6 +393,30 @@ Return your response as a JSON object with the following structure:
 
     if (usageUpdateError) {
       console.error('Error updating usage:', usageUpdateError);
+    }
+
+    // Create iteration record if this is part of a session
+    if (sessionId) {
+      const { error: iterationError } = await addIteration(
+        sessionId,
+        'image_analysis',
+        {
+          image_name: imageFile.name,
+          file_size: imageFile.size,
+          media_type: mediaType,
+        },
+        analysisData,
+        analysis.id,
+        undefined,
+        true // use admin
+      );
+
+      if (iterationError) {
+        console.error('Error creating iteration:', iterationError);
+        // Don't fail the analysis if iteration creation fails
+      } else {
+        console.log('Created iteration for session:', sessionId);
+      }
     }
 
     try {
@@ -400,6 +451,10 @@ Return your response as a JSON object with the following structure:
         used: currentUsage.analyses_used + 1,
         limit: currentUsage.analyses_limit,
       },
+      session: sessionId ? {
+        id: sessionId,
+        title: session?.title || null,
+      } : null,
     });
   } catch (error: any) {
     console.error('Error analyzing image:', error);

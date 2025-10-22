@@ -28,7 +28,19 @@
       "Bash(powershell -Command \"Get-Process node | ForEach-Object { Stop-Process -Id $_Id -Force }\")",
       "Bash(npm run build:*)",
       "Bash(git fetch:*)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(cmd /c \"taskkill /F /PID 36188\")",
+      "Bash(cmd /c \"for /f \"\"tokens=5\"\" %a in (''netstat -ano ^| findstr :3000 ^| findstr LISTENING'') do taskkill /F /PID %a\")",
+      "Bash(powershell:*)",
+      "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" --version)",
+      "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" auth login)",
+      "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" repo sync)",
+      "Bash(\"C:\\Program Files\\GitHub CLI\\gh.exe\" auth setup-git)",
+      "Bash(echo:*)",
+      "Bash(cmd /c \"taskkill /F /PID 50280\")",
+      "Bash(cmd /c \"for /f \"tokens=5\" %a in (''netstat -ano ^| findstr :3000 ^| findstr LISTENING'') do taskkill /F /PID %a\")",
+      "Bash(cmd /c \"if exist .next rmdir /s /q .next\")",
+      "Bash(cmd /c \"taskkill /F /IM node.exe\")"
     ],
     "deny": [],
     "ask": []
