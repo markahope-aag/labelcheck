@@ -78,5 +78,29 @@ export interface Analysis {
   analysis_result: any;
   compliance_status: string;
   issues_found: number;
+  session_id: string | null;
+  created_at: string;
+}
+
+export type SessionStatus = 'in_progress' | 'resolved' | 'archived';
+export type IterationType = 'image_analysis' | 'text_check' | 'chat_question' | 'revised_analysis';
+
+export interface AnalysisSession {
+  id: string;
+  user_id: string;
+  title: string | null;
+  status: SessionStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AnalysisIteration {
+  id: string;
+  session_id: string;
+  iteration_type: IterationType;
+  input_data: any; // JSONB - flexible structure based on iteration_type
+  result_data: any | null; // JSONB - AI response or analysis result
+  analysis_id: string | null; // Links to analyses table for image analyses
+  parent_iteration_id: string | null; // For threading conversations
   created_at: string;
 }
