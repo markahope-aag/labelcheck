@@ -1,8 +1,8 @@
 # Analysis Sessions Feature Specification
 
-**Status:** Core Features Completed - Ready for Testing
+**Status:** Phase 6 Completed - Full Iteration Workflow Ready
 **Created:** 2025-10-22
-**Last Updated:** 2025-10-22 (Session 2)
+**Last Updated:** 2025-10-22 (Session 3)
 
 ## Implementation Status Summary
 
@@ -12,13 +12,13 @@
 - **Frontend UI** - Session context display, iteration buttons, chat interface, text/PDF checker modal
 - **AI Chat Feature** - Fully functional context-aware Q&A system
 - **Text Content Checker** - Dual-mode text/PDF analyzer with vision-based PDF reading
-- **Comparison Engine** - Tracks issues resolved/remaining/new across iterations
+- **Revised Image Upload** - Complete revision workflow with visual comparison
+- **Comparison Engine** - Tracks issues resolved/remaining/new across iterations with visual metrics
 
 ### 🔄 In Progress
 - None currently
 
 ### 📋 Planned (Future Phases)
-- Revised image upload (compare iterations)
 - Session timeline/history component
 - Session export and reporting
 
@@ -373,22 +373,50 @@ Response: {
 
 ---
 
-### Phase 6: Revised Image Upload 📋 PLANNED
+### Phase 6: Revised Image Upload ✅ COMPLETED
 
 **Route:** In-page panel (reuses image upload component)
 
-**Features:**
-1. Upload new label image
-2. Automatically linked to session
-3. Compare to previous iteration:
-   - Show issue count: "3 → 1" with visual indicator
-   - Highlight resolved warnings in green
-   - Highlight new warnings in red
+**Implementation:**
 
-4. **Implementation:**
-   - Reuse existing `/api/analyze` endpoint
-   - Pass `sessionId` parameter
-   - Create `revised_analysis` iteration
+**Frontend:** `app/analyze/page.tsx`
+- ✅ Added `isRevisedMode` and `previousResult` state management
+- ✅ Enabled "Upload Revised Label" button with onClick handler
+- ✅ Shows purple "Revision Mode Active" banner when in revision mode
+- ✅ Automatically passes `sessionId` to API for revised uploads
+- ✅ Comparison calculation engine counts issues across all sections
+- ✅ Visual comparison component displays:
+  - Previous issue count
+  - Improvement metric (↓ resolved, ↑ new, = no change)
+  - Current issue count with green highlight if fully compliant
+  - Success message when compliance status improves
+
+**API Integration:**
+- ✅ Modified `handleAnalyze` to include `sessionId` in FormData for revisions
+- ✅ Reuses existing `/api/analyze` endpoint (no backend changes needed)
+- ✅ Creates `revised_analysis` iteration automatically via existing session logic
+
+**User Experience:**
+1. User completes initial analysis
+2. Clicks "Upload Revised Label" button
+3. Previous results stored for comparison
+4. Upload UI reappears with "Revision Mode" indicator
+5. User uploads improved label
+6. Beautiful comparison card shows improvement metrics:
+   - Three-column layout (Previous → Improvement → Current)
+   - Color-coded indicators (green for improvements, red for new issues)
+   - Special success message if compliance status improved
+7. User can continue iterating
+
+**Visual Design:**
+- Gradient purple-to-pink comparison card
+- Responsive grid layout (stacks on mobile)
+- Large, bold improvement numbers
+- Success checkmarks and status improvements highlighted
+- Fully compliant results get green background with "✓ Fully Compliant!"
+
+**Files Modified:**
+- `app/analyze/page.tsx` (Lines 33-34, 89-131, 221-296, 536-614)
 
 ---
 
@@ -454,7 +482,30 @@ interface SessionTimelineProps {
 - Chat saved to database as `chat_question` iteration
 - User can ask follow-up questions with maintained context
 
-**4. Database Tracking**
+**4. Check Text Alternative (ACTIVE)**
+- User clicks "Check Text Alternative" button
+- Modal opens with dual-mode selector (Paste Text / Upload PDF)
+- User pastes prospective label text or uploads PDF
+- AI analyzes content with vision-based PDF reading
+- Comparison shows issues resolved/remaining/new vs. original
+- Saved as `text_check` iteration
+
+**5. Upload Revised Label (ACTIVE)**
+- User clicks "Upload Revised Label" button
+- Purple "Revision Mode Active" banner appears
+- Upload UI reappears to accept new image
+- User uploads improved label
+- AI analyzes with session context
+- **Comparison Card Displays:**
+  - Previous issue count (e.g., "5 issues")
+  - Improvement arrow (↓ 3 Issues Resolved)
+  - Current issue count (e.g., "2 issues remaining")
+  - Green highlight if fully compliant
+  - Success message if status improved
+- Creates `revised_analysis` iteration
+- User can iterate multiple times
+
+**6. Database Tracking**
 - All sessions stored in `analysis_sessions` table
 - All iterations (image analysis + chat) in `analysis_iterations` table
 - Full audit trail of user's compliance improvement journey
@@ -471,6 +522,8 @@ interface SessionTimelineProps {
 **Iteration Tracking:**
 - Image analysis creates `image_analysis` iteration
 - Chat creates `chat_question` iteration
+- Text/PDF check creates `text_check` iteration
+- Revised upload creates `revised_analysis` iteration
 - Each iteration has `input_data` and `result_data` JSONB fields
 - Timestamps track when each interaction occurred
 
@@ -483,23 +536,36 @@ interface SessionTimelineProps {
 ### What Needs Testing
 
 **Happy Path:**
-1. Upload a label image
+1. Upload a label image with compliance issues
 2. Wait for analysis to complete
-3. Click "Ask AI Questions"
-4. Try suggested questions
-5. Ask follow-up questions
-6. Verify responses are contextually relevant
+3. Click "Ask AI Questions" and ask about specific warnings
+4. Click "Check Text Alternative" and test revised text
+5. Click "Upload Revised Label" and upload improved version
+6. Verify comparison card shows accurate improvement metrics
+7. Repeat revision process to test multiple iterations
+8. Verify all improvements tracked correctly
+
+**Visual Verification:**
+- Session banner displays with all 3 buttons enabled
+- Revision mode banner appears when uploading revised label
+- Comparison card shows correct issue counts
+- Green highlight appears when fully compliant
+- Improvement arrows show correct direction (↓ ↑ =)
+- Success message displays when status improves
 
 **Database Verification:**
 - Check `analysis_sessions` table for new records
-- Check `analysis_iterations` table for both `image_analysis` and `chat_question` types
+- Check `analysis_iterations` table for all types: `image_analysis`, `chat_question`, `text_check`, `revised_analysis`
 - Verify `analyses.session_id` is populated
+- Verify iteration order and timestamps are correct
 
 **Edge Cases:**
 - Multiple analyses by same user (new session each time)
-- Chat with no previous iterations (should still work)
-- Long conversation history (context stays manageable)
+- Multiple revisions in same session (comparison always vs. previous)
+- Upload same image twice (comparison shows no change)
+- Upload worse image (comparison shows new issues with ↑)
 - Session persists across page refreshes (sessionId in state)
+- Revised upload with no issues in original (comparison still works)
 
 ---
 
