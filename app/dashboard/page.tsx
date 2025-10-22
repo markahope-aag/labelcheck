@@ -103,20 +103,26 @@ export default async function DashboardPage() {
             <CardContent>
               {analyses && analyses.length > 0 ? (
                 <div className="space-y-4">
-                  {analyses.map((analysis) => (
-                    <div key={analysis.id} className="flex items-start justify-between p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-slate-900 mb-1">{analysis.product_name || 'Unnamed Product'}</h3>
-                        <p className="text-sm text-slate-600 line-clamp-2">{analysis.summary || 'No summary available'}</p>
-                        <p className="text-xs text-slate-500 mt-2">{new Date(analysis.created_at).toLocaleDateString()}</p>
+                  {analyses.map((analysis) => {
+                    const result = analysis.analysis_result || {};
+                    const productName = result.product_name || analysis.image_name || 'Unnamed Product';
+                    const summary = result.overall_assessment?.summary || 'No summary available';
+
+                    return (
+                      <div key={analysis.id} className="flex items-start justify-between p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-slate-900 mb-1">{productName}</h3>
+                          <p className="text-sm text-slate-600 line-clamp-2">{summary}</p>
+                          <p className="text-xs text-slate-500 mt-2">{new Date(analysis.created_at).toLocaleDateString()}</p>
+                        </div>
+                        <Link href={`/history?id=${analysis.id}`}>
+                          <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
+                            View
+                          </Button>
+                        </Link>
                       </div>
-                      <Link href={`/history?id=${analysis.id}`}>
-                        <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
-                          View
-                        </Button>
-                      </Link>
-                    </div>
-                  ))}
+                    );
+                  })}
                   <Link href="/history">
                     <Button variant="link" className="w-full text-blue-600 hover:text-blue-700">
                       View All Analyses →
