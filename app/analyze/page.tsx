@@ -25,6 +25,7 @@ export default function AnalyzePage() {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
   const [copied, setCopied] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
 
   const processFile = (file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -101,6 +102,11 @@ export default function AnalyzePage() {
       }
 
       setResult(data);
+
+      // Store session ID if present
+      if (data.session?.id) {
+        setSessionId(data.session.id);
+      }
     } catch (err: any) {
       setError(err.message || 'An error occurred while analyzing the image');
     } finally {
@@ -113,6 +119,7 @@ export default function AnalyzePage() {
     setPreviewUrl('');
     setResult(null);
     setError('');
+    setSessionId(null);
   };
 
   const handleDownloadPDF = async () => {
@@ -323,6 +330,77 @@ export default function AnalyzePage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-8">
+                    {/* Session Context */}
+                    {sessionId && (
+                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-5">
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="p-2 bg-blue-100 rounded-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-blue-900">Analysis Session Active</h3>
+                            <p className="text-sm text-blue-700">You can now iterate on this analysis to improve compliance</p>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          <button
+                            disabled
+                            className="flex items-center gap-3 p-4 bg-white border-2 border-blue-200 rounded-lg hover:border-blue-300 transition-all opacity-60 cursor-not-allowed"
+                          >
+                            <div className="p-2 bg-blue-100 rounded">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                              </svg>
+                            </div>
+                            <div className="text-left">
+                              <div className="font-semibold text-slate-900">Ask AI Questions</div>
+                              <div className="text-xs text-slate-600">Coming soon</div>
+                            </div>
+                          </button>
+
+                          <button
+                            disabled
+                            className="flex items-center gap-3 p-4 bg-white border-2 border-blue-200 rounded-lg hover:border-blue-300 transition-all opacity-60 cursor-not-allowed"
+                          >
+                            <div className="p-2 bg-green-100 rounded">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                            </div>
+                            <div className="text-left">
+                              <div className="font-semibold text-slate-900">Check Text Alternative</div>
+                              <div className="text-xs text-slate-600">Coming soon</div>
+                            </div>
+                          </button>
+
+                          <button
+                            disabled
+                            className="flex items-center gap-3 p-4 bg-white border-2 border-blue-200 rounded-lg hover:border-blue-300 transition-all opacity-60 cursor-not-allowed"
+                          >
+                            <div className="p-2 bg-purple-100 rounded">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                            </div>
+                            <div className="text-left">
+                              <div className="font-semibold text-slate-900">Upload Revised Label</div>
+                              <div className="text-xs text-slate-600">Coming soon</div>
+                            </div>
+                          </button>
+                        </div>
+
+                        <div className="mt-4 p-3 bg-blue-100 bg-opacity-50 rounded-lg">
+                          <p className="text-xs text-blue-800">
+                            <strong>Session ID:</strong> <code className="font-mono text-xs">{sessionId.substring(0, 8)}...</code> •
+                            This session maintains context across multiple iterations
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Overall Assessment */}
                     {result.overall_assessment && (
                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
