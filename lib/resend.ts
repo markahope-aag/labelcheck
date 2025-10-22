@@ -13,7 +13,7 @@ export async function sendEmail({
 }) {
   try {
     const { data, error } = await resend.emails.send({
-      from: 'Food Label Checker <onboarding@resend.dev>',
+      from: 'LabelCheck <noreply@app.labelcheck.io>',
       to: [to],
       subject,
       html,
