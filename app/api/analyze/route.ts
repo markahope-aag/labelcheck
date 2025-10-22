@@ -165,36 +165,31 @@ export async function POST(request: NextRequest) {
     const bytes = await imageFile.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Preprocess the image to improve readability
-    const processedBuffer = await preprocessImage(buffer);
-    const base64Image = processedBuffer.toString('base64');
+    // Detect if this is a PDF or image
+    const isPdf = imageFile.type === 'application/pdf';
+    let base64Data: string;
+    let mediaType: 'image/jpeg' | 'application/pdf';
+    let contentType: 'image' | 'document';
 
-    // Use JPEG as media type since preprocessing converts to JPEG
-    const mediaType = 'image/jpeg' as const;
+    if (isPdf) {
+      // For PDFs, send directly without preprocessing
+      base64Data = buffer.toString('base64');
+      mediaType = 'application/pdf';
+      contentType = 'document';
+    } else {
+      // For images, preprocess to improve readability
+      const processedBuffer = await preprocessImage(buffer);
+      base64Data = processedBuffer.toString('base64');
+      mediaType = 'image/jpeg';
+      contentType = 'image';
+    }
 
     const regulatoryDocuments = await getActiveRegulatoryDocuments();
     const regulatoryContext = buildRegulatoryContext(regulatoryDocuments);
 
-    const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 8192,
-      messages: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'image',
-              source: {
-                type: 'base64',
-                media_type: mediaType,
-                data: base64Image,
-              },
-            },
-            {
-              type: 'text',
-              text: `${regulatoryContext}
+    const promptText = `${regulatoryContext}
 
-You are a labeling regulatory compliance expert. Analyze this label image and provide a comprehensive evaluation of its compliance with FDA and USDA labeling requirements based on the regulatory documents provided above.
+You are a labeling regulatory compliance expert. Analyze this label ${isPdf ? 'PDF document' : 'image'} and provide a comprehensive evaluation of its compliance with FDA and USDA labeling requirements based on the regulatory documents provided above.
 
 IMPORTANT INSTRUCTIONS FOR READING THE IMAGE:
 - The text on this label may be very small, difficult to read, or have poor contrast
@@ -327,12 +322,56 @@ Return your response as a JSON object with the following structure:
 4. Distinguish between "non-compliant" (definite violation) and "potentially non-compliant" (conditional on information not visible)
 5. For coffee, spices, and similar products: they are typically EXEMPT from Nutrition Facts panels
 6. Base compliance status on visible information; use "potentially non-compliant" when ingredient composition is unknown
-7. In the compliance_table, provide a clear summary similar to the NotebookLM format`,
+7. In the compliance_table, provide a clear summary similar to the NotebookLM format`;
+
+    // Create message with appropriate content type (image or document)
+    const message = isPdf
+      ? await anthropic.messages.create({
+          model: 'claude-3-5-sonnet-20241022',
+          max_tokens: 8192,
+          messages: [
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'document',
+                  source: {
+                    type: 'base64',
+                    media_type: 'application/pdf',
+                    data: base64Data,
+                  },
+                },
+                {
+                  type: 'text',
+                  text: promptText,
+                },
+              ],
             },
           ],
-        },
-      ],
-    });
+        })
+      : await anthropic.messages.create({
+          model: 'claude-3-5-sonnet-20241022',
+          max_tokens: 8192,
+          messages: [
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'image',
+                  source: {
+                    type: 'base64',
+                    media_type: 'image/jpeg',
+                    data: base64Data,
+                  },
+                },
+                {
+                  type: 'text',
+                  text: promptText,
+                },
+              ],
+            },
+          ],
+        });
 
     const textContent = message.content.find((block) => block.type === 'text');
     if (!textContent || textContent.type !== 'text') {
@@ -370,7 +409,7 @@ Return your response as a JSON object with the following structure:
       .from('analyses')
       .insert({
         user_id: user.id,
-        image_url: `data:${mediaType};base64,${base64Image.substring(0, 100)}...`,
+        image_url: `data:${mediaType};base64,${base64Data.substring(0, 100)}...`,
         image_name: imageFile.name,
         analysis_result: analysisData,
         compliance_status: dbComplianceStatus,

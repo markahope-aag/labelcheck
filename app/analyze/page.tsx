@@ -34,16 +34,27 @@ export default function AnalyzePage() {
   const [previousResult, setPreviousResult] = useState<any>(null);
 
   const processFile = (file: File) => {
-    if (!file.type.startsWith('image/')) {
-      setError('Please select a valid image file');
+    // Accept both images and PDFs
+    const isImage = file.type.startsWith('image/');
+    const isPdf = file.type === 'application/pdf';
+
+    if (!isImage && !isPdf) {
+      setError('Please select a valid image or PDF file');
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      setError('Image size must be less than 10MB');
+      setError('File size must be less than 10MB');
       return;
     }
     setSelectedFile(file);
-    setPreviewUrl(URL.createObjectURL(file));
+
+    // Create preview - for PDFs, show a placeholder
+    if (isPdf) {
+      setPreviewUrl(''); // Will show PDF indicator instead
+    } else {
+      setPreviewUrl(URL.createObjectURL(file));
+    }
+
     setError('');
     setResult(null);
   };
@@ -367,7 +378,7 @@ export default function AnalyzePage() {
                     >
                       <input
                         type="file"
-                        accept="image/*"
+                        accept="image/*,application/pdf"
                         onChange={handleFileSelect}
                         className="hidden"
                         id="file-upload"
@@ -380,16 +391,29 @@ export default function AnalyzePage() {
                             <Upload className="h-8 w-8 text-blue-600" />
                           </div>
                           <p className="text-lg font-medium text-slate-900 mb-2">
-                            {isDragging ? 'Drop image here' : 'Click to upload or drag and drop'}
+                            {isDragging ? 'Drop file here' : 'Click to upload or drag and drop'}
                           </p>
-                          <p className="text-sm text-slate-500">PNG, JPG or JPEG up to 10MB</p>
+                          <p className="text-sm text-slate-500">PNG, JPG, JPEG or PDF up to 10MB</p>
                         </div>
                       </label>
                     </div>
                   ) : (
                     <div className="space-y-4">
                       <div className="relative rounded-lg overflow-hidden border border-slate-200">
-                        <img src={previewUrl} alt="Preview" className="w-full h-auto max-h-96 object-contain bg-slate-50" />
+                        {selectedFile?.type === 'application/pdf' ? (
+                          <div className="flex flex-col items-center justify-center p-12 bg-slate-50">
+                            <div className="p-4 bg-red-100 rounded-full mb-4">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                              </svg>
+                            </div>
+                            <p className="font-semibold text-slate-900 mb-1">{selectedFile.name}</p>
+                            <p className="text-sm text-slate-600">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                            <p className="text-xs text-slate-500 mt-2">PDF ready for analysis</p>
+                          </div>
+                        ) : (
+                          <img src={previewUrl} alt="Preview" className="w-full h-auto max-h-96 object-contain bg-slate-50" />
+                        )}
                       </div>
                       <div className="flex gap-4">
                         <Button
