@@ -64,9 +64,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Get session with all iterations to find original analysis
+    // Use admin client to bypass RLS since sessions are created with admin
     const { session, iterations, error: sessionError } = await getSessionWithIterations(
       sessionId,
-      false
+      true
     );
 
     if (sessionError || !session) {
@@ -268,7 +269,7 @@ Additionally, include a "comparison" field if original analysis exists:
       analysisData,
       undefined,
       undefined,
-      false // Use regular client (user owns this session)
+      true // Use admin client to bypass RLS
     );
 
     if (iterationError) {

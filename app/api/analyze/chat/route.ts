@@ -37,9 +37,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Get session with all iterations to build context
+    // Use admin client to bypass RLS since sessions are created with admin
     const { session, iterations, error: sessionError } = await getSessionWithIterations(
       sessionId,
-      false
+      true
     );
 
     if (sessionError || !session) {
@@ -106,7 +107,7 @@ export async function POST(request: NextRequest) {
 
     if (chatIterations.length > 0) {
       contextMessage += '## Recent Conversation History\n\n';
-      const recentChats = chatIterations.slice(-3); // Last 3 chat exchanges
+      const recentChats = chatIterations.slice(-5); // Last 5 chat exchanges
       recentChats.forEach((chat) => {
         contextMessage += `**User:** ${chat.input_data?.message || ''}\n`;
         contextMessage += `**Assistant:** ${chat.result_data?.response || ''}\n\n`;
@@ -152,7 +153,7 @@ export async function POST(request: NextRequest) {
       },
       undefined,
       parentIterationId || undefined,
-      false // Use regular client (user owns this session)
+      true // Use admin client to bypass RLS
     );
 
     if (iterationError) {
