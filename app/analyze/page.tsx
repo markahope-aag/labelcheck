@@ -197,7 +197,7 @@ export default function AnalyzePage() {
         <div className="max-w-4xl mx-auto">
           <div className="mb-8">
             <h1 className="text-4xl font-bold text-slate-900 mb-2">Analyze Label</h1>
-            <p className="text-slate-600">Upload a photo of any label to get instant nutritional insights</p>
+            <p className="text-slate-600">Upload any label to get instant compliance insights</p>
           </div>
 
           {error && (
