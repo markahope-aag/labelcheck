@@ -17,13 +17,39 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { sessionId, textContent } = await request.json();
+    let sessionId: string;
+    let textContent: string | undefined;
+    let pdfFile: File | undefined;
+    let isPdfMode = false;
 
-    if (!sessionId || !textContent) {
-      return NextResponse.json(
-        { error: 'Session ID and text content are required' },
-        { status: 400 }
-      );
+    // Check if this is a FormData request (PDF upload) or JSON (text)
+    const contentType = request.headers.get('content-type') || '';
+
+    if (contentType.includes('multipart/form-data')) {
+      // PDF upload mode
+      const formData = await request.formData();
+      sessionId = formData.get('sessionId') as string;
+      pdfFile = formData.get('pdf') as File;
+      isPdfMode = true;
+
+      if (!sessionId || !pdfFile) {
+        return NextResponse.json(
+          { error: 'Session ID and PDF file are required' },
+          { status: 400 }
+        );
+      }
+    } else {
+      // Text mode
+      const body = await request.json();
+      sessionId = body.sessionId;
+      textContent = body.textContent;
+
+      if (!sessionId || !textContent) {
+        return NextResponse.json(
+          { error: 'Session ID and text content are required' },
+          { status: 400 }
+        );
+      }
     }
 
     // Get user from database
@@ -82,8 +108,67 @@ export async function POST(request: NextRequest) {
     const regulatoryDocuments = await getActiveRegulatoryDocuments();
     const regulatoryContext = buildRegulatoryContext(regulatoryDocuments);
 
-    // Create AI prompt for text analysis
-    const prompt = `${regulatoryContext}
+    // Create AI prompt for text/PDF analysis
+    let message;
+
+    if (isPdfMode && pdfFile) {
+      // PDF mode - send PDF to Claude for visual text extraction
+      const bytes = await pdfFile.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      const base64Pdf = buffer.toString('base64');
+
+      const prompt = `${regulatoryContext}
+
+You are a labeling regulatory compliance expert. A user has uploaded a PDF of their prospective label design to check compliance BEFORE finalizing it.
+
+${originalContext}
+
+## Analysis Instructions
+
+READ THE TEXT from this PDF label design and analyze it for compliance. The PDF may have:
+- Text in various orientations (rotated, vertical, sideways, upside-down)
+- Small fonts (ingredient lists, fine print)
+- Text on complex backgrounds
+- Multiple colors and fonts
+- Poor contrast
+
+Extract all visible text and analyze for regulatory compliance.
+
+IMPORTANT:
+1. If there was an original analysis, compare this PDF's content to those findings
+2. Note what issues have been RESOLVED (if any)
+3. Note any NEW issues introduced
+4. Note what's still MISSING or unclear
+5. Be constructive - this is a draft the user is improving
+
+Return your response as a JSON object with the same structure used for image analysis.`;
+
+      message = await anthropic.messages.create({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 8192,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'document',
+                source: {
+                  type: 'base64',
+                  media_type: 'application/pdf',
+                  data: base64Pdf,
+                },
+              },
+              {
+                type: 'text',
+                text: prompt,
+              },
+            ],
+          },
+        ],
+      });
+    } else {
+      // Text mode - analyze plain text
+      const prompt = `${regulatoryContext}
 
 You are a labeling regulatory compliance expert. A user is testing prospective label content (text-only, not an image) to check compliance BEFORE creating a physical label.
 
@@ -132,16 +217,17 @@ Additionally, include a "comparison" field if original analysis exists:
   }
 }`;
 
-    const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 8192,
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-    });
+      message = await anthropic.messages.create({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 8192,
+        messages: [
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+      });
+    }
 
     const textBlock = message.content.find((block) => block.type === 'text');
     if (!textBlock || textBlock.type !== 'text') {
@@ -173,7 +259,10 @@ Additionally, include a "comparison" field if original analysis exists:
       sessionId,
       'text_check',
       {
-        textContent: textContent.substring(0, 5000), // Limit stored text length
+        inputType: isPdfMode ? 'pdf' : 'text',
+        textContent: isPdfMode ? undefined : textContent?.substring(0, 5000), // Limit stored text length
+        pdfFileName: isPdfMode && pdfFile ? pdfFile.name : undefined,
+        pdfSize: isPdfMode && pdfFile ? pdfFile.size : undefined,
         timestamp: new Date().toISOString(),
       },
       analysisData,

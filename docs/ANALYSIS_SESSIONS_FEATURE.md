@@ -8,15 +8,16 @@
 
 ### ✅ Completed (Ready for Testing)
 - **Database Infrastructure** - Sessions and iterations tables with RLS policies
-- **Backend API** - Session creation, iteration tracking, chat endpoint
-- **Frontend UI** - Session context display, iteration buttons, chat interface
+- **Backend API** - Session creation, iteration tracking, chat endpoint, text/PDF analysis endpoint
+- **Frontend UI** - Session context display, iteration buttons, chat interface, text/PDF checker modal
 - **AI Chat Feature** - Fully functional context-aware Q&A system
+- **Text Content Checker** - Dual-mode text/PDF analyzer with vision-based PDF reading
+- **Comparison Engine** - Tracks issues resolved/remaining/new across iterations
 
 ### 🔄 In Progress
 - None currently
 
 ### 📋 Planned (Future Phases)
-- Text content checker (analyze prospective label text/PDF)
 - Revised image upload (compare iterations)
 - Session timeline/history component
 - Session export and reporting
@@ -251,57 +252,124 @@ Response: {
 
 ---
 
-### Phase 5: Text Content Checker 📋 PLANNED
+### Phase 5: Text Content Checker ✅ COMPLETED
 
-**Route:** In-page panel
+**Implementation:**
 
-**Features:**
-1. **Input Methods:**
-   - Plain text textarea
-   - PDF upload (extract text with `pdf-parse-fork`)
-   - Future: Word doc upload
+**Backend API:** `app/api/analyze/text/route.ts`
+- ✅ Accepts both JSON (text mode) and FormData (PDF mode)
+- ✅ Dual input support:
+  - **Text Mode:** Plain text content via JSON body
+  - **PDF Mode:** PDF file upload with vision-based text extraction
+- ✅ Fetches session with all iterations for comparison context
+- ✅ Builds context including original analysis findings
+- ✅ **PDF Processing (Vision-Based):**
+  - Converts PDF to base64
+  - Sends to Claude API with `type: 'document'`
+  - Uses Claude's vision capabilities to read complex label layouts
+  - Handles text in various orientations, fonts, colors, backgrounds
+  - No simple text extraction - full visual understanding
+- ✅ **Text Processing:**
+  - Analyzes plain text content for compliance
+  - Notes limitations (can't evaluate visual elements)
+- ✅ Comparison logic in AI prompt:
+  - Lists original issues found
+  - Identifies resolved issues
+  - Identifies remaining issues
+  - Identifies new issues introduced
+  - Provides improvement summary
+- ✅ Saves as `text_check` iteration with metadata
+- ✅ Returns analysis with comparison data
 
-2. **Structured Input Fields (Optional Enhancement):**
-   ```
-   Product Name: [          ]
-   Ingredients:  [          ]
-   Allergens:    [          ]
-   Net Weight:   [          ]
-   Nutrition:    [          ]
-   ```
+**Frontend Component:** `components/TextChecker.tsx`
+- ✅ Modal dialog interface (full-screen overlay)
+- ✅ **Mode Selector:**
+  - Tab-style buttons to switch between Paste Text / Upload PDF
+  - Clear visual feedback for active mode
+- ✅ **Text Mode Features:**
+  - Large textarea with placeholder example
+  - "Load Example" button with sample coffee label text
+  - Helper text explaining what to include
+  - Warning about text-only limitations
+- ✅ **PDF Mode Features:**
+  - Drag-and-drop upload area
+  - File validation (PDF type, 10MB max)
+  - File preview with name and size
+  - "Remove File" button
+  - Info panel explaining complex text recognition capabilities
+- ✅ **UI/UX:**
+  - Blue info panel explaining how it works (changes based on mode)
+  - Yellow warning panel for text mode limitations
+  - Green info panel for PDF capabilities
+  - Disabled state handling
+  - Loading states during analysis
+  - Toast notifications for success/error
+- ✅ **Integration:**
+  - Sends FormData for PDF, JSON for text
+  - Calls parent callback on completion
+  - Closes modal after successful analysis
 
-3. **Analysis Context:**
-   - References original image analysis
-   - Shows side-by-side comparison:
-     - "Original had 3 warnings"
-     - "This version has 1 warning"
-   - Highlights what changed
+**Integration:** `app/analyze/page.tsx`
+- ✅ Added `isTextCheckerOpen` state
+- ✅ Updated "Check Text Alternative" button (enabled, with onClick)
+- ✅ Added `handleTextAnalysisComplete` callback
+- ✅ Renders TextChecker component when sessionId exists
+- ✅ Passes analysis results to comparison view
 
-4. **Implementation:**
-   ```typescript
-   // API: /api/analyze/text
-   POST {
-     sessionId: string,
-     textContent: string,
-     structuredData?: object
-   }
-   ```
+**Technical Implementation:**
+- ✅ Updated `@anthropic-ai/sdk` to v0.67.0 for PDF document support
+- ✅ Claude API uses `type: 'document'` with `media_type: 'application/pdf'`
+- ✅ Vision-based reading (not simple text extraction)
+- ✅ Regulatory context included in prompts
+- ✅ Comparison data structure in response
 
-5. **Modified AI Prompt:**
-   ```
-   You are analyzing prospective label content (text-only, no image).
+**Files Created:**
+- `app/api/analyze/text/route.ts` (293 lines)
+- `components/TextChecker.tsx` (336 lines)
 
-   Original analysis context:
-   [Include original warnings/issues]
+**Files Modified:**
+- `app/analyze/page.tsx` (Lines 32, 383-395, 195-207, 811-819)
+- `package.json` (@anthropic-ai/sdk upgraded to 0.67.0)
 
-   User is testing alternative content:
-   [New text content]
+**API Endpoint:**
+```typescript
+POST /api/analyze/text
 
-   Evaluate:
-   1. Does this resolve the original warnings?
-   2. Are there new compliance issues?
-   3. What's still missing?
-   ```
+// Text mode:
+Content-Type: application/json
+Body: {
+  sessionId: string,
+  textContent: string
+}
+
+// PDF mode:
+Content-Type: multipart/form-data
+Body: FormData {
+  sessionId: string,
+  pdf: File
+}
+
+Response: {
+  ...analysisData, // Same structure as image analysis
+  comparison?: {
+    issues_resolved: string[],
+    issues_remaining: string[],
+    new_issues: string[],
+    improvement_summary: string
+  },
+  iterationId: string,
+  analysisType: 'text_check',
+  timestamp: string
+}
+```
+
+**Key Features:**
+- ✅ Dual-mode input (text + PDF with vision)
+- ✅ Context-aware comparison to original analysis
+- ✅ Complex PDF text recognition (rotated, small fonts, poor contrast)
+- ✅ Limitation warnings for text-only mode
+- ✅ Database persistence as iterations
+- ✅ Clean, modern UI with mode switching
 
 ---
 
