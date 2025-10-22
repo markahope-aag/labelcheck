@@ -95,7 +95,6 @@ export default function TeamPage() {
       if (orgData) {
         setOrganization(orgData);
         await loadMembers(orgData.id);
-        await loadPendingInvitations(orgData.id);
       }
     } catch (error) {
       console.error('Error loading organization:', error);
@@ -110,41 +109,35 @@ export default function TeamPage() {
   }
 
   async function loadMembers(orgId: string) {
-    const { data, error } = await supabase
-      .from('organization_members')
-      .select(`
-        id,
-        user_id,
-        role,
-        invited_at,
-        joined_at,
-        users!inner (email)
-      `)
-      .eq('organization_id', orgId);
+    try {
+      const response = await fetch('/api/organizations/members');
+      const data = await response.json();
 
-    if (error) {
-      console.error('Error loading members:', error);
-    } else {
-      const formattedData = (data || []).map((item: any) => ({
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to load members');
+      }
+
+      console.log('Members loaded:', data);
+
+      const formattedMembers = (data.members || []).map((item: any) => ({
         ...item,
         users: Array.isArray(item.users) ? item.users[0] : item.users,
       }));
-      setMembers(formattedData);
+
+      setMembers(formattedMembers);
+      setPendingInvitations(data.pendingInvitations || []);
+    } catch (error) {
+      console.error('Error loading members:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load team members',
+        variant: 'destructive',
+      });
     }
   }
 
   async function loadPendingInvitations(orgId: string) {
-    const { data, error } = await supabase
-      .from('pending_invitations')
-      .select('id, email, role, invited_at, expires_at')
-      .eq('organization_id', orgId)
-      .is('accepted_at', null);
-
-    if (error) {
-      console.error('Error loading pending invitations:', error);
-    } else {
-      setPendingInvitations(data || []);
-    }
+    // This is now handled by loadMembers
   }
 
   async function createOrganization() {
@@ -214,7 +207,6 @@ export default function TeamPage() {
 
       setInviteEmail('');
       loadMembers(organization.id);
-      loadPendingInvitations(organization.id);
     } catch (error: any) {
       console.error('Error inviting member:', error);
       toast({
@@ -267,7 +259,7 @@ export default function TeamPage() {
         description: 'Invitation cancelled successfully',
       });
 
-      loadPendingInvitations(organization!.id);
+      loadMembers(organization!.id);
     } catch (error: any) {
       console.error('Error cancelling invitation:', error);
       toast({
