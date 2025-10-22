@@ -55,6 +55,74 @@ Key implementation in `app/api/analyze/route.ts`:
 - Images are base64 encoded, but only first 100 chars stored in DB
 - Usage limits: Basic (10/month), Pro (100/month), Enterprise (unlimited = -1)
 
+### Analysis Sessions (Iterative Improvement Workflow)
+
+**New Feature:** Transforms one-shot analysis into an iterative compliance improvement workspace.
+
+**Database Tables:**
+- `analysis_sessions`: Tracks user's compliance improvement sessions
+- `analysis_iterations`: Records each interaction (analysis, chat, text check, revision)
+- Sessions created automatically on first analysis, linked by `session_id`
+
+**Three Iteration Methods:**
+1. **💬 Ask AI Questions** (`/api/analyze/chat`)
+   - Context-aware chat about compliance findings
+   - Remembers last 5 chat exchanges
+   - Full analysis context provided to AI
+   - Creates `chat_question` iterations
+
+2. **📝 Check Text Alternative** (`/api/analyze/text`)
+   - Dual-mode: paste text OR upload PDF
+   - PDF uses Claude's vision capabilities (not simple extraction)
+   - Compares to original analysis (issues resolved/remaining/new)
+   - Creates `text_check` iterations
+
+3. **📸 Upload Revised Label** (analyze page revision mode)
+   - User uploads improved label version
+   - Visual comparison card shows improvement metrics
+   - Displays previous vs current issue counts (e.g., 5 → 2 issues)
+   - Green highlight for fully compliant results
+   - Creates `revised_analysis` iterations
+
+**Important Implementation Notes:**
+- **All session operations use `supabaseAdmin`** (with `useAdmin: true`) to bypass RLS
+- Sessions are created with admin privileges, so reads/writes must also use admin
+- Chat context includes: latest analysis + last 5 exchanges + all recommendations
+- Comparison logic counts issues across all sections to show improvement
+- Session persists in frontend state (`sessionId`) throughout interaction
+
+**Files:**
+- Session management: `lib/session-helpers.ts`
+- Main analyze page: `app/analyze/page.tsx`
+- Chat API: `app/api/analyze/chat/route.ts`
+- Text checker API: `app/api/analyze/text/route.ts`
+- Chat UI: `components/AnalysisChat.tsx`
+- Text checker UI: `components/TextChecker.tsx`
+- Feature docs: `docs/ANALYSIS_SESSIONS_FEATURE.md`
+
+### AI Analysis Quality & Refinement
+
+**Known Issue: Marketing Claims Consistency**
+- Initial analysis may not always flag problematic marketing terms (e.g., "superfood")
+- Chat follow-ups provide more detailed scrutiny
+- Need to enhance initial analysis prompt to catch these consistently
+
+**Systematic Refinement Approach:**
+1. **Build Evaluation Dataset**: Create test cases with expected findings
+2. **Prompt Versioning**: Version control prompts, A/B test different versions
+3. **Iterative Loop**: Run evaluation → Refine prompt → Test → Expert review → Deploy
+4. **Monitor Real Usage**: Track when users ask chat about issues missed in initial analysis
+5. **Domain Expert Validation**: Regular review by FDA compliance experts
+
+**Prompt Engineering Best Practices:**
+- Be specific about red flag terms (superfood, immunity, detox, natural healing)
+- Use chain-of-thought reasoning for complex regulations
+- Include few-shot examples of good/bad labels
+- Enforce structured JSON output for consistency
+- Use temperature=0 for deterministic compliance analysis
+
+**Next Priority:** Enhance analysis prompt to explicitly scrutinize marketing terms that could be implied health claims.
+
 ### Payment & Subscription Flow
 1. User selects plan on `/pricing`
 2. `/api/create-checkout-session` creates Stripe checkout
@@ -324,9 +392,17 @@ const { data: user } = await supabase
 - `app/api/admin/documents/route.ts` - Admin document listing and creation endpoint
 - `app/api/admin/documents/[id]/route.ts` - Admin document update and delete endpoint
 - `app/api/admin/documents/extract-pdf/route.ts` - PDF text extraction endpoint
+- `app/api/analyze/chat/route.ts` - Analysis Sessions chat endpoint with context-aware AI
+- `app/api/analyze/text/route.ts` - Text/PDF checker endpoint for prospective content
+- `components/AnalysisChat.tsx` - Chat interface component for asking AI questions
+- `components/TextChecker.tsx` - Dual-mode text/PDF checker component
+- `lib/session-helpers.ts` - Analysis Sessions CRUD operations and context building
 - `lib/subscription-helpers.ts` - Usage and subscription queries
 - `lib/export-helpers.ts` - PDF/CSV/JSON export functions
 - `lib/pdf-helpers.ts` - PDF text extraction and metadata parsing utilities
 - `lib/email-templates.ts` - Email template generation including invitation emails
 - `supabase-migrations/add-regulatory-document-fields.sql` - Database migration for regulatory document fields
+- `supabase/migrations/20251022000000_create_analysis_sessions.sql` - Analysis Sessions database migration
+- `docs/ANALYSIS_SESSIONS_FEATURE.md` - Complete Analysis Sessions feature specification
+- `SESSION_NOTES.md` - Session-by-session development notes and next steps
 - `SETUP_GUIDE.md` - Comprehensive setup and testing documentation
