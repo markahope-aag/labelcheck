@@ -34,12 +34,21 @@ interface Member {
   };
 }
 
+interface PendingInvitation {
+  id: string;
+  email: string;
+  role: 'owner' | 'admin' | 'member' | 'viewer';
+  invited_at: string;
+  expires_at: string;
+}
+
 export default function TeamPage() {
   const { user } = useUser();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
+  const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
   const [currentUserRole, setCurrentUserRole] = useState<string>('');
   const [showCreateOrg, setShowCreateOrg] = useState(false);
   const [orgName, setOrgName] = useState('');
@@ -86,6 +95,7 @@ export default function TeamPage() {
       if (orgData) {
         setOrganization(orgData);
         await loadMembers(orgData.id);
+        await loadPendingInvitations(orgData.id);
       }
     } catch (error) {
       console.error('Error loading organization:', error);
@@ -123,41 +133,40 @@ export default function TeamPage() {
     }
   }
 
+  async function loadPendingInvitations(orgId: string) {
+    const { data, error } = await supabase
+      .from('pending_invitations')
+      .select('id, email, role, invited_at, expires_at')
+      .eq('organization_id', orgId)
+      .is('accepted_at', null);
+
+    if (error) {
+      console.error('Error loading pending invitations:', error);
+    } else {
+      setPendingInvitations(data || []);
+    }
+  }
+
   async function createOrganization() {
     if (!user || !orgName || !orgSlug) return;
 
     try {
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('id, email')
-        .eq('clerk_user_id', user.id)
-        .single();
-
-      if (userError || !userData) throw userError || new Error('User not found');
-
-      const { data: newOrg, error: orgError } = await supabase
-        .from('organizations')
-        .insert({
+      const response = await fetch('/api/organizations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           name: orgName,
           slug: orgSlug,
-          billing_email: userData.email,
-          created_by: userData.id,
-        })
-        .select()
-        .single();
+        }),
+      });
 
-      if (orgError) throw orgError;
+      const data = await response.json();
 
-      const { error: memberError } = await supabase
-        .from('organization_members')
-        .insert({
-          organization_id: newOrg.id,
-          user_id: userData.id,
-          role: 'owner',
-          joined_at: new Date().toISOString(),
-        });
-
-      if (memberError) throw memberError;
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create organization');
+      }
 
       toast({
         title: 'Success',
@@ -180,38 +189,23 @@ export default function TeamPage() {
     if (!organization || !inviteEmail) return;
 
     try {
-      const { data: invitedUser } = await supabase
-        .from('users')
-        .select('id')
-        .eq('email', inviteEmail)
-        .maybeSingle();
-
-      if (!invitedUser) {
-        toast({
-          title: 'Error',
-          description: 'User not found. They must create an account first.',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      const { data: currentUser, error: currentUserError } = await supabase
-        .from('users')
-        .select('id')
-        .eq('clerk_user_id', user!.id)
-        .single();
-
-      if (currentUserError || !currentUser) throw currentUserError || new Error('Current user not found');
-
-      const { error } = await supabase.from('organization_members').insert({
-        organization_id: organization.id,
-        user_id: invitedUser.id,
-        role: inviteRole,
-        invited_by: currentUser.id,
-        joined_at: new Date().toISOString(),
+      const response = await fetch('/api/organizations/members', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          organizationId: organization.id,
+          email: inviteEmail,
+          role: inviteRole,
+        }),
       });
 
-      if (error) throw error;
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to invite member');
+      }
 
       toast({
         title: 'Success',
@@ -220,6 +214,7 @@ export default function TeamPage() {
 
       setInviteEmail('');
       loadMembers(organization.id);
+      loadPendingInvitations(organization.id);
     } catch (error: any) {
       console.error('Error inviting member:', error);
       toast({
@@ -250,6 +245,34 @@ export default function TeamPage() {
       toast({
         title: 'Error',
         description: 'Failed to remove member',
+        variant: 'destructive',
+      });
+    }
+  }
+
+  async function cancelInvitation(invitationId: string) {
+    try {
+      const response = await fetch(`/api/organizations/invitations/${invitationId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to cancel invitation');
+      }
+
+      toast({
+        title: 'Success',
+        description: 'Invitation cancelled successfully',
+      });
+
+      loadPendingInvitations(organization!.id);
+    } catch (error: any) {
+      console.error('Error cancelling invitation:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to cancel invitation',
         variant: 'destructive',
       });
     }
@@ -453,6 +476,71 @@ export default function TeamPage() {
               </div>
             </CardContent>
           </Card>
+
+          {canManageMembers && pendingInvitations.length > 0 && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Mail className="h-5 w-5" />
+                  <CardTitle>Pending Invitations</CardTitle>
+                </div>
+                <CardDescription>
+                  {pendingInvitations.length} pending invitation{pendingInvitations.length !== 1 ? 's' : ''}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {pendingInvitations.map((invitation) => (
+                    <div
+                      key={invitation.id}
+                      className="flex items-center justify-between p-3 border rounded-lg bg-amber-50"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center">
+                          <Mail className="h-5 w-5 text-amber-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{invitation.email}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Invited {new Date(invitation.invited_at).toLocaleDateString()} • Expires {new Date(invitation.expires_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Badge variant="secondary">
+                          <Shield className="h-3 w-3 mr-1" />
+                          {invitation.role}
+                        </Badge>
+                        <span className="text-sm text-amber-600 font-medium">Pending</span>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <Trash2 className="h-4 w-4 text-red-600" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Cancel Invitation</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to cancel the invitation for {invitation.email}?
+                                This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => cancelInvitation(invitation.id)}>
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>
