@@ -12,10 +12,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if user is admin
-    const client = await clerkClient();
-    const user = await client.users.getUser(userId);
-    if (user.publicMetadata?.role !== 'admin') {
+    // Check if user is system admin in database
+    const { data: currentUser } = await supabaseAdmin
+      .from('users')
+      .select('is_system_admin')
+      .eq('clerk_user_id', userId)
+      .single();
+
+    if (!currentUser?.is_system_admin) {
       return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 });
     }
 

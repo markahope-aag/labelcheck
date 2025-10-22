@@ -32,18 +32,29 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const isAdmin = user?.publicMetadata?.role === 'admin';
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [checkingAdmin, setCheckingAdmin] = useState(true);
 
   useEffect(() => {
-    console.log('Admin Layout - isLoaded:', isLoaded, 'user:', !!user, 'isAdmin:', isAdmin);
-    if (isLoaded && user && !isAdmin) {
-      console.log('Not admin, redirecting to dashboard');
-      router.push('/dashboard');
-    }
-  }, [isLoaded, user, isAdmin, router]);
+    async function checkAdminStatus() {
+      if (!isLoaded || !user) return;
 
-  // Show loading state while user data is being fetched
-  if (!isLoaded) {
+      try {
+        // The middleware will handle the actual redirect, but we check here for UI
+        const response = await fetch('/api/admin/users');
+        setIsAdmin(response.ok);
+      } catch (error) {
+        setIsAdmin(false);
+      } finally {
+        setCheckingAdmin(false);
+      }
+    }
+
+    checkAdminStatus();
+  }, [isLoaded, user]);
+
+  // Show loading state while checking admin status
+  if (!isLoaded || checkingAdmin) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -54,8 +65,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
-  // Redirect non-admin users
-  if (!user || !isAdmin) {
+  // Redirect non-admin users (middleware will also handle this)
+  if (!user || isAdmin === false) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">

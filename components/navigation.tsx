@@ -5,11 +5,31 @@ import { usePathname } from 'next/navigation';
 import { UserButton, useUser } from '@clerk/nextjs';
 import { FlaskConical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useEffect, useState } from 'react';
 
 export function Navigation() {
   const pathname = usePathname();
   const { isSignedIn, user } = useUser();
-  const isAdmin = user?.publicMetadata?.role === 'admin';
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    async function checkAdminStatus() {
+      if (!isSignedIn || !user) {
+        setIsAdmin(false);
+        return;
+      }
+
+      try {
+        // Try to fetch admin users endpoint - if successful, user is admin
+        const response = await fetch('/api/admin/users');
+        setIsAdmin(response.ok);
+      } catch {
+        setIsAdmin(false);
+      }
+    }
+
+    checkAdminStatus();
+  }, [isSignedIn, user]);
 
   const navItems = isSignedIn
     ? [
