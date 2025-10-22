@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { exportSingleAnalysisAsPDF } from '@/lib/export-helpers';
 import { useToast } from '@/hooks/use-toast';
 import { AnalysisChat } from '@/components/AnalysisChat';
+import { TextChecker } from '@/components/TextChecker';
 
 export default function AnalyzePage() {
   const { userId } = useAuth();
@@ -28,6 +29,7 @@ export default function AnalyzePage() {
   const [copied, setCopied] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isTextCheckerOpen, setIsTextCheckerOpen] = useState(false);
 
   const processFile = (file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -188,6 +190,20 @@ export default function AnalyzePage() {
         variant: 'destructive',
       });
     }
+  };
+
+  const handleTextAnalysisComplete = (analysisResult: any) => {
+    // Update the result state with the text analysis
+    setResult({
+      ...analysisResult,
+      analysisType: 'text_check',
+      image_name: 'Text Content Analysis',
+    });
+
+    toast({
+      title: 'Text Analysis Complete',
+      description: 'Your prospective label content has been analyzed',
+    });
   };
 
   useEffect(() => {
@@ -364,8 +380,8 @@ export default function AnalyzePage() {
                           </button>
 
                           <button
-                            disabled
-                            className="flex items-center gap-3 p-4 bg-white border-2 border-blue-200 rounded-lg hover:border-blue-300 transition-all opacity-60 cursor-not-allowed"
+                            onClick={() => setIsTextCheckerOpen(true)}
+                            className="flex items-center gap-3 p-4 bg-white border-2 border-blue-200 rounded-lg hover:border-green-400 hover:bg-green-50 transition-all"
                           >
                             <div className="p-2 bg-green-100 rounded">
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -374,7 +390,7 @@ export default function AnalyzePage() {
                             </div>
                             <div className="text-left">
                               <div className="font-semibold text-slate-900">Check Text Alternative</div>
-                              <div className="text-xs text-slate-600">Coming soon</div>
+                              <div className="text-xs text-slate-600">Test revised content</div>
                             </div>
                           </button>
 
@@ -789,6 +805,16 @@ export default function AnalyzePage() {
           sessionId={sessionId}
           isOpen={isChatOpen}
           onClose={() => setIsChatOpen(false)}
+        />
+      )}
+
+      {/* Text Checker */}
+      {sessionId && (
+        <TextChecker
+          sessionId={sessionId}
+          isOpen={isTextCheckerOpen}
+          onClose={() => setIsTextCheckerOpen(false)}
+          onAnalysisComplete={handleTextAnalysisComplete}
         />
       )}
     </div>
