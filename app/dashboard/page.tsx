@@ -106,7 +106,7 @@ export default async function DashboardPage() {
                   {analyses.map((analysis) => {
                     const result = analysis.analysis_result || {};
                     const productName = result.product_name || analysis.image_name || 'Unnamed Product';
-                    const summary = result.overall_assessment?.summary || 'No summary available';
+                    const summary = result.overall_assessment?.summary || result.summary || 'No summary available';
 
                     return (
                       <div key={analysis.id} className="flex items-start justify-between p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
