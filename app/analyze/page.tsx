@@ -30,6 +30,8 @@ export default function AnalyzePage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isTextCheckerOpen, setIsTextCheckerOpen] = useState(false);
+  const [isRevisedMode, setIsRevisedMode] = useState(false);
+  const [previousResult, setPreviousResult] = useState<any>(null);
 
   const processFile = (file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -94,6 +96,11 @@ export default function AnalyzePage() {
       const formData = new FormData();
       formData.append('image', selectedFile);
 
+      // If in revised mode, pass the sessionId
+      if (isRevisedMode && sessionId) {
+        formData.append('sessionId', sessionId);
+      }
+
       const response = await fetch('/api/analyze', {
         method: 'POST',
         body: formData,
@@ -110,6 +117,11 @@ export default function AnalyzePage() {
       // Store session ID if present
       if (data.session?.id) {
         setSessionId(data.session.id);
+      }
+
+      // If this was a revised upload, exit revised mode
+      if (isRevisedMode) {
+        setIsRevisedMode(false);
       }
     } catch (err: any) {
       setError(err.message || 'An error occurred while analyzing the image');
@@ -206,6 +218,83 @@ export default function AnalyzePage() {
     });
   };
 
+  const handleUploadRevised = () => {
+    // Store the current result for comparison
+    setPreviousResult(result);
+
+    // Enter revised mode
+    setIsRevisedMode(true);
+
+    // Clear current file to show upload UI
+    setSelectedFile(null);
+    setPreviewUrl('');
+    setResult(null);
+
+    toast({
+      title: 'Upload Revised Label',
+      description: 'Upload your updated label to see the improvements',
+    });
+  };
+
+  // Calculate comparison between previous and current results
+  const calculateComparison = () => {
+    if (!previousResult || !result) return null;
+
+    const prevStatus = previousResult.overall_assessment?.primary_compliance_status || '';
+    const currStatus = result.overall_assessment?.primary_compliance_status || '';
+
+    // Count issues by severity in previous result
+    const prevIssues = {
+      critical: 0,
+      warning: 0,
+      compliant: 0,
+    };
+
+    // Count issues by severity in current result
+    const currIssues = {
+      critical: 0,
+      warning: 0,
+      compliant: 0,
+    };
+
+    // Helper to count issues from a section
+    const countIssuesInSection = (section: any, counters: any) => {
+      if (!section) return;
+      Object.values(section).forEach((item: any) => {
+        if (item && item.status) {
+          if (item.status === 'non_compliant') counters.critical++;
+          else if (item.status === 'warning' || item.status === 'potentially_non_compliant') counters.warning++;
+          else if (item.status === 'compliant') counters.compliant++;
+        }
+      });
+    };
+
+    // Count issues in both results
+    [previousResult, result].forEach((res, idx) => {
+      const counters = idx === 0 ? prevIssues : currIssues;
+      countIssuesInSection(res.general_labeling, counters);
+      countIssuesInSection(res.nutrition_labeling, counters);
+      countIssuesInSection(res.allergen_labeling, counters);
+      countIssuesInSection(res.claims_and_statements, counters);
+    });
+
+    const prevTotal = prevIssues.critical + prevIssues.warning;
+    const currTotal = currIssues.critical + currIssues.warning;
+    const improvement = prevTotal - currTotal;
+
+    return {
+      prevStatus,
+      currStatus,
+      prevIssues: prevTotal,
+      currIssues: currTotal,
+      improvement,
+      statusImproved: prevStatus !== currStatus &&
+        (currStatus === 'compliant' || currStatus === 'likely_compliant'),
+    };
+  };
+
+  const comparison = previousResult && result ? calculateComparison() : null;
+
   useEffect(() => {
     if (userId === null) {
       router.push('/sign-in');
@@ -232,12 +321,36 @@ export default function AnalyzePage() {
             </Alert>
           )}
 
-          {!result ? (
-            <Card className="border-slate-200">
-              <CardHeader>
-                <CardTitle className="text-xl font-semibold text-slate-900">Upload Image</CardTitle>
-                <CardDescription>Take a clear photo of the nutrition facts label</CardDescription>
-              </CardHeader>
+          {!result || isRevisedMode ? (
+            <>
+              {isRevisedMode && previousResult && (
+                <div className="mb-6 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-purple-100 rounded-lg">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-purple-900">Revision Mode Active</h3>
+                      <p className="text-sm text-purple-700">
+                        Upload your revised label to see how your changes compare to the previous analysis
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <Card className="border-slate-200">
+                <CardHeader>
+                  <CardTitle className="text-xl font-semibold text-slate-900">
+                    {isRevisedMode ? 'Upload Revised Label' : 'Upload Image'}
+                  </CardTitle>
+                  <CardDescription>
+                    {isRevisedMode
+                      ? 'Upload your updated label to see the improvements'
+                      : 'Take a clear photo of the nutrition facts label'}
+                  </CardDescription>
+                </CardHeader>
               <CardContent>
                 <div className="space-y-6">
                   {!previewUrl ? (
@@ -320,6 +433,7 @@ export default function AnalyzePage() {
                 </div>
               </CardContent>
             </Card>
+            </>
           ) : (
             <div className="space-y-6">
               <Card className="border-slate-200">
@@ -395,8 +509,8 @@ export default function AnalyzePage() {
                           </button>
 
                           <button
-                            disabled
-                            className="flex items-center gap-3 p-4 bg-white border-2 border-blue-200 rounded-lg hover:border-blue-300 transition-all opacity-60 cursor-not-allowed"
+                            onClick={handleUploadRevised}
+                            className="flex items-center gap-3 p-4 bg-white border-2 border-blue-200 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all"
                           >
                             <div className="p-2 bg-purple-100 rounded">
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -405,7 +519,7 @@ export default function AnalyzePage() {
                             </div>
                             <div className="text-left">
                               <div className="font-semibold text-slate-900">Upload Revised Label</div>
-                              <div className="text-xs text-slate-600">Coming soon</div>
+                              <div className="text-xs text-slate-600">Test your improvements</div>
                             </div>
                           </button>
                         </div>
@@ -416,6 +530,86 @@ export default function AnalyzePage() {
                             This session maintains context across multiple iterations
                           </p>
                         </div>
+                      </div>
+                    )}
+
+                    {/* Comparison Results */}
+                    {comparison && (
+                      <div className="bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-300 rounded-lg p-6">
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="p-2 bg-purple-100 rounded-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-bold text-purple-900">Revision Comparison</h3>
+                            <p className="text-sm text-purple-700">See how your changes improved compliance</p>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          {/* Previous Issues */}
+                          <div className="bg-white rounded-lg p-4 border border-purple-200">
+                            <div className="text-sm font-semibold text-slate-600 mb-1">Previous Analysis</div>
+                            <div className="text-3xl font-bold text-slate-900">{comparison.prevIssues}</div>
+                            <div className="text-sm text-slate-600">issues found</div>
+                          </div>
+
+                          {/* Improvement */}
+                          <div className="bg-white rounded-lg p-4 border-2 border-purple-300 flex items-center justify-center">
+                            <div className="text-center">
+                              {comparison.improvement > 0 ? (
+                                <>
+                                  <div className="text-4xl font-bold text-green-600">↓ {comparison.improvement}</div>
+                                  <div className="text-sm font-semibold text-green-700 mt-1">Issues Resolved</div>
+                                </>
+                              ) : comparison.improvement < 0 ? (
+                                <>
+                                  <div className="text-4xl font-bold text-red-600">↑ {Math.abs(comparison.improvement)}</div>
+                                  <div className="text-sm font-semibold text-red-700 mt-1">New Issues</div>
+                                </>
+                              ) : (
+                                <>
+                                  <div className="text-4xl font-bold text-yellow-600">=</div>
+                                  <div className="text-sm font-semibold text-yellow-700 mt-1">No Change</div>
+                                </>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Current Issues */}
+                          <div className={`rounded-lg p-4 border-2 ${
+                            comparison.currIssues === 0
+                              ? 'bg-green-50 border-green-300'
+                              : 'bg-white border-purple-200'
+                          }`}>
+                            <div className="text-sm font-semibold text-slate-600 mb-1">Current Analysis</div>
+                            <div className={`text-3xl font-bold ${
+                              comparison.currIssues === 0 ? 'text-green-600' : 'text-slate-900'
+                            }`}>
+                              {comparison.currIssues}
+                            </div>
+                            <div className={`text-sm ${
+                              comparison.currIssues === 0 ? 'text-green-700 font-semibold' : 'text-slate-600'
+                            }`}>
+                              {comparison.currIssues === 0 ? '✓ Fully Compliant!' : 'issues remaining'}
+                            </div>
+                          </div>
+                        </div>
+
+                        {comparison.statusImproved && (
+                          <div className="mt-4 p-3 bg-green-100 border border-green-300 rounded-lg">
+                            <div className="flex items-center gap-2">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              <span className="text-sm font-semibold text-green-800">
+                                Compliance status improved! Your revisions made a positive impact.
+                              </span>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
 
