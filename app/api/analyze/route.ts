@@ -300,25 +300,44 @@ After determining the category, evaluate your confidence and check for ambiguity
 
 Check if the product could reasonably be classified differently:
 
-**⚠️ ALWAYS FLAG AS AMBIGUOUS IF:**
-1. **Has Nutrition Facts BUT contains supplement-like ingredients** (vitamins, minerals, collagen, protein powder, biotin, etc.)
-2. **Has Nutrition Facts BUT makes health/structure/function claims** (supports, promotes, boosts, enhances)
-3. **Panel type conflicts with marketing** (e.g., Nutrition Facts but marketed like supplement)
-4. **Could be marketed as either food OR supplement** with minor label changes
+**🚨 CRITICAL AMBIGUITY DETECTION REQUIREMENTS 🚨**
 
-**Common Ambiguous Products:**
-1. **Protein bars:** Could be FOOD or SUPPLEMENT depending on panel type and claims
-2. **Protein shakes:** Could be FOOD (meal replacement) or SUPPLEMENT or BEVERAGE depending on positioning
-3. **Fortified beverages/foods:** Has Nutrition Facts + vitamins/minerals + health claims = could be BEVERAGE or SUPPLEMENT
-4. **Functional beverages:** Energy drinks, wellness shots - could be BEVERAGE or SUPPLEMENT
-5. **Herbal products:** Could be FOOD (tea) or SUPPLEMENT depending on format and claims
-6. **Coffee/tea with added ingredients:** Collagen coffee, vitamin-enhanced tea = could be BEVERAGE or SUPPLEMENT
+**STOP AND CHECK - You MUST flag as ambiguous if ANY of these are true:**
 
-**If ambiguous, you MUST:**
+✋ **MANDATORY AMBIGUITY TRIGGER #1:**
+- Product has **Nutrition Facts panel** (not Supplement Facts)
+- **AND** contains ANY of these ingredients: collagen, biotin, vitamins, minerals, protein powder, amino acids, herbal extracts, probiotics, omega-3, CoQ10
+- **EXAMPLE:** Coffee with Nutrition Facts + collagen + biotin = **MUST BE AMBIGUOUS**
+- **ACTION:** Set is_ambiguous: true, list both CONVENTIONAL_FOOD/NON_ALCOHOLIC_BEVERAGE (based on panel) AND DIETARY_SUPPLEMENT (based on ingredients) as options
+
+✋ **MANDATORY AMBIGUITY TRIGGER #2:**
+- Product has **Nutrition Facts panel** (not Supplement Facts)
+- **AND** makes ANY health/structure/function claims using words like: supports, promotes, boosts, enhances, strengthens, improves, helps, benefits (skin, hair, joints, immunity, etc.)
+- **EXAMPLE:** Beverage with Nutrition Facts + "supports skin health" claim = **MUST BE AMBIGUOUS**
+- **ACTION:** Set is_ambiguous: true, explain that health claims suggest supplement but panel says food/beverage
+
+✋ **MANDATORY AMBIGUITY TRIGGER #3:**
+- Panel type (Nutrition Facts vs Supplement Facts) **conflicts** with ingredients or marketing
+- **EXAMPLE:** Has Supplement Facts but sold as "protein bar" = **MUST BE AMBIGUOUS**
+
+**REAL-WORLD AMBIGUOUS PRODUCT EXAMPLES:**
+1. **Coffee pods with collagen + Nutrition Facts** ← THIS EXACT SCENARIO
+   - Panel says: CONVENTIONAL_FOOD or NON_ALCOHOLIC_BEVERAGE
+   - Ingredients say: DIETARY_SUPPLEMENT (has collagen, biotin, vitamins)
+   - **YOU MUST FLAG THIS AS AMBIGUOUS** with both categories as options
+
+2. **Energy drink with vitamins + Nutrition Facts**
+   - Could be NON_ALCOHOLIC_BEVERAGE or DIETARY_SUPPLEMENT
+
+3. **Protein shake with Nutrition Facts**
+   - Could be CONVENTIONAL_FOOD (meal replacement) or DIETARY_SUPPLEMENT
+
+**If you flag as ambiguous (which you MUST for above scenarios), you MUST:**
 1. Set "is_ambiguous: true"
-2. List "alternative_categories" with rationale for each (include BOTH what panel type says AND what ingredients/claims suggest)
-3. Identify any "label_conflicts" (e.g., Nutrition Facts but supplement claims)
-4. Provide guidance for EACH viable category option
+2. Set "category_confidence" to "medium" or "low" (NEVER "high" if ambiguous)
+3. List "alternative_categories" with clear rationale for EACH option
+4. Fill out "category_options" with guidance for ALL viable categories
+5. Explain the conflict in "ambiguity_reason"
 
 **STEP 3: CATEGORY OPTIONS & GUIDANCE** (Required if ambiguous OR confidence < HIGH)
 

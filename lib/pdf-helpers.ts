@@ -60,6 +60,25 @@ export function isValidPDF(buffer: Buffer): boolean {
  */
 export function cleanExtractedText(text: string): string {
   return text
+    .normalize('NFKD') // Normalize Unicode to decomposed form
+    .replace(/[\u0300-\u036f]/g, '') // Remove diacritical marks
+    .replace(/[^\x00-\x7F]/g, (char) => {
+      // Replace common special characters
+      const replacements: Record<string, string> = {
+        'ǥ': 'o',
+        'ö': 'o',
+        'ä': 'a',
+        'ü': 'u',
+        'Ö': 'O',
+        'Ä': 'A',
+        'Ü': 'U',
+        '€': 'EUR',
+        '©': '(c)',
+        '®': '(R)',
+        '™': '(TM)',
+      };
+      return replacements[char] || char;
+    })
     .replace(/\r\n/g, '\n') // Normalize line endings
     .replace(/\n{3,}/g, '\n\n') // Remove excessive line breaks
     .replace(/[ \t]{2,}/g, ' ') // Remove excessive spaces
