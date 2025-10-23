@@ -399,9 +399,88 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
    - **Important**: Consider exemptions for foods with insignificant amounts of all required nutrients
    - If nutrition panel is missing but product qualifies for exemption, mark as COMPLIANT with explanation
 
+   **🔍 NUTRITION FACTS VALIDATION - CHECK ROUNDING RULES:**
+   If a Nutrition Facts panel is present, validate ALL nutrient values against FDA rounding rules:
+   - **Calories**: <5 cal must be "0" or "5" (NOT "1", "2", "3", or "4"). Values like "1 calorie" are NON-COMPLIANT.
+   - **Fiber**: <0.5g must be "0g" (NOT "0.1g", "0.2g", etc.). Values 0.5-1g should be "less than 1g".
+   - **Protein**: <0.5g rounds to 0g. If 0.5g or more, round to nearest gram.
+   - **Fat (Total, Sat, Trans)**: <0.5g must be "0g". Round to nearest 0.5g above that.
+   - **Cholesterol**: <2mg must be "0mg". Round to nearest 5mg above that.
+   - **Sodium**: <5mg must be "0mg". Round to nearest 5mg (5-140mg) or 10mg (>140mg).
+   - **Carbs/Sugars**: <0.5g must be "0g". Round to nearest gram.
+   - **Vitamins/Minerals**: Report as % DV, round to nearest 2% (0-10%), 5% (10-50%), or 10% (>50%).
+
+   **FLAG AS NON-COMPLIANT:** If ANY nutrient value violates rounding rules.
+
 5. **Additional Regulatory Considerations**: Evaluate any other applicable requirements
-   - Fortification Policy: Are essential nutrients added? Are there fortification claims?
-   - Special Labeling: Date labeling, caffeine disclosure, organic claims, etc.
+
+   **🚨 FORTIFICATION POLICY COMPLIANCE - CRITICAL CHECK:**
+   If the label uses terms "enriched", "fortified", "added", "with added X", or lists added vitamins/minerals:
+
+   A. **Check Product is Appropriate Vehicle for Fortification:**
+   - **INAPPROPRIATE VEHICLES** (flag as potential violation):
+     • Coffee (plain or flavored) - minimal nutritional value
+     • Tea (plain or flavored) - minimal nutritional value
+     • Candy, gum - primarily sugar, not nutrient-dense
+     • Carbonated beverages, soft drinks - not nutrient-dense
+     • Snack foods (chips, pretzels, cookies) - high cal, low nutrients
+
+   - **APPROPRIATE VEHICLES**:
+     • Bread, flour, cereals - staple foods
+     • Milk and dairy products - naturally nutrient-dense
+     • Fruit juices - naturally contain nutrients
+     • Meal replacement products - intended as nutrition source
+
+   B. **Fortification Policy Violations to Flag:**
+   - "Enriched" or "Fortified" claims on coffee/tea/soda
+   - Adding 100% DV of vitamins to products with <50 calories
+   - Fortifying products with no significant nutritional value
+   - Adding nutrients solely to make misleading nutrient content claims
+
+   C. **What to Report:**
+   - If inappropriate vehicle: Mark as NON-COMPLIANT, cite FDA fortification policy
+   - Explain: "Fortifying [product type] with [nutrients] may violate FDA fortification policy which discourages fortifying non-nutrient-dense foods"
+   - Reference: 21 CFR 104 (Nutritional Quality Guidelines), FDA Fortification Policy
+
+   **📢 CLAIMS DETECTION & VALIDATION:**
+
+   D. **Structure/Function (S/F) Claims - MUST DETECT & ANALYZE:**
+   Look for claims about what a nutrient or ingredient does in the body:
+   - Words to detect: "supports", "promotes", "boosts", "enhances", "strengthens", "improves", "helps", "benefits", "contributes to", "maintains"
+   - Body functions: "immune health", "skin health", "hair health", "joint function", "bone strength", "energy", "metabolism", "digestion", "heart health"
+
+   **Examples of S/F claims:**
+   - "Biotin contributes to normal skin health"
+   - "Selenium supports hair health"
+   - "Zinc helps protect cells from oxidative stress"
+   - "Supports immune function"
+
+   **Validation Requirements:**
+   - S/F claims must be truthful and not misleading
+   - Nutrient levels must support the claim (generally ≥10% DV)
+   - Cannot imply disease treatment/cure
+   - List ALL S/F claims found on the label
+
+   E. **Nutrient Content Claims (NCCs) - MUST DETECT & VALIDATE:**
+   Look for claims about nutrient levels in the product:
+
+   **Common NCCs to detect:**
+   - "Enriched", "Fortified" - implies ≥10% more DV than reference food
+   - "High", "Rich in", "Excellent source" - requires ≥20% DV per serving
+   - "Good source", "Contains", "Provides" - requires 10-19% DV per serving
+   - "More", "Enriched", "Fortified", "Added" - requires ≥10% more than reference
+   - "Free" (fat-free, sugar-free) - must have <0.5g per serving
+   - "Low" (low fat, low sodium) - specific thresholds apply
+   - "Reduced", "Less", "Fewer" - must be 25% less than reference
+
+   **Validation Requirements:**
+   - Check if nutrient levels meet the definition
+   - Example: "High in Zinc" requires ≥20% DV of Zinc per serving
+   - If claim is made but level doesn't meet definition = NON-COMPLIANT
+   - List ALL NCCs found and whether they meet regulatory definitions
+
+   F. **Other Special Labeling:**
+   - Date labeling, caffeine disclosure, organic claims, etc.
    - Product-Specific Requirements: Based on product type (beverage, coffee, meat, etc.)
 
 6. **Summary Compliance Table**: Provide a structured summary
@@ -483,12 +562,65 @@ Return your response as a JSON object with the following structure:
     "exemption_applicable": true|false,
     "exemption_reason": "Explanation if exemption applies (e.g., 'Foods of no nutritional significance')",
     "details": "Full explanation of nutrition labeling compliance or exemption",
-    "regulation_citation": "21 CFR 101.9"
+    "regulation_citation": "21 CFR 101.9",
+    "rounding_validation": {
+      "has_errors": true|false,
+      "errors_found": [
+        {
+          "nutrient": "Nutrient name (e.g., 'Calories', 'Fiber')",
+          "declared_value": "Value shown on label",
+          "required_value": "Correct value per FDA rounding rules",
+          "rule_violated": "Explanation of rounding rule"
+        }
+      ]
+    }
   },
   "additional_requirements": {
     "fortification": {
       "status": "compliant|non_compliant|not_applicable",
-      "details": "Analysis of fortification compliance"
+      "is_fortified": true|false,
+      "nutrients_added": ["List of added vitamins/minerals if any"],
+      "fortification_claims": ["List of 'enriched'/'fortified' claims on label"],
+      "vehicle_appropriate": true|false|null,
+      "product_type": "Type of product (e.g., 'coffee', 'cereal', 'candy')",
+      "policy_violation": {
+        "present": true|false,
+        "severity": "critical|high|medium|low",
+        "issue": "Description of fortification policy violation",
+        "reasoning": "Why this product is inappropriate vehicle for fortification"
+      },
+      "details": "Full analysis of fortification compliance and policy",
+      "regulation_citation": "21 CFR 104, FDA Fortification Policy"
+    },
+    "structure_function_claims": {
+      "claims_present": true|false,
+      "claims_found": [
+        {
+          "claim_text": "Exact text of claim from label",
+          "nutrient": "Nutrient making the claim",
+          "nutrient_level": "% DV or amount",
+          "meets_requirements": true|false,
+          "issue": "Any compliance issue with this claim"
+        }
+      ],
+      "status": "compliant|non_compliant|not_applicable",
+      "details": "Analysis of structure/function claims compliance"
+    },
+    "nutrient_content_claims": {
+      "claims_present": true|false,
+      "claims_found": [
+        {
+          "claim_type": "Type of claim (e.g., 'high', 'good source', 'enriched')",
+          "claim_text": "Exact text from label",
+          "nutrient": "Nutrient being claimed",
+          "nutrient_level": "% DV or amount per serving",
+          "required_level": "Regulatory threshold for this claim",
+          "meets_definition": true|false,
+          "issue": "Any compliance issue"
+        }
+      ],
+      "status": "compliant|non_compliant|not_applicable",
+      "details": "Analysis of nutrient content claims compliance"
     },
     "other_requirements": [
       {
