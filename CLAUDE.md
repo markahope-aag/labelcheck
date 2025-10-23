@@ -36,6 +36,7 @@ The database uses PostgreSQL with Row Level Security (RLS) enabled on all tables
 - **usage_tracking**: Monthly usage limits, keyed by `user_id` + `month` (YYYY-MM format)
 - **analyses**: Stores analysis results with truncated image previews (not full images), includes `share_token` for public sharing
 - **regulatory_documents**: FDA/USDA regulations used for AI analysis context
+- **gras_ingredients**: 1,465 FDA GRAS (Generally Recognized as Safe) ingredients for compliance checking
 - **organizations** + **organization_members**: Team collaboration features
 - **user_settings**: User preferences (notifications, theme, timezone)
 - **analysis_exports**: Export history tracking
@@ -44,15 +45,44 @@ The database uses PostgreSQL with Row Level Security (RLS) enabled on all tables
 1. User uploads image to `/api/analyze`
 2. Check usage limits against `usage_tracking` table
 3. Fetch active regulatory documents from database
-4. Send image + regulatory context to Claude 3.5 Sonnet
+4. Send image + regulatory context to Claude 3.5 Sonnet (with retry logic for rate limits)
 5. Parse JSON response containing compliance analysis
-6. Save to `analyses` table, increment usage counter
-7. Send email notification to user
+6. **Check GRAS compliance** for all detected ingredients using three-strategy matching
+7. Save to `analyses` table with GRAS results, increment usage counter
+8. Send email notification to user
+
+### GRAS Ingredient Compliance
+The system automatically validates all ingredients against the FDA GRAS database:
+
+**Database Coverage:**
+- 1,465 total ingredients (848 GRAS notices + 152 affirmed GRAS + 465 comprehensive additions)
+- Covers ~95%+ of commercial food products
+- Sourced from FDA GRAS Notice Inventory
+
+**Matching Strategies** (implemented in `lib/gras-helpers.ts`):
+1. **Exact match**: Case-insensitive comparison of ingredient names
+2. **Synonym match**: Checks against alternative names for each ingredient
+3. **Fuzzy match**: Partial word matching for complex ingredient names
+
+**Integration:**
+- Analysis results include `gras_compliance` object with detailed ingredient status
+- Non-GRAS ingredients automatically flagged as CRITICAL priority recommendations
+- UI displays color-coded ingredient tags (green=GRAS, red=non-GRAS)
+- Hover tooltips show match type (exact/synonym/fuzzy)
+
+**Key Files:**
+- `lib/gras-helpers.ts`: Core matching and compliance checking logic
+- `scrape-gras-notices.js`: Web scraper for FDA GRAS Notice Inventory
+- `import-gras-notices.js`: Import scraped data with deduplication
+- `supabase/migrations/20251022220000_create_gras_ingredients.sql`: Database schema
+- `GRAS_DATABASE.md`: Comprehensive GRAS database documentation
 
 Key implementation in `app/api/analyze/route.ts`:
 - Uses `@anthropic-ai/sdk` with model `claude-3-5-sonnet-20241022`
+- **Automatic retry logic** with exponential backoff for rate limits (5s, 10s, 20s delays)
 - Regulatory context is injected via `lib/regulatory-documents.ts`
 - Images are base64 encoded, but only first 100 chars stored in DB
+- **GRAS compliance checking** runs automatically after analysis completes
 - Usage limits: Basic (10/month), Pro (100/month), Enterprise (unlimited = -1)
 
 ### Analysis Sessions (Iterative Improvement Workflow)
@@ -156,11 +186,13 @@ import { Button } from '@/components/ui/button';
 - Check in `app/api/analyze/route.ts` enforces limits before analysis
 
 ### Image Handling
+- **Supports both images and PDFs** with proper MIME type detection
 - Images are preprocessed using Sharp (`lib/image-processing.ts`) before AI analysis:
   - Auto-rotates based on EXIF orientation
   - Upscales if too small (min 1500px on longest side)
   - Enhances contrast and sharpness for better text recognition
   - Validates file size (max 10MB by default)
+- **Drag-and-drop upload** with proper event handling and visual feedback
 - Images are NOT permanently stored in cloud storage
 - Only first 100 characters of base64 string stored for preview purposes
 - Full image sent to Claude API but discarded after analysis
@@ -287,8 +319,21 @@ The application supports team collaboration through organization invitations:
 - **Status Filter**: Filter by compliance status (All, Compliant, Non-Compliant, Minor Issues)
 - **Sort Options**: Newest First (default), Oldest First, Name (A-Z)
 - **Results Counter**: Shows "Showing X of Y analyses"
+- **Color-coded ingredient display**: Visual tags showing GRAS compliance status
 - All filtering and sorting happens client-side for instant results
 - Maintains backward compatibility with old and new analysis data formats
+
+### UI/UX Enhancements
+**Compliance Status Formatting:**
+- All status displays use proper capitalization and hyphens (e.g., "Non-Compliant", "Potentially-Non-Compliant")
+- Helper function `formatComplianceStatus()` ensures consistent formatting across all pages
+- Applied to: analyze page, analysis detail page, and all compliance badges
+
+**Ingredient Display:**
+- Color-coded tags: Green background for GRAS-compliant, Red background for non-GRAS
+- Hover tooltips show match type and compliance status
+- Responsive layout with flex-wrap for mobile compatibility
+- Consistent styling across analyze and history pages
 
 ## Environment Variables Required
 
