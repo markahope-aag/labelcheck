@@ -121,7 +121,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to track usage' }, { status: 500 });
     }
 
+    // Check if user is an admin - admins have unlimited access
+    const client = await clerkClient();
+    const clerkUser = await client.users.getUser(userId);
+    const isAdmin = clerkUser?.publicMetadata?.role === 'admin';
+
+    // Only enforce limits for non-admin users
     if (
+      !isAdmin &&
       currentUsage.analyses_limit !== -1 &&
       currentUsage.analyses_used >= currentUsage.analyses_limit
     ) {
