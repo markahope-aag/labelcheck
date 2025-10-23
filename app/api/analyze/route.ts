@@ -335,7 +335,7 @@ Return your response as a JSON object with the following structure:
 7. In the compliance_table, provide a clear summary similar to the NotebookLM format`;
 
     // Helper function to call Anthropic API with retry logic for rate limits
-    async function callAnthropicWithRetry(maxRetries = 3) {
+    const callAnthropicWithRetry = async (maxRetries = 3) => {
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
           return isPdf
@@ -418,7 +418,7 @@ Return your response as a JSON object with the following structure:
       }
 
       throw new Error('Failed to get response from API after retries');
-    }
+    };
 
     // Create message with appropriate content type (image or document)
     // Place regulatory context FIRST with cache_control for efficient caching
@@ -433,7 +433,7 @@ Return your response as a JSON object with the following structure:
     console.log(textContent.text.substring(0, 500));
     console.log('=== End preview ===');
 
-    let analysisData;
+    let analysisData: any;
     try {
       const jsonMatch = textContent.text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
