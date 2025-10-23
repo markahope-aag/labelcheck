@@ -1,8 +1,337 @@
 # Session Notes - Analysis Sessions Development
 
-**Last Updated:** 2025-10-23 (Session 4)
+**Last Updated:** 2025-10-23 (Session 5)
 **Branch:** main
-**Status:** Phase 1 (Product Category Classification) Complete - Migration Pending
+**Status:** Category Ambiguity & Regulatory Enhancement Complete ✅
+
+---
+
+## Session 5 Summary (2025-10-23) - Continued Session
+
+### ✅ Completed in This Session
+
+**Major Features: Category Ambiguity Detection, Comparison View, Panel Type Validation, Enhanced Regulatory Analysis**
+
+This session dramatically enhanced the regulatory analysis capabilities and built out the category selection workflow with proper comparison and switching features.
+
+#### 1. Enhanced Regulatory Analysis (Phase 1.5+)
+- ✅ **Fixed OpenAI API compatibility** (`max_tokens` → `max_completion_tokens`)
+  - Updated all 5 occurrences across 3 API route files
+  - Files: `app/api/analyze/route.ts`, `app/api/analyze/chat/route.ts`, `app/api/analyze/text/route.ts`
+
+- ✅ **Performance optimization** (117s → 28s analysis time, 75% reduction)
+  - Switched from `gpt-5-mini` to `gpt-4o` for main analysis
+  - Switched to `gpt-4o-mini` for chat (faster, cheaper)
+
+- ✅ **Product classification improvements**
+  - Added PRIMARY CLASSIFICATION RULE emphasizing panel type precedence
+  - Supplement Facts → DIETARY_SUPPLEMENT (regardless of ingredients)
+  - Nutrition Facts → NOT a supplement (even if fortified/makes claims)
+  - File: `app/api/analyze/route.ts` (lines 224-236)
+
+- ✅ **Ambiguity detection strengthened**
+  - Added MANDATORY AMBIGUITY TRIGGER #1: Nutrition Facts + supplement ingredients
+  - Added MANDATORY AMBIGUITY TRIGGER #2: Nutrition Facts + health claims
+  - Used forceful language: "STOP AND CHECK", "You MUST flag"
+  - Added exact example: coffee with Nutrition Facts + collagen + biotin
+  - File: `app/api/analyze/route.ts` (lines 303-340)
+
+- ✅ **Fortification policy compliance** (CRITICAL NEW CHECK)
+  - Identifies inappropriate fortification vehicles (coffee, tea, candy, soda)
+  - Flags as NON-COMPLIANT with severity level
+  - References 21 CFR 104 and FDA Fortification Policy
+  - File: `app/api/analyze/route.ts` (lines 417-443)
+
+- ✅ **Nutrition Facts rounding validation** (CRITICAL NEW CHECK)
+  - Validates ALL nutrient values against FDA rounding rules
+  - Calories <5 must be "0" or "5" (NOT "1", "2", "3", "4")
+  - Fiber <0.5g must be "0g" (NOT "0.1g", "0.2g")
+  - Fat, cholesterol, sodium, vitamins/minerals all validated
+  - File: `app/api/analyze/route.ts` (lines 402-413)
+
+- ✅ **Structure/Function claims detection** (NEW ANALYSIS)
+  - Detects keywords: "supports", "promotes", "boosts", "enhances", "strengthens"
+  - Body functions: immune health, skin health, hair health, joints, etc.
+  - Validates nutrient levels support claims (≥10% DV)
+  - File: `app/api/analyze/route.ts` (lines 447-462)
+
+- ✅ **Nutrient Content Claims validation** (NEW ANALYSIS)
+  - Detects: "enriched", "fortified", "high", "good source", "contains"
+  - Validates against DV thresholds (10-19%, ≥20%)
+  - Checks "free", "low", "reduced" claims
+  - File: `app/api/analyze/route.ts` (lines 464-480)
+
+- ✅ **Enhanced JSON response structure**
+  - Added rounding_validation with specific errors
+  - Added fortification analysis with vehicle appropriateness
+  - Added structure_function_claims with validation
+  - Added nutrient_content_claims with threshold checks
+  - File: `app/api/analyze/route.ts` (lines 566-632)
+
+#### 2. Category Selector UI Component
+- ✅ **Created CategorySelector component** (`components/CategorySelector.tsx`)
+  - Displays AI detected category with confidence badge
+  - Shows label conflicts (if any)
+  - Displays AI recommendation with reasoning
+  - Lists all category options with pros/cons, allowed/prohibited claims
+  - Expandable cards showing detailed compliance requirements
+  - Color-coded: blue (AI detected), green (recommended), gray (others)
+
+#### 3. Category Comparison Feature
+- ✅ **Created CategoryComparison component** (`components/CategoryComparison.tsx`)
+  - Side-by-side grid layout for all category options
+  - Shows compliance status, required changes, pros/cons for each
+  - Displays allowed vs prohibited claims in parallel
+  - "Back to Selection" button for navigation
+  - Responsive design with horizontal scroll support
+
+- ✅ **Integrated comparison workflow** (`app/analyze/page.tsx`)
+  - Added "Compare All Options Side-by-Side" button
+  - State management with `showComparison` flag
+  - Proper navigation between selector and comparison views
+  - Fixed placeholder TODO → working feature
+
+#### 4. Category Switching Feature (USER FEEDBACK DRIVEN)
+- ✅ **"Change Category" button** in results view
+  - Orange border with AlertCircle icon
+  - Only shows when product had category ambiguity
+  - Preserves `analysisData` state (doesn't clear it)
+  - Allows users to explore different classification paths
+  - File: `app/analyze/page.tsx` (lines 653-663)
+
+- ✅ **Navigation handlers**
+  - `handleChangeCategoryClick()`: Returns to category selector
+  - `handleBackToSelector()`: Returns from comparison view
+  - Proper state management across all views
+
+#### 5. Panel Type Validation (CRITICAL REGULATORY FIX)
+- ✅ **Panel type mismatch detection** (lines 397-414)
+  - IF DIETARY_SUPPLEMENT: Requires Supplement Facts, prohibits Nutrition Facts
+  - IF CONVENTIONAL_FOOD/BEVERAGE: Requires Nutrition Facts, prohibits Supplement Facts
+  - Checks what panel is actually present on label
+  - Marks as NON-COMPLIANT if wrong panel type
+  - Skips rounding validation if panel needs replacement
+
+- ✅ **Enhanced JSON structure for panel validation** (lines 580-607)
+  - `panel_type_present`: What's on the label
+  - `panel_type_required`: What should be there
+  - `panel_type_correct`: Boolean validation
+  - `panel_type_mismatch`: Issue description and resolution
+  - Note: Only validate rounding if correct panel type
+
+- ✅ **Critical recommendation generation** (line 693)
+  - Panel type mismatch = CRITICAL priority
+  - Specific regulation citation (21 CFR 101.36 or 101.9)
+  - Actionable resolution instructions
+
+#### 6. Unicode/Encoding Fixes
+- ✅ **PDF text extraction improvements** (`lib/pdf-helpers.ts`)
+  - Unicode normalization (NFKD)
+  - Diacritical mark removal
+  - Special character replacement map (ö→o, ä→a, ǥ→o, etc.)
+  - Fixes "Superföd" → "Superfood" encoding issues
+  - File: `lib/pdf-helpers.ts` (lines 61-86)
+
+#### 7. UI Enhancements
+- ✅ **"New Analysis" button visibility improvement**
+  - Changed to solid blue (`bg-blue-600`) with white text
+  - Added RotateCcw icon
+  - More prominent and obvious
+  - File: `app/analyze/page.tsx` (lines 643-657)
+
+### 📊 Files Created/Modified
+
+**New Files Created:**
+1. `components/CategorySelector.tsx` (category selection UI)
+2. `components/CategoryComparison.tsx` (side-by-side comparison view)
+
+**Files Modified:**
+1. `app/api/analyze/route.ts` (major enhancements: ~200 lines added)
+   - Panel type validation
+   - Fortification policy checking
+   - Nutrition rounding validation
+   - S/F claims detection
+   - NCC validation
+   - Enhanced JSON schema
+
+2. `app/analyze/page.tsx` (category workflow integration)
+   - Category selector/comparison state management
+   - Change Category button
+   - Navigation handlers
+
+3. `app/api/analyze/chat/route.ts` (API parameter fix)
+4. `app/api/analyze/text/route.ts` (API parameter fix)
+5. `lib/pdf-helpers.ts` (Unicode normalization)
+6. `CLAUDE.md` (documentation updates)
+7. `.gitignore` (added `nul` Windows artifact)
+
+**Total Production Code:** ~400 lines added/modified
+**Components:** 2 new React components created
+
+### 🎯 Current Status
+
+**What's Working:**
+- ✅ Fast analysis (28s vs 117s - 75% faster)
+- ✅ Accurate product classification (panel type first)
+- ✅ Ambiguity detection triggers properly
+- ✅ Fortification policy violation detection
+- ✅ Nutrition Facts rounding validation
+- ✅ Structure/Function claims analysis
+- ✅ Nutrient Content Claims validation
+- ✅ Category selector UI with pros/cons
+- ✅ Side-by-side comparison view
+- ✅ Category switching ("Change Category" button)
+- ✅ Panel type validation for supplements
+- ✅ Unicode text extraction from PDFs
+- ✅ All features committed and pushed
+
+**Regulatory Depth Now Matches/Exceeds:**
+- NotebookLM analysis comparison
+- Gemini regulatory analysis
+- Catches fortification policy violations
+- Validates rounding errors
+- Detects marketing claims
+
+**Environment:**
+- Server running on: http://localhost:3002
+- Model: GPT-4o (main analysis), GPT-4o-mini (chat)
+- All TypeScript checks: PASSING
+- Git status: Clean (all changes committed)
+
+### 🐛 Issues Fixed This Session
+
+**1. API Parameter Deprecation** ✅
+- Fixed: `max_tokens` → `max_completion_tokens` (5 locations)
+- All routes now use correct GPT-4/5 parameter
+
+**2. Slow Analysis Performance** ✅
+- Fixed: GPT-5 Mini (117s) → GPT-4o (28s)
+- 75% performance improvement
+
+**3. Incorrect Classification** ✅
+- Fixed: Panel type now takes precedence over ingredients
+- Coffee with Nutrition Facts correctly NOT classified as supplement
+
+**4. Missing Ambiguity Detection** ✅
+- Fixed: Mandatory triggers for fortified products
+- Forceful language ensures AI flags edge cases
+
+**5. UI - New Analysis Button** ✅
+- Fixed: Changed to blue button with icon for visibility
+
+**6. PDF Encoding Issues** ✅
+- Fixed: Unicode normalization prevents "Superföd" errors
+
+**7. Missing Regulatory Checks** ✅
+- Fixed: Added fortification policy, rounding, claims analysis
+
+**8. Comparison View Placeholder** ✅
+- Fixed: Built full side-by-side comparison component
+
+**9. No Category Switching** ✅
+- Fixed: Added "Change Category" button to explore options
+
+**10. Panel Type Not Validated** ✅
+- Fixed: Critical validation for Supplement Facts vs Nutrition Facts
+
+### 📋 Commits in This Session
+
+```
+321990c - Update Claude Code local settings - add Downloads read permission
+9ec6412 - Add critical panel type validation for dietary supplements
+cf490ca - Add category switching feature to explore different classification paths
+76a19d1 - Implement category comparison side-by-side view
+d22f130 - Add comprehensive regulatory analysis: fortification policy, rounding validation, claims detection
+63acf49 - Implement Phase 1.5: Category Guidance & Ambiguity Detection
+5e33995 - Implement Phase 1: Product Category Classification System
+```
+
+### 🔄 Workflow Demonstration
+
+**Typical User Flow for Ambiguous Product (e.g., Collagen Coffee):**
+
+1. **Upload Label** → AI analyzes and detects ambiguity
+   - Panel type: Nutrition Facts (indicates CONVENTIONAL_FOOD)
+   - Ingredients: Collagen, biotin, vitamins (indicate DIETARY_SUPPLEMENT)
+   - Claims: "supports skin health" (indicate health claims)
+
+2. **Category Selector Appears**
+   - AI detected: CONVENTIONAL_FOOD (medium confidence)
+   - Alternative: DIETARY_SUPPLEMENT
+   - Recommendation displayed with reasoning
+   - Label conflicts shown (if any)
+
+3. **Option A: Quick Select**
+   - Click "Select Conventional Food" → See analysis
+
+4. **Option B: Compare First**
+   - Click "Compare All Options Side-by-Side"
+   - See both categories in parallel columns
+   - Compare pros/cons, required changes, allowed claims
+   - Select preferred option
+
+5. **View Analysis Results**
+   - See category-specific compliance issues
+   - For CONVENTIONAL_FOOD: Fortification policy violations, rounding errors
+   - For DIETARY_SUPPLEMENT: Panel type mismatch (needs Supplement Facts)
+
+6. **Explore Alternative**
+   - Click "Change Category" (orange button)
+   - Returns to category selector
+   - Try different classification
+   - Compare regulatory requirements
+
+### 🎓 Key Regulatory Insights Implemented
+
+**From Gemini Analysis (Collagen Coffee):**
+- ✅ Coffee is "food of no nutritional significance"
+- ✅ Fortifying coffee violates FDA fortification policy
+- ✅ Calorie rounding: "1" should be "0" or "5"
+- ✅ Fiber rounding: "0.1g" should be "0g"
+- ✅ Panel type is definitive regulatory indicator
+- ✅ Two compliance paths: remain food (remove claims) or convert to supplement (change panel)
+
+**From NotebookLM Comparison:**
+- ✅ Fortification policy violation detection
+- ✅ Nutrition Facts rounding validation
+- ✅ Structure/Function claims analysis
+- ✅ Nutrient Content Claims validation
+
+### 🚀 Ready for Next Session
+
+**Quick Start Commands:**
+```bash
+cd C:\users\markh\projects\labelcheck
+git status                    # Should show: working tree clean
+git log --oneline -7          # View recent commits
+npm run dev                   # Start server (port 3002 or next available)
+```
+
+**Testing Checklist:**
+1. ✅ Upload collagen coffee label
+2. ✅ Verify ambiguity detection triggers
+3. ✅ Test category selector UI
+4. ✅ Test side-by-side comparison
+5. ✅ Select "Conventional Food" → Check for fortification violations
+6. ✅ Click "Change Category"
+7. ✅ Select "Dietary Supplement" → Check for panel type mismatch
+8. ✅ Verify all new regulatory checks appear in results
+
+### 📌 Important Technical Notes
+
+**Always Remember:**
+- Panel type (Supplement Facts vs Nutrition Facts) is THE definitive indicator
+- Supplement Facts = Dietary Supplement (21 CFR 101.36)
+- Nutrition Facts = Food/Beverage (21 CFR 101.9)
+- Panel type mismatch = CRITICAL priority violation
+- Fortification policy applies to foods, NOT supplements
+- Rounding validation only applies to Nutrition Facts panels
+
+**State Management for Category Workflow:**
+- `showCategorySelector`: Shows initial category selection screen
+- `showComparison`: Shows side-by-side comparison view
+- `analysisData`: Preserved across category switches (don't clear!)
+- `result`: Current displayed analysis result
 
 ---
 
