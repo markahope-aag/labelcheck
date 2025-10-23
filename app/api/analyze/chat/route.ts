@@ -1,12 +1,12 @@
 import { auth } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 import { supabase } from '@/lib/supabase';
 import { getSessionWithIterations, addIteration } from '@/lib/session-helpers';
 import { getActiveRegulatoryDocuments, buildRegulatoryContext } from '@/lib/regulatory-documents';
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 export async function POST(request: NextRequest) {
@@ -129,34 +129,22 @@ export async function POST(request: NextRequest) {
     dynamicContext += 'If the question is about a specific regulation, cite the relevant CFR section. ';
     dynamicContext += 'If the question is about how to fix an issue, provide specific, actionable guidance.';
 
-    // Call Claude API with cached context
-    const response = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+    // Call OpenAI API
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-5-mini',
       max_tokens: 2048,
       messages: [
         {
           role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: cachedContext,
-              cache_control: { type: 'ephemeral' },
-            },
-            {
-              type: 'text',
-              text: dynamicContext,
-            },
-          ],
+          content: cachedContext + '\n\n' + dynamicContext,
         },
       ],
     });
 
-    const textContent = response.content.find((block) => block.type === 'text');
-    if (!textContent || textContent.type !== 'text') {
+    const aiResponse = completion.choices[0]?.message?.content;
+    if (!aiResponse) {
       throw new Error('No text response from AI');
     }
-
-    const aiResponse = textContent.text;
 
     // Save chat iteration to database
     const { data: iteration, error: iterationError } = await addIteration(

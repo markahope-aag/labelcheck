@@ -55,6 +55,8 @@ export default function AnalyzePage() {
   const [previousResult, setPreviousResult] = useState<any>(null);
   const [showCategorySelector, setShowCategorySelector] = useState(false);
   const [analysisData, setAnalysisData] = useState<any>(null);
+  const [analysisProgress, setAnalysisProgress] = useState(0);
+  const [analysisStep, setAnalysisStep] = useState('');
 
   const processFile = (file: File) => {
     console.log('Processing file:', file.name, 'Type:', file.type, 'Size:', file.size);
@@ -143,6 +145,33 @@ export default function AnalyzePage() {
 
     setIsAnalyzing(true);
     setError('');
+    setAnalysisProgress(0);
+    setAnalysisStep('Uploading file...');
+
+    // Simulate progress updates
+    const progressInterval = setInterval(() => {
+      setAnalysisProgress(prev => {
+        if (prev < 90) {
+          // Slowly increment progress
+          const increment = Math.random() * 3 + 1;
+          const newProgress = Math.min(prev + increment, 90);
+
+          // Update step message based on progress
+          if (newProgress < 20) {
+            setAnalysisStep('Uploading file...');
+          } else if (newProgress < 40) {
+            setAnalysisStep('Processing image...');
+          } else if (newProgress < 80) {
+            setAnalysisStep('Analyzing with AI (this may take 60-90 seconds)...');
+          } else {
+            setAnalysisStep('Finalizing results...');
+          }
+
+          return newProgress;
+        }
+        return prev;
+      });
+    }, 1000);
 
     try {
       const formData = new FormData();
@@ -157,6 +186,10 @@ export default function AnalyzePage() {
         method: 'POST',
         body: formData,
       });
+
+      clearInterval(progressInterval);
+      setAnalysisProgress(100);
+      setAnalysisStep('Complete!');
 
       const data = await response.json();
 
@@ -548,6 +581,29 @@ export default function AnalyzePage() {
                           Cancel
                         </Button>
                       </div>
+
+                      {/* Progress Bar */}
+                      {isAnalyzing && (
+                        <div className="space-y-3 mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-blue-900">
+                              {analysisStep}
+                            </span>
+                            <span className="text-sm font-semibold text-blue-700">
+                              {Math.round(analysisProgress)}%
+                            </span>
+                          </div>
+                          <div className="w-full bg-blue-200 rounded-full h-3 overflow-hidden">
+                            <div
+                              className="bg-blue-600 h-full rounded-full transition-all duration-500 ease-out"
+                              style={{ width: `${analysisProgress}%` }}
+                            />
+                          </div>
+                          <p className="text-xs text-blue-700">
+                            This typically takes 60-90 seconds. Please wait...
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
 

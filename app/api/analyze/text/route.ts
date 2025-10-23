@@ -1,12 +1,13 @@
 import { auth } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 import { supabase } from '@/lib/supabase';
 import { getSessionWithIterations, addIteration } from '@/lib/session-helpers';
 import { getActiveRegulatoryDocuments, buildRegulatoryContext } from '@/lib/regulatory-documents';
+import { processPdfForAnalysis } from '@/lib/pdf-helpers';
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 export async function POST(request: NextRequest) {
@@ -110,13 +111,13 @@ export async function POST(request: NextRequest) {
     const regulatoryContext = buildRegulatoryContext(regulatoryDocuments);
 
     // Create AI prompt for text/PDF analysis
-    let message;
+    let completion;
 
     if (isPdfMode && pdfFile) {
-      // PDF mode - send PDF to Claude for visual text extraction
+      // PDF mode - hybrid processing (text extraction first, CloudConvert fallback)
       const bytes = await pdfFile.arrayBuffer();
       const buffer = Buffer.from(bytes);
-      const base64Pdf = buffer.toString('base64');
+      const pdfResult = await processPdfForAnalysis(buffer);
 
       const analysisInstructions = `You are a labeling regulatory compliance expert. A user has uploaded a PDF of their prospective label design to check compliance BEFORE finalizing it.
 
@@ -124,14 +125,7 @@ ${originalContext}
 
 ## Analysis Instructions
 
-READ THE TEXT from this PDF label design and analyze it for compliance. The PDF may have:
-- Text in various orientations (rotated, vertical, sideways, upside-down)
-- Small fonts (ingredient lists, fine print)
-- Text on complex backgrounds
-- Multiple colors and fonts
-- Poor contrast
-
-Extract all visible text and analyze for regulatory compliance.
+ANALYZE THIS PDF LABEL DESIGN for compliance.
 
 IMPORTANT:
 1. If there was an original analysis, compare this PDF's content to those findings
@@ -142,34 +136,53 @@ IMPORTANT:
 
 Return your response as a JSON object with the same structure used for image analysis.`;
 
-      message = await anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 8192,
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: regulatoryContext,
-                cache_control: { type: 'ephemeral' },
-              },
-              {
-                type: 'document',
-                source: {
-                  type: 'base64',
-                  media_type: 'application/pdf',
-                  data: base64Pdf,
+      if (pdfResult.type === 'text') {
+        // Text extraction successful
+        const pdfText = pdfResult.content as string;
+        completion = await openai.chat.completions.create({
+          model: 'gpt-5-mini',
+          max_tokens: 8192,
+          messages: [
+            {
+              role: 'user',
+              content:
+                regulatoryContext +
+                '\n\n' +
+                analysisInstructions +
+                '\n\n## Extracted PDF Text:\n\n' +
+                pdfText,
+            },
+          ],
+          response_format: { type: 'json_object' },
+        });
+      } else {
+        // CloudConvert converted to image
+        const imageBuffer = pdfResult.content as Buffer;
+        const base64Image = imageBuffer.toString('base64');
+        completion = await openai.chat.completions.create({
+          model: 'gpt-5-mini',
+          max_tokens: 8192,
+          messages: [
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'text',
+                  text: regulatoryContext + '\n\n' + analysisInstructions,
                 },
-              },
-              {
-                type: 'text',
-                text: analysisInstructions,
-              },
-            ],
-          },
-        ],
-      });
+                {
+                  type: 'image_url',
+                  image_url: {
+                    url: `data:image/jpeg;base64,${base64Image}`,
+                    detail: 'high',
+                  },
+                },
+              ],
+            },
+          ],
+          response_format: { type: 'json_object' },
+        });
+      }
     } else {
       // Text mode - analyze plain text
       const analysisInstructions = `You are a labeling regulatory compliance expert. A user is testing prospective label content (text-only, not an image) to check compliance BEFORE creating a physical label.
@@ -219,50 +232,35 @@ Additionally, include a "comparison" field if original analysis exists:
   }
 }`;
 
-      message = await anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
+      completion = await openai.chat.completions.create({
+        model: 'gpt-5-mini',
         max_tokens: 8192,
         messages: [
           {
             role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: regulatoryContext,
-                cache_control: { type: 'ephemeral' },
-              },
-              {
-                type: 'text',
-                text: analysisInstructions,
-              },
-            ],
+            content: regulatoryContext + '\n\n' + analysisInstructions,
           },
         ],
+        response_format: { type: 'json_object' },
       });
     }
 
-    const textBlock = message.content.find((block) => block.type === 'text');
-    if (!textBlock || textBlock.type !== 'text') {
+    const responseText = completion.choices[0]?.message?.content;
+    if (!responseText) {
       throw new Error('No text response from AI');
     }
 
     console.log('=== AI Text Analysis Response (first 500 chars) ===');
-    console.log(textBlock.text.substring(0, 500));
+    console.log(responseText.substring(0, 500));
     console.log('=== End preview ===');
 
     let analysisData;
     try {
-      const jsonMatch = textBlock.text.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        console.error('No JSON found in AI response. Full response:');
-        console.error(textBlock.text);
-        throw new Error('No JSON found in response');
-      }
-      analysisData = JSON.parse(jsonMatch[0]);
+      analysisData = JSON.parse(responseText);
       console.log('Successfully parsed text analysis data');
     } catch (parseError) {
       console.error('Error parsing AI response:', parseError);
-      console.error('Raw text content (first 1000 chars):', textBlock.text.substring(0, 1000));
+      console.error('Raw response (first 1000 chars):', responseText.substring(0, 1000));
       throw new Error('Failed to parse AI response');
     }
 

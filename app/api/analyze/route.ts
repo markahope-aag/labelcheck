@@ -1,6 +1,6 @@
 import { auth, clerkClient } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 import { supabase, supabaseAdmin } from '@/lib/supabase';
 import { getActiveRegulatoryDocuments, buildRegulatoryContext } from '@/lib/regulatory-documents';
 import { sendEmail } from '@/lib/resend';
@@ -8,9 +8,10 @@ import { generateAnalysisResultEmail } from '@/lib/email-templates';
 import { preprocessImage } from '@/lib/image-processing';
 import { createSession, addIteration } from '@/lib/session-helpers';
 import { checkGRASCompliance } from '@/lib/gras-helpers';
+import { processPdfForAnalysis } from '@/lib/pdf-helpers';
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 export async function POST(request: NextRequest) {
@@ -170,29 +171,47 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    console.log('📥 Processing image file...');
     const bytes = await imageFile.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
     // Detect if this is a PDF or image
     const isPdf = imageFile.type === 'application/pdf';
-    let base64Data: string;
-    let mediaType: 'image/jpeg' | 'application/pdf';
-    let contentType: 'image' | 'document';
+    let base64Data: string | undefined;
+    let pdfTextContent: string | undefined;
+    let mediaType: 'image/jpeg' | 'image/png' = 'image/jpeg'; // Default
+    let contentType: 'image' | 'document' | 'text';
 
     if (isPdf) {
-      // For PDFs, send directly without preprocessing
-      base64Data = buffer.toString('base64');
-      mediaType = 'application/pdf';
-      contentType = 'document';
+      // Hybrid PDF processing: text extraction first, CloudConvert fallback
+      const pdfResult = await processPdfForAnalysis(buffer);
+
+      if (pdfResult.type === 'text') {
+        // Text extraction successful
+        pdfTextContent = pdfResult.content as string;
+        contentType = 'text';
+        console.log(`✅ Using extracted text (${pdfTextContent.length} characters)`);
+      } else {
+        // CloudConvert converted PDF to image
+        const imageBuffer = pdfResult.content as Buffer;
+        base64Data = imageBuffer.toString('base64');
+        mediaType = 'image/jpeg';
+        contentType = 'document';
+        console.log('✅ Using CloudConvert image conversion');
+      }
     } else {
+      console.log('🖼️ Preprocessing image...');
       // For images, preprocess to improve readability
       const processedBuffer = await preprocessImage(buffer);
       base64Data = processedBuffer.toString('base64');
       mediaType = 'image/jpeg';
       contentType = 'image';
+      console.log('✅ Image preprocessed');
     }
 
+    console.log('📚 Fetching regulatory documents...');
     const regulatoryDocuments = await getActiveRegulatoryDocuments();
+    console.log(`✅ Fetched ${regulatoryDocuments.length} regulatory documents`);
     const regulatoryContext = buildRegulatoryContext(regulatoryDocuments);
 
     // Separate cached context from dynamic prompt
@@ -480,67 +499,53 @@ Return your response as a JSON object with the following structure:
 6. Base compliance status on visible information; use "potentially non-compliant" when ingredient composition is unknown
 7. In the compliance_table, provide a clear summary similar to the NotebookLM format`;
 
-    // Helper function to call Anthropic API with retry logic for rate limits
-    const callAnthropicWithRetry = async (maxRetries = 3) => {
+    // Helper function to call OpenAI API with retry logic for rate limits
+    const callOpenAIWithRetry = async (maxRetries = 3) => {
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        console.log(`🤖 Calling OpenAI GPT-5 mini (attempt ${attempt}/${maxRetries})...`);
         try {
-          return isPdf
-            ? await anthropic.messages.create({
-                model: 'claude-3-5-sonnet-20241022',
-                max_tokens: 8192,
-                messages: [
-                  {
-                    role: 'user',
-                    content: [
-                      {
-                        type: 'text',
-                        text: regulatoryContext,
-                        cache_control: { type: 'ephemeral' },
-                      },
-                      {
-                        type: 'document',
-                        source: {
-                          type: 'base64',
-                          media_type: 'application/pdf',
-                          data: base64Data,
-                        },
-                      },
-                      {
-                        type: 'text',
-                        text: analysisInstructions,
-                      },
-                    ],
+          // Construct the message content based on content type
+          let userMessage: any;
+
+          if (pdfTextContent) {
+            // Text-only mode (PDF with extractable text)
+            userMessage = {
+              role: 'user' as const,
+              content:
+                regulatoryContext +
+                '\n\n' +
+                analysisInstructions +
+                '\n\n## Extracted PDF Text:\n\n' +
+                pdfTextContent,
+            };
+          } else if (base64Data) {
+            // Image mode (regular images or CloudConvert-converted PDFs)
+            userMessage = {
+              role: 'user' as const,
+              content: [
+                {
+                  type: 'text' as const,
+                  text: regulatoryContext + '\n\n' + analysisInstructions,
+                },
+                {
+                  type: 'image_url' as const,
+                  image_url: {
+                    url: `data:${mediaType};base64,${base64Data}`,
+                    detail: 'high' as const,
                   },
-                ],
-              })
-            : await anthropic.messages.create({
-                model: 'claude-3-5-sonnet-20241022',
-                max_tokens: 8192,
-                messages: [
-                  {
-                    role: 'user',
-                    content: [
-                      {
-                        type: 'text',
-                        text: regulatoryContext,
-                        cache_control: { type: 'ephemeral' },
-                      },
-                      {
-                        type: 'image',
-                        source: {
-                          type: 'base64',
-                          media_type: 'image/jpeg',
-                          data: base64Data,
-                        },
-                      },
-                      {
-                        type: 'text',
-                        text: analysisInstructions,
-                      },
-                    ],
-                  },
-                ],
-              });
+                },
+              ],
+            };
+          } else {
+            throw new Error('No content available for analysis');
+          }
+
+          return await openai.chat.completions.create({
+            model: 'gpt-5-mini',
+            max_tokens: 8192,
+            messages: [userMessage],
+            response_format: { type: 'json_object' },
+          });
         } catch (error: any) {
           // Check if it's a rate limit error
           if (error?.status === 429 || error?.error?.type === 'rate_limit_error') {
@@ -548,7 +553,7 @@ Return your response as a JSON object with the following structure:
 
             if (attempt === maxRetries) {
               // On final attempt, throw a user-friendly error
-              throw new Error('API rate limit reached. Please wait 60 seconds and try again. If this persists, you may need to upgrade your Anthropic API plan at https://console.anthropic.com/settings/limits');
+              throw new Error('API rate limit reached. Please wait 60 seconds and try again. If this persists, you may need to upgrade your OpenAI API plan at https://platform.openai.com/settings');
             }
 
             // Exponential backoff: wait 5s, 10s, 20s
@@ -566,32 +571,27 @@ Return your response as a JSON object with the following structure:
       throw new Error('Failed to get response from API after retries');
     };
 
-    // Create message with appropriate content type (image or document)
-    // Place regulatory context FIRST with cache_control for efficient caching
-    const message = await callAnthropicWithRetry();
+    // Call OpenAI API
+    const completion = await callOpenAIWithRetry();
 
-    const textContent = message.content.find((block) => block.type === 'text');
-    if (!textContent || textContent.type !== 'text') {
+    const responseText = completion.choices[0]?.message?.content;
+    if (!responseText) {
       throw new Error('No text response from AI');
     }
 
     console.log('=== AI Response (first 500 chars) ===');
-    console.log(textContent.text.substring(0, 500));
+    console.log(responseText.substring(0, 500));
     console.log('=== End preview ===');
 
+    // Parse JSON response
+    // OpenAI's JSON mode should return clean JSON, but we'll add error handling
     let analysisData: any;
     try {
-      const jsonMatch = textContent.text.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        console.error('No JSON found in AI response. Full response:');
-        console.error(textContent.text);
-        throw new Error('No JSON found in response');
-      }
-      analysisData = JSON.parse(jsonMatch[0]);
-      console.log('Successfully parsed analysis data');
+      analysisData = JSON.parse(responseText);
+      console.log('✅ Successfully parsed analysis data');
     } catch (parseError) {
       console.error('Error parsing AI response:', parseError);
-      console.error('Raw text content (first 1000 chars):', textContent.text.substring(0, 1000));
+      console.error('Raw response (first 1000 chars):', responseText.substring(0, 1000));
       throw new Error('Failed to parse AI response');
     }
 
@@ -691,11 +691,13 @@ Return your response as a JSON object with the following structure:
       complianceStatus === 'potentially_non_compliant' ? 'minor_issues' :
       'major_violations';
 
-    const { data: analysis, error: insertError } = await supabase
+    const { data: analysis, error: insertError} = await supabase
       .from('analyses')
       .insert({
         user_id: user.id,
-        image_url: `data:${mediaType};base64,${base64Data.substring(0, 100)}...`,
+        image_url: base64Data
+          ? `data:${mediaType};base64,${base64Data.substring(0, 100)}...`
+          : `text/plain;preview,${pdfTextContent?.substring(0, 100) || ''}...`,
         image_name: imageFile.name,
         analysis_result: analysisData,
         compliance_status: dbComplianceStatus,

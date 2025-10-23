@@ -65,3 +65,111 @@ export function cleanExtractedText(text: string): string {
     .replace(/[ \t]{2,}/g, ' ') // Remove excessive spaces
     .trim();
 }
+
+/**
+ * Convert PDF to JPG using CloudConvert API
+ * @param buffer - PDF file as a Buffer
+ * @returns JPG image buffer
+ */
+export async function convertPdfToJpgViaCloudConvert(buffer: Buffer): Promise<Buffer> {
+  try {
+    const CloudConvert = require('cloudconvert');
+
+    const apiKey = process.env.CLOUDCONVERT_API_KEY;
+    if (!apiKey) {
+      throw new Error('CLOUDCONVERT_API_KEY environment variable is not set');
+    }
+
+    const cloudConvert = new CloudConvert(apiKey);
+
+    // Create a job to convert PDF to JPG
+    const job = await cloudConvert.jobs.create({
+      tasks: {
+        'import-pdf': {
+          operation: 'import/upload',
+        },
+        'convert-to-jpg': {
+          operation: 'convert',
+          input: 'import-pdf',
+          output_format: 'jpg',
+          some_other_option: 'value',
+        },
+        'export-jpg': {
+          operation: 'export/url',
+          input: 'convert-to-jpg',
+        },
+      },
+    });
+
+    // Upload the PDF
+    const uploadTask = job.tasks.filter((task: any) => task.name === 'import-pdf')[0];
+    await cloudConvert.tasks.upload(uploadTask, buffer, 'label.pdf');
+
+    // Wait for job completion
+    const completedJob = await cloudConvert.jobs.wait(job.id);
+
+    // Download the converted JPG
+    const exportTask = completedJob.tasks.filter(
+      (task: any) => task.name === 'export-jpg'
+    )[0];
+    const file = exportTask.result.files[0];
+    const fileStream = cloudConvert.tasks.download(file);
+
+    // Convert stream to buffer
+    const chunks: Buffer[] = [];
+    for await (const chunk of fileStream) {
+      chunks.push(chunk as Buffer);
+    }
+    return Buffer.concat(chunks);
+  } catch (error) {
+    console.error('Error converting PDF via CloudConvert:', error);
+    throw new Error('Failed to convert PDF to image using CloudConvert.');
+  }
+}
+
+/**
+ * Hybrid PDF processing: Try text extraction first, fallback to CloudConvert if insufficient text
+ * @param buffer - PDF file as a Buffer
+ * @param minTextLength - Minimum text length to consider extraction successful (default: 100)
+ * @returns Object with either extracted text or image buffer, plus metadata
+ */
+export async function processPdfForAnalysis(
+  buffer: Buffer,
+  minTextLength: number = 100
+): Promise<{
+  type: 'text' | 'image';
+  content: string | Buffer;
+  method: 'text_extraction' | 'cloudconvert';
+}> {
+  try {
+    // Step 1: Try text extraction first (free, fast)
+    console.log('📄 Attempting text extraction from PDF...');
+    const rawText = await extractTextFromPDF(buffer);
+    const cleanedText = cleanExtractedText(rawText);
+
+    if (cleanedText.length >= minTextLength) {
+      console.log(`✅ Text extraction successful (${cleanedText.length} characters)`);
+      return {
+        type: 'text',
+        content: cleanedText,
+        method: 'text_extraction',
+      };
+    }
+
+    // Step 2: Insufficient text, use CloudConvert (paid, visual analysis)
+    console.log(
+      `⚠️  Insufficient text extracted (${cleanedText.length} characters), converting to image via CloudConvert...`
+    );
+    const imageBuffer = await convertPdfToJpgViaCloudConvert(buffer);
+    console.log('✅ PDF converted to JPG via CloudConvert');
+
+    return {
+      type: 'image',
+      content: imageBuffer,
+      method: 'cloudconvert',
+    };
+  } catch (error) {
+    console.error('Error processing PDF:', error);
+    throw new Error('Failed to process PDF for analysis.');
+  }
+}

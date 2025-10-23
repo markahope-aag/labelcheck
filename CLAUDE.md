@@ -78,9 +78,11 @@ The system automatically validates all ingredients against the FDA GRAS database
 - `GRAS_DATABASE.md`: Comprehensive GRAS database documentation
 
 Key implementation in `app/api/analyze/route.ts`:
-- Uses `@anthropic-ai/sdk` with model `claude-3-5-sonnet-20241022`
+- Uses OpenAI SDK with model `gpt-5-mini` (GPT-5 mini)
+- **JSON mode enabled** (`response_format: { type: 'json_object' }`) for reliable structured outputs
 - **Automatic retry logic** with exponential backoff for rate limits (5s, 10s, 20s delays)
 - Regulatory context is injected via `lib/regulatory-documents.ts`
+- Images and PDFs are base64 encoded with `detail: 'high'` for better accuracy
 - Images are base64 encoded, but only first 100 chars stored in DB
 - **GRAS compliance checking** runs automatically after analysis completes
 - Usage limits: Basic (10/month), Pro (100/month), Enterprise (unlimited = -1)
@@ -103,7 +105,7 @@ Key implementation in `app/api/analyze/route.ts`:
 
 2. **📝 Check Text Alternative** (`/api/analyze/text`)
    - Dual-mode: paste text OR upload PDF
-   - PDF uses Claude's vision capabilities (not simple extraction)
+   - PDF uses GPT-4o-mini's vision capabilities (not simple extraction)
    - Compares to original analysis (issues resolved/remaining/new)
    - Creates `text_check` iterations
 
@@ -345,8 +347,8 @@ NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
 CLERK_SECRET_KEY=
 CLERK_WEBHOOK_SECRET=
 
-# Anthropic AI
-ANTHROPIC_API_KEY=
+# OpenAI
+OPENAI_API_KEY=
 
 # Stripe Payments
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=

@@ -44,7 +44,8 @@
       "WebSearch",
       "WebFetch(domain:www.cfsanappsexternal.fda.gov)",
       "WebFetch(domain:hfpappexternal.fda.gov)",
-      "WebFetch(domain:comptox.epa.gov)"
+      "WebFetch(domain:comptox.epa.gov)",
+      "Bash(cmd /c \"if exist nul del nul\")"
     ],
     "deny": [],
     "ask": []
