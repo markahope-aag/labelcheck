@@ -45,7 +45,8 @@
       "WebFetch(domain:www.cfsanappsexternal.fda.gov)",
       "WebFetch(domain:hfpappexternal.fda.gov)",
       "WebFetch(domain:comptox.epa.gov)",
-      "Bash(cmd /c \"if exist nul del nul\")"
+      "Bash(cmd /c \"if exist nul del nul\")",
+      "Read(//g/My Drive/Downloads/**)"
     ],
     "deny": [],
     "ask": []
