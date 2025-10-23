@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Search, Calendar, Download, Eye, FileText, Filter, X, Loader2, Trash2 } from 'lucide-react';
@@ -34,13 +34,10 @@ import { supabase } from '@/lib/supabase';
 import { exportAnalysesAsCSV, exportAnalysesAsJSON, exportAnalysesAsPDF } from '@/lib/export-helpers';
 import { useToast } from '@/hooks/use-toast';
 
-// Force dynamic rendering since this page uses useSearchParams and requires authentication
-export const dynamic = 'force-dynamic';
-
 const PAGE_SIZE = 50;
 const STORAGE_KEY = 'history_filters';
 
-export default function HistoryPage() {
+function HistoryContent() {
   const { user } = useUser();
   const { toast } = useToast();
   const router = useRouter();
@@ -698,5 +695,17 @@ export default function HistoryPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function HistoryPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      </div>
+    }>
+      <HistoryContent />
+    </Suspense>
   );
 }
