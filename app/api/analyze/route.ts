@@ -542,7 +542,7 @@ Return your response as a JSON object with the following structure:
 
           return await openai.chat.completions.create({
             model: 'gpt-5-mini',
-            max_tokens: 8192,
+            max_completion_tokens: 8192,
             messages: [userMessage],
             response_format: { type: 'json_object' },
           });

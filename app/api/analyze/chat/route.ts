@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
     // Call OpenAI API
     const completion = await openai.chat.completions.create({
       model: 'gpt-5-mini',
-      max_tokens: 2048,
+      max_completion_tokens: 2048,
       messages: [
         {
           role: 'user',

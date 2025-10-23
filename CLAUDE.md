@@ -105,7 +105,7 @@ Key implementation in `app/api/analyze/route.ts`:
 
 2. **📝 Check Text Alternative** (`/api/analyze/text`)
    - Dual-mode: paste text OR upload PDF
-   - PDF uses GPT-4o-mini's vision capabilities (not simple extraction)
+   - PDF uses GPT-5 Mini's vision capabilities (not simple extraction)
    - Compares to original analysis (issues resolved/remaining/new)
    - Creates `text_check` iterations
 
