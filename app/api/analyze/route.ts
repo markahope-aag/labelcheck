@@ -221,15 +221,19 @@ export async function POST(request: NextRequest) {
 
 Before performing the detailed compliance analysis, you MUST first determine which regulatory category this product falls into. This is CRITICAL because different product categories have entirely different regulatory requirements.
 
+**🔍 PRIMARY CLASSIFICATION RULE - CHECK PANEL TYPE FIRST:**
+- If label has **"Supplement Facts" panel** → DIETARY_SUPPLEMENT (regardless of product type)
+- If label has **"Nutrition Facts" panel** → NOT a supplement (classify as FOOD, BEVERAGE, or ALCOHOLIC_BEVERAGE)
+- **Panel type is the definitive regulatory indicator** - it overrides ingredients, claims, and marketing
+
 Classify the product into ONE of these four categories based on the following criteria:
 
-1. **DIETARY_SUPPLEMENT** - Select this if ANY of these are true:
-   - Label explicitly states "dietary supplement" or "supplement facts"
-   - Contains vitamins, minerals, herbs, botanicals, amino acids, or other dietary ingredients intended to supplement the diet
-   - Has a "Supplement Facts" panel (NOT "Nutrition Facts")
-   - Makes structure/function claims (e.g., "supports immune health", "promotes joint function")
-   - Contains ingredients like: multivitamins, probiotics, protein powder, herbal extracts, omega-3, CoQ10, etc.
-   - **EXCEPTION:** Fortified foods with added vitamins are NOT supplements unless labeled as such
+1. **DIETARY_SUPPLEMENT** - Select this ONLY if:
+   - **REQUIRED:** Has a "Supplement Facts" panel (NOT "Nutrition Facts")
+   - **OR:** Label explicitly states "dietary supplement"
+   - **WARNING:** Do NOT classify as supplement just because it contains vitamins, minerals, collagen, protein, etc.
+   - **WARNING:** Do NOT classify as supplement just because it makes health claims
+   - **IF IT HAS NUTRITION FACTS PANEL:** It is NOT a dietary supplement (even if fortified or makes claims)
 
 2. **ALCOHOLIC_BEVERAGE** - Select this if ANY of these are true:
    - Contains alcohol ≥0.5% ABV (alcohol by volume)
@@ -296,17 +300,24 @@ After determining the category, evaluate your confidence and check for ambiguity
 
 Check if the product could reasonably be classified differently:
 
+**⚠️ ALWAYS FLAG AS AMBIGUOUS IF:**
+1. **Has Nutrition Facts BUT contains supplement-like ingredients** (vitamins, minerals, collagen, protein powder, biotin, etc.)
+2. **Has Nutrition Facts BUT makes health/structure/function claims** (supports, promotes, boosts, enhances)
+3. **Panel type conflicts with marketing** (e.g., Nutrition Facts but marketed like supplement)
+4. **Could be marketed as either food OR supplement** with minor label changes
+
 **Common Ambiguous Products:**
 1. **Protein bars:** Could be FOOD or SUPPLEMENT depending on panel type and claims
 2. **Protein shakes:** Could be FOOD (meal replacement) or SUPPLEMENT or BEVERAGE depending on positioning
-3. **Fortified beverages:** Could be BEVERAGE or SUPPLEMENT depending on claim types
+3. **Fortified beverages/foods:** Has Nutrition Facts + vitamins/minerals + health claims = could be BEVERAGE or SUPPLEMENT
 4. **Functional beverages:** Energy drinks, wellness shots - could be BEVERAGE or SUPPLEMENT
 5. **Herbal products:** Could be FOOD (tea) or SUPPLEMENT depending on format and claims
+6. **Coffee/tea with added ingredients:** Collagen coffee, vitamin-enhanced tea = could be BEVERAGE or SUPPLEMENT
 
 **If ambiguous, you MUST:**
 1. Set "is_ambiguous: true"
-2. List "alternative_categories" with rationale for each
-3. Identify any "label_conflicts" (e.g., food claims but supplement panel)
+2. List "alternative_categories" with rationale for each (include BOTH what panel type says AND what ingredients/claims suggest)
+3. Identify any "label_conflicts" (e.g., Nutrition Facts but supplement claims)
 4. Provide guidance for EACH viable category option
 
 **STEP 3: CATEGORY OPTIONS & GUIDANCE** (Required if ambiguous OR confidence < HIGH)
