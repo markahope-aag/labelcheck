@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import { Camera, Upload, Loader2, AlertCircle, Download, Share2, Copy, Check } from 'lucide-react';
+import { Camera, Upload, Loader2, AlertCircle, Download, Share2, Copy, Check, RotateCcw } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -640,7 +640,8 @@ export default function AnalyzePage() {
                         <Download className="h-4 w-4" />
                         Download PDF
                       </Button>
-                      <Button onClick={handleReset} variant="outline" className="border-slate-300 hover:bg-slate-50">
+                      <Button onClick={handleReset} className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
+                        <RotateCcw className="h-4 w-4" />
                         New Analysis
                       </Button>
                     </div>
