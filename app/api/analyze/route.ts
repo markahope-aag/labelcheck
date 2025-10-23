@@ -393,6 +393,27 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
    - Determine if the label is compliant or potentially non-compliant based on missing allergen declarations
 
 4. **Nutrition Labeling and Claims**: Assess nutrition facts panel requirements and exemptions
+
+   **🚨 CRITICAL: PANEL TYPE VALIDATION - CHECK THIS FIRST:**
+
+   **IF product_category is DIETARY_SUPPLEMENT:**
+   - ✅ **REQUIRED**: Label MUST have a "Supplement Facts" panel (21 CFR 101.36)
+   - ❌ **PROHIBITED**: Label MUST NOT have a "Nutrition Facts" panel
+   - **CHECK THE LABEL:**
+     • Does it show "Supplement Facts"? (REQUIRED - if missing, mark NON-COMPLIANT)
+     • Does it show "Nutrition Facts"? (WRONG PANEL TYPE - if present, mark NON-COMPLIANT)
+   - **If wrong panel type found**: Status = NON-COMPLIANT, details = "Product classified as dietary supplement but label has Nutrition Facts panel instead of Supplement Facts panel. Dietary supplements must use Supplement Facts format per 21 CFR 101.36. This panel must be removed and replaced with a Supplement Facts panel."
+   - **DO NOT validate rounding rules** if wrong panel type - the entire panel needs to be replaced
+
+   **IF product_category is CONVENTIONAL_FOOD, NON_ALCOHOLIC_BEVERAGE, or ALCOHOLIC_BEVERAGE:**
+   - ✅ **REQUIRED**: Label MUST have a "Nutrition Facts" panel (21 CFR 101.9), unless exempt
+   - ❌ **PROHIBITED**: Label MUST NOT have a "Supplement Facts" panel
+   - **CHECK THE LABEL:**
+     • Does it show "Nutrition Facts"? (CORRECT - proceed with validation)
+     • Does it show "Supplement Facts"? (WRONG - if present, mark NON-COMPLIANT)
+   - **If wrong panel type found**: Status = NON-COMPLIANT, details = "Product classified as food/beverage but label has Supplement Facts panel instead of Nutrition Facts panel. This panel type is only for dietary supplements. Panel must be changed to Nutrition Facts format."
+
+   **AFTER PANEL TYPE VALIDATION:**
    - Mandatory Nutrition Labeling: Is a Nutrition Facts panel required for this product type?
    - **Exemptions**: Does this product qualify for exemption (e.g., coffee, spices, foods of no nutritional significance)?
    - Evaluation of Claims: Are there any nutrient content claims (NCCs) or health claims that would trigger mandatory nutrition labeling?
@@ -400,7 +421,7 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
    - If nutrition panel is missing but product qualifies for exemption, mark as COMPLIANT with explanation
 
    **🔍 NUTRITION FACTS VALIDATION - CHECK ROUNDING RULES:**
-   If a Nutrition Facts panel is present, validate ALL nutrient values against FDA rounding rules:
+   If a Nutrition Facts panel is present AND product is NOT a dietary supplement, validate ALL nutrient values against FDA rounding rules:
    - **Calories**: <5 cal must be "0" or "5" (NOT "1", "2", "3", or "4"). Values like "1 calorie" are NON-COMPLIANT.
    - **Fiber**: <0.5g must be "0g" (NOT "0.1g", "0.2g", etc.). Values 0.5-1g should be "less than 1g".
    - **Protein**: <0.5g rounds to 0g. If 0.5g or more, round to nearest gram.
@@ -558,13 +579,22 @@ Return your response as a JSON object with the following structure:
   },
   "nutrition_labeling": {
     "status": "compliant|non_compliant|not_applicable",
+    "panel_type_present": "Nutrition Facts|Supplement Facts|None|Both (describe what's actually on the label)",
+    "panel_type_required": "Nutrition Facts (for foods/beverages) or Supplement Facts (for dietary supplements)",
+    "panel_type_correct": true|false,
+    "panel_type_mismatch": {
+      "has_mismatch": true|false,
+      "issue": "Description of panel type problem (e.g., 'Has Nutrition Facts but requires Supplement Facts')",
+      "resolution": "What needs to change (e.g., 'Remove Nutrition Facts panel and replace with Supplement Facts panel per 21 CFR 101.36')"
+    },
     "panel_present": true|false,
     "exemption_applicable": true|false,
     "exemption_reason": "Explanation if exemption applies (e.g., 'Foods of no nutritional significance')",
-    "details": "Full explanation of nutrition labeling compliance or exemption",
-    "regulation_citation": "21 CFR 101.9",
+    "details": "Full explanation of nutrition labeling compliance or exemption, including panel type validation",
+    "regulation_citation": "21 CFR 101.9 (foods) or 21 CFR 101.36 (supplements)",
     "rounding_validation": {
       "has_errors": true|false,
+      "note": "Only validate rounding if correct panel type is present",
       "errors_found": [
         {
           "nutrient": "Nutrient name (e.g., 'Calories', 'Fiber')",
@@ -659,7 +689,8 @@ Return your response as a JSON object with the following structure:
 4. Distinguish between "non-compliant" (definite violation) and "potentially non-compliant" (conditional on information not visible)
 5. For coffee, spices, and similar products: they are typically EXEMPT from Nutrition Facts panels
 6. Base compliance status on visible information; use "potentially non-compliant" when ingredient composition is unknown
-7. In the compliance_table, provide a clear summary similar to the NotebookLM format`;
+7. In the compliance_table, provide a clear summary similar to the NotebookLM format
+8. **PANEL TYPE MISMATCH = CRITICAL VIOLATION**: If product is classified as DIETARY_SUPPLEMENT but has "Nutrition Facts" panel (or vice versa), this is a CRITICAL priority recommendation. Generate recommendation: "Replace [wrong panel type] with [correct panel type] per [regulation citation]"`;
 
     // Helper function to call OpenAI API with retry logic for rate limits
     const callOpenAIWithRetry = async (maxRetries = 3) => {
