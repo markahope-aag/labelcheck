@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { AnalysisChat } from '@/components/AnalysisChat';
 import { TextChecker } from '@/components/TextChecker';
 import CategorySelector from '@/components/CategorySelector';
+import CategoryComparison from '@/components/CategoryComparison';
 import { ProductCategory } from '@/lib/supabase';
 
 // Helper function to format compliance status for display
@@ -54,6 +55,7 @@ export default function AnalyzePage() {
   const [isRevisedMode, setIsRevisedMode] = useState(false);
   const [previousResult, setPreviousResult] = useState<any>(null);
   const [showCategorySelector, setShowCategorySelector] = useState(false);
+  const [showComparison, setShowComparison] = useState(false);
   const [analysisData, setAnalysisData] = useState<any>(null);
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [analysisStep, setAnalysisStep] = useState('');
@@ -263,17 +265,13 @@ export default function AnalyzePage() {
   };
 
   const handleCompare = () => {
-    // TODO: Implement comparison mode
-    // For now, just skip to results
-    toast({
-      title: 'Comparison Mode',
-      description: 'Comparison mode coming soon! Showing analysis results.',
-    });
-    if (analysisData) {
-      setResult(analysisData);
-      setShowCategorySelector(false);
-      setAnalysisData(null);
-    }
+    setShowComparison(true);
+    setShowCategorySelector(false);
+  };
+
+  const handleBackToSelector = () => {
+    setShowComparison(false);
+    setShowCategorySelector(true);
   };
 
   const handleDownloadPDF = async () => {
@@ -459,7 +457,20 @@ export default function AnalyzePage() {
             </Alert>
           )}
 
-          {showCategorySelector && analysisData ? (
+          {showComparison && analysisData ? (
+            // Show Category Comparison when user clicks "Compare All Options Side-by-Side"
+            <CategoryComparison
+              aiCategory={analysisData.product_category}
+              confidence={analysisData.category_confidence || 'medium'}
+              categoryRationale={analysisData.category_rationale || ''}
+              alternatives={analysisData.category_ambiguity?.alternative_categories || []}
+              categoryOptions={analysisData.category_options || {}}
+              labelConflicts={analysisData.category_ambiguity?.label_conflicts || []}
+              recommendation={analysisData.recommendation}
+              onSelect={handleCategorySelect}
+              onBack={handleBackToSelector}
+            />
+          ) : showCategorySelector && analysisData ? (
             // Show Category Selector when ambiguity is detected
             <CategorySelector
               aiCategory={analysisData.product_category}
