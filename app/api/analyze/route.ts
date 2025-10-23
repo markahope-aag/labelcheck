@@ -8,6 +8,7 @@ import { generateAnalysisResultEmail } from '@/lib/email-templates';
 import { preprocessImage } from '@/lib/image-processing';
 import { createSession, addIteration } from '@/lib/session-helpers';
 import { checkGRASCompliance } from '@/lib/gras-helpers';
+import { checkNDICompliance } from '@/lib/ndi-helpers';
 import { processPdfForAnalysis } from '@/lib/pdf-helpers';
 
 const openai = new OpenAI({
@@ -875,6 +876,84 @@ Return your response as a JSON object with the following structure:
       }
     } else {
       console.log('No ingredients found in analysis - skipping GRAS check');
+    }
+
+    // NDI (New Dietary Ingredient) Compliance Checking
+    // Only check for dietary supplements (ingredients not marketed before Oct 15, 1994 require NDI notification)
+    if (analysisData.product_category === 'DIETARY_SUPPLEMENT' &&
+        analysisData.ingredient_labeling?.ingredients_list &&
+        Array.isArray(analysisData.ingredient_labeling.ingredients_list) &&
+        analysisData.ingredient_labeling.ingredients_list.length > 0) {
+
+      console.log('Checking NDI compliance for dietary supplement ingredients:', analysisData.ingredient_labeling.ingredients_list);
+
+      try {
+        const ndiCompliance = await checkNDICompliance(analysisData.ingredient_labeling.ingredients_list);
+
+        console.log('NDI compliance check complete:', {
+          total: ndiCompliance.summary.totalChecked,
+          withNDI: ndiCompliance.summary.withNDI,
+          withoutNDI: ndiCompliance.summary.withoutNDI,
+          requiresNotification: ndiCompliance.summary.requiresNotification,
+        });
+
+        // Add NDI compliance info to analysis data
+        analysisData.ndi_compliance = {
+          status: ndiCompliance.summary.requiresNotification > 0 ? 'requires_verification' : 'compliant',
+          total_ingredients: ndiCompliance.summary.totalChecked,
+          with_ndi_count: ndiCompliance.summary.withNDI,
+          without_ndi_count: ndiCompliance.summary.withoutNDI,
+          requires_notification_count: ndiCompliance.summary.requiresNotification,
+          detailed_results: ndiCompliance.results,
+        };
+
+        // If ingredients without NDI found, add warning recommendations
+        if (ndiCompliance.summary.requiresNotification > 0) {
+          console.log('WARNING: Ingredients without NDI notifications detected');
+
+          // Initialize recommendations array if it doesn't exist
+          if (!analysisData.recommendations) {
+            analysisData.recommendations = [];
+          }
+
+          // Add warning for ingredients that may require NDI
+          const ingredientsWithoutNDI = ndiCompliance.results
+            .filter(r => r.requiresNDI)
+            .map(r => r.ingredient);
+
+          analysisData.recommendations.push({
+            priority: 'high',
+            recommendation: `WARNING: The following ingredients do NOT have NDI notifications on file: ${ingredientsWithoutNDI.join(', ')}. Per DSHEA 1994, any dietary ingredient NOT marketed before October 15, 1994 requires an NDI notification 75 days before marketing. Verify these ingredients were on the market pre-1994 or file NDI notifications with FDA.`,
+            regulation: 'FD&C Act Section 413 (DSHEA), 21 CFR 190.6 (NDI Notification)',
+          });
+
+          // Add to compliance table
+          if (!analysisData.compliance_table) {
+            analysisData.compliance_table = [];
+          }
+          analysisData.compliance_table.push({
+            element: 'NDI (New Dietary Ingredient) Compliance',
+            status: 'Verification Required',
+            rationale: `${ndiCompliance.summary.requiresNotification} ingredient(s) without NDI notifications. Verify pre-1994 market presence or file NDI notifications.`,
+          });
+        } else {
+          console.log('All ingredients either have NDI notifications or verification not applicable');
+
+          if (!analysisData.compliance_table) {
+            analysisData.compliance_table = [];
+          }
+          analysisData.compliance_table.push({
+            element: 'NDI (New Dietary Ingredient) Compliance',
+            status: 'Compliant',
+            rationale: `All ingredients either have NDI notifications on file or are exempt (pre-1994 ingredients)`,
+          });
+        }
+      } catch (ndiError) {
+        console.error('Error checking NDI compliance:', ndiError);
+        // Don't fail the analysis if NDI check fails, just log the error
+      }
+    } else if (analysisData.product_category === 'DIETARY_SUPPLEMENT') {
+      console.log('No ingredients found in supplement analysis - skipping NDI check');
     }
 
     // Determine compliance status from the new analysis structure

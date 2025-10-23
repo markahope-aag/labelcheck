@@ -115,3 +115,15 @@ export interface AnalysisIteration {
   parent_iteration_id: string | null; // For threading conversations
   created_at: string;
 }
+
+export interface NDIIngredient {
+  id: string;
+  notification_number: number;
+  report_number: string | null;
+  ingredient_name: string;
+  firm: string | null;
+  submission_date: string | null;
+  fda_response_date: string | null;
+  created_at: string;
+  updated_at: string;
+}
