@@ -34,6 +34,9 @@ import { supabase } from '@/lib/supabase';
 import { exportAnalysesAsCSV, exportAnalysesAsJSON, exportAnalysesAsPDF } from '@/lib/export-helpers';
 import { useToast } from '@/hooks/use-toast';
 
+// Force dynamic rendering since this page uses useSearchParams and requires authentication
+export const dynamic = 'force-dynamic';
+
 const PAGE_SIZE = 50;
 const STORAGE_KEY = 'history_filters';
 
