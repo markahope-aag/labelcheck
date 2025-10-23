@@ -140,7 +140,7 @@ Return your response as a JSON object with the same structure used for image ana
         // Text extraction successful
         const pdfText = pdfResult.content as string;
         completion = await openai.chat.completions.create({
-          model: 'gpt-5-mini',
+          model: 'gpt-4o',
           max_completion_tokens: 8192,
           messages: [
             {
@@ -160,7 +160,7 @@ Return your response as a JSON object with the same structure used for image ana
         const imageBuffer = pdfResult.content as Buffer;
         const base64Image = imageBuffer.toString('base64');
         completion = await openai.chat.completions.create({
-          model: 'gpt-5-mini',
+          model: 'gpt-4o',
           max_completion_tokens: 8192,
           messages: [
             {
@@ -233,7 +233,7 @@ Additionally, include a "comparison" field if original analysis exists:
 }`;
 
       completion = await openai.chat.completions.create({
-        model: 'gpt-5-mini',
+        model: 'gpt-4o',
         max_completion_tokens: 8192,
         messages: [
           {

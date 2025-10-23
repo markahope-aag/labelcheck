@@ -78,7 +78,8 @@ The system automatically validates all ingredients against the FDA GRAS database
 - `GRAS_DATABASE.md`: Comprehensive GRAS database documentation
 
 Key implementation in `app/api/analyze/route.ts`:
-- Uses OpenAI SDK with model `gpt-5-mini` (GPT-5 mini)
+- Uses OpenAI SDK with model `gpt-4o` for main analysis (fast, highly capable)
+- Chat uses `gpt-4o-mini` for quick responses
 - **JSON mode enabled** (`response_format: { type: 'json_object' }`) for reliable structured outputs
 - **Automatic retry logic** with exponential backoff for rate limits (5s, 10s, 20s delays)
 - Regulatory context is injected via `lib/regulatory-documents.ts`
@@ -105,7 +106,7 @@ Key implementation in `app/api/analyze/route.ts`:
 
 2. **📝 Check Text Alternative** (`/api/analyze/text`)
    - Dual-mode: paste text OR upload PDF
-   - PDF uses GPT-5 Mini's vision capabilities (not simple extraction)
+   - PDF uses GPT-4o's vision capabilities (not simple extraction)
    - Compares to original analysis (issues resolved/remaining/new)
    - Creates `text_check` iterations
 
