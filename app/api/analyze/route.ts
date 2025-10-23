@@ -7,6 +7,7 @@ import { sendEmail } from '@/lib/resend';
 import { generateAnalysisResultEmail } from '@/lib/email-templates';
 import { preprocessImage } from '@/lib/image-processing';
 import { createSession, addIteration } from '@/lib/session-helpers';
+import { checkGRASCompliance } from '@/lib/gras-helpers';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -187,9 +188,8 @@ export async function POST(request: NextRequest) {
     const regulatoryDocuments = await getActiveRegulatoryDocuments();
     const regulatoryContext = buildRegulatoryContext(regulatoryDocuments);
 
-    const promptText = `${regulatoryContext}
-
-You are a labeling regulatory compliance expert. Analyze this label ${isPdf ? 'PDF document' : 'image'} and provide a comprehensive evaluation of its compliance with FDA and USDA labeling requirements based on the regulatory documents provided above.
+    // Separate cached context from dynamic prompt
+    const analysisInstructions = `You are a labeling regulatory compliance expert. Analyze this label ${isPdf ? 'PDF document' : 'image'} and provide a comprehensive evaluation of its compliance with FDA and USDA labeling requirements based on the regulatory documents provided above.
 
 ${isPdf ? `IMPORTANT INSTRUCTIONS FOR READING THE PDF:
 This is a PDF of a label design mockup. READ THE TEXT from this PDF carefully and analyze it for compliance. The PDF may have complex design elements:
@@ -334,54 +334,95 @@ Return your response as a JSON object with the following structure:
 6. Base compliance status on visible information; use "potentially non-compliant" when ingredient composition is unknown
 7. In the compliance_table, provide a clear summary similar to the NotebookLM format`;
 
+    // Helper function to call Anthropic API with retry logic for rate limits
+    async function callAnthropicWithRetry(maxRetries = 3) {
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          return isPdf
+            ? await anthropic.messages.create({
+                model: 'claude-3-5-sonnet-20241022',
+                max_tokens: 8192,
+                messages: [
+                  {
+                    role: 'user',
+                    content: [
+                      {
+                        type: 'text',
+                        text: regulatoryContext,
+                        cache_control: { type: 'ephemeral' },
+                      },
+                      {
+                        type: 'document',
+                        source: {
+                          type: 'base64',
+                          media_type: 'application/pdf',
+                          data: base64Data,
+                        },
+                      },
+                      {
+                        type: 'text',
+                        text: analysisInstructions,
+                      },
+                    ],
+                  },
+                ],
+              })
+            : await anthropic.messages.create({
+                model: 'claude-3-5-sonnet-20241022',
+                max_tokens: 8192,
+                messages: [
+                  {
+                    role: 'user',
+                    content: [
+                      {
+                        type: 'text',
+                        text: regulatoryContext,
+                        cache_control: { type: 'ephemeral' },
+                      },
+                      {
+                        type: 'image',
+                        source: {
+                          type: 'base64',
+                          media_type: 'image/jpeg',
+                          data: base64Data,
+                        },
+                      },
+                      {
+                        type: 'text',
+                        text: analysisInstructions,
+                      },
+                    ],
+                  },
+                ],
+              });
+        } catch (error: any) {
+          // Check if it's a rate limit error
+          if (error?.status === 429 || error?.error?.type === 'rate_limit_error') {
+            console.log(`Rate limit hit, attempt ${attempt}/${maxRetries}`);
+
+            if (attempt === maxRetries) {
+              // On final attempt, throw a user-friendly error
+              throw new Error('API rate limit reached. Please wait 60 seconds and try again. If this persists, you may need to upgrade your Anthropic API plan at https://console.anthropic.com/settings/limits');
+            }
+
+            // Exponential backoff: wait 5s, 10s, 20s
+            const waitTime = 5000 * Math.pow(2, attempt - 1);
+            console.log(`Waiting ${waitTime}ms before retry...`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+            continue;
+          }
+
+          // If not a rate limit error, throw immediately
+          throw error;
+        }
+      }
+
+      throw new Error('Failed to get response from API after retries');
+    }
+
     // Create message with appropriate content type (image or document)
-    const message = isPdf
-      ? await anthropic.messages.create({
-          model: 'claude-3-5-sonnet-20241022',
-          max_tokens: 8192,
-          messages: [
-            {
-              role: 'user',
-              content: [
-                {
-                  type: 'document',
-                  source: {
-                    type: 'base64',
-                    media_type: 'application/pdf',
-                    data: base64Data,
-                  },
-                },
-                {
-                  type: 'text',
-                  text: promptText,
-                },
-              ],
-            },
-          ],
-        })
-      : await anthropic.messages.create({
-          model: 'claude-3-5-sonnet-20241022',
-          max_tokens: 8192,
-          messages: [
-            {
-              role: 'user',
-              content: [
-                {
-                  type: 'image',
-                  source: {
-                    type: 'base64',
-                    media_type: 'image/jpeg',
-                    data: base64Data,
-                  },
-                },
-                {
-                  type: 'text',
-                  text: promptText,
-                },
-              ],
-            },
-          ],
-        });
+    // Place regulatory context FIRST with cache_control for efficient caching
+    const message = await callAnthropicWithRetry();
 
     const textContent = message.content.find((block) => block.type === 'text');
     if (!textContent || textContent.type !== 'text') {
@@ -406,6 +447,95 @@ Return your response as a JSON object with the following structure:
       console.error('Error parsing AI response:', parseError);
       console.error('Raw text content (first 1000 chars):', textContent.text.substring(0, 1000));
       throw new Error('Failed to parse AI response');
+    }
+
+    // GRAS Compliance Checking
+    // Check if ingredients are present and validate against GRAS database
+    if (analysisData.ingredient_labeling?.ingredients_list &&
+        Array.isArray(analysisData.ingredient_labeling.ingredients_list) &&
+        analysisData.ingredient_labeling.ingredients_list.length > 0) {
+
+      console.log('Checking GRAS compliance for ingredients:', analysisData.ingredient_labeling.ingredients_list);
+
+      try {
+        const grasCompliance = await checkGRASCompliance(analysisData.ingredient_labeling.ingredients_list);
+
+        console.log('GRAS compliance check complete:', {
+          total: grasCompliance.totalIngredients,
+          compliant: grasCompliance.grasCompliant,
+          nonGRAS: grasCompliance.nonGRASIngredients,
+        });
+
+        // Add GRAS compliance info to analysis data
+        analysisData.gras_compliance = {
+          status: grasCompliance.overallCompliant ? 'compliant' : 'non_compliant',
+          total_ingredients: grasCompliance.totalIngredients,
+          gras_compliant_count: grasCompliance.grasCompliant,
+          non_gras_ingredients: grasCompliance.nonGRASIngredients,
+          gras_ingredients: grasCompliance.grasIngredients,
+          detailed_results: grasCompliance.detailedResults,
+        };
+
+        // If non-GRAS ingredients found, add critical recommendations
+        if (!grasCompliance.overallCompliant && grasCompliance.nonGRASIngredients.length > 0) {
+          console.log('CRITICAL: Non-GRAS ingredients detected:', grasCompliance.nonGRASIngredients);
+
+          // Initialize recommendations array if it doesn't exist
+          if (!analysisData.recommendations) {
+            analysisData.recommendations = [];
+          }
+
+          // Add critical recommendations for each non-GRAS ingredient
+          grasCompliance.nonGRASIngredients.forEach((ingredient) => {
+            analysisData.recommendations.unshift({
+              priority: 'critical',
+              recommendation: `CRITICAL: Ingredient "${ingredient}" is NOT found in the FDA GRAS (Generally Recognized as Safe) database. This ingredient may require FDA pre-market approval (food additive petition), could be a prohibited substance, or may need special GRAS determination. Remove this ingredient or obtain proper FDA approval before marketing this product.`,
+              regulation: '21 CFR 170.3 (Definitions), 21 CFR 170.30 (GRAS determination)',
+            });
+          });
+
+          // Update overall compliance status to reflect GRAS violations
+          if (analysisData.overall_assessment) {
+            analysisData.overall_assessment.primary_compliance_status = 'non_compliant';
+
+            // Add GRAS violation to key findings
+            if (!analysisData.overall_assessment.key_findings) {
+              analysisData.overall_assessment.key_findings = [];
+            }
+            analysisData.overall_assessment.key_findings.unshift(
+              `CRITICAL: ${grasCompliance.nonGRASIngredients.length} ingredient(s) not in FDA GRAS database: ${grasCompliance.nonGRASIngredients.join(', ')}`
+            );
+          }
+
+          // Add to compliance table
+          if (!analysisData.compliance_table) {
+            analysisData.compliance_table = [];
+          }
+          analysisData.compliance_table.unshift({
+            element: 'GRAS Ingredient Compliance',
+            status: 'Non-compliant',
+            rationale: `${grasCompliance.nonGRASIngredients.length} ingredient(s) not in FDA GRAS database: ${grasCompliance.nonGRASIngredients.join(', ')}. Requires FDA approval.`,
+          });
+        } else {
+          // All ingredients are GRAS-compliant
+          console.log('All ingredients are GRAS-compliant');
+
+          if (!analysisData.compliance_table) {
+            analysisData.compliance_table = [];
+          }
+          analysisData.compliance_table.push({
+            element: 'GRAS Ingredient Compliance',
+            status: 'Compliant',
+            rationale: `All ${grasCompliance.totalIngredients} ingredients found in FDA GRAS database`,
+          });
+        }
+      } catch (grasError) {
+        console.error('Error checking GRAS compliance:', grasError);
+        // Don't fail the analysis if GRAS check fails, just log the error
+        // The analysis will continue without GRAS compliance info
+      }
+    } else {
+      console.log('No ingredients found in analysis - skipping GRAS check');
     }
 
     // Determine compliance status from the new analysis structure

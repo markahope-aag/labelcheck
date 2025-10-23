@@ -12,6 +12,25 @@ import { supabase } from '@/lib/supabase';
 import { exportSingleAnalysisAsPDF } from '@/lib/export-helpers';
 import { useToast } from '@/hooks/use-toast';
 
+// Helper function to format compliance status for display
+const formatComplianceStatus = (status: string): string => {
+  if (!status) return '';
+
+  // Handle specific cases
+  const statusMap: Record<string, string> = {
+    'compliant': 'Compliant',
+    'likely_compliant': 'Likely Compliant',
+    'non_compliant': 'Non-Compliant',
+    'potentially_non_compliant': 'Potentially-Non-Compliant',
+    'not_applicable': 'Not Applicable',
+    'warning': 'Warning',
+  };
+
+  return statusMap[status] || status.split('_').map(word =>
+    word.charAt(0).toUpperCase() + word.slice(1)
+  ).join('-');
+};
+
 export default function AnalysisDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -236,7 +255,7 @@ export default function AnalysisDetailPage() {
                             result.overall_assessment.primary_compliance_status === 'potentially_non_compliant' ? 'bg-yellow-100 text-yellow-800' :
                             'bg-red-100 text-red-800'
                           }`}>
-                            {result.overall_assessment.primary_compliance_status?.replace('_', ' ').toUpperCase()}
+                            {formatComplianceStatus(result.overall_assessment.primary_compliance_status)}
                           </span>
                           <span className="ml-3 text-sm text-blue-700">
                             Confidence: {result.overall_assessment.confidence_level}
@@ -274,7 +293,7 @@ export default function AnalysisDetailPage() {
                               result.general_labeling.statement_of_identity.status === 'non_compliant' ? 'bg-red-100 text-red-800' :
                               'bg-gray-100 text-gray-800'
                             }`}>
-                              {result.general_labeling.statement_of_identity.status}
+                              {formatComplianceStatus(result.general_labeling.statement_of_identity.status)}
                             </span>
                           </div>
                           <p className="text-sm text-slate-700 mb-2">{result.general_labeling.statement_of_identity.details}</p>
@@ -290,7 +309,7 @@ export default function AnalysisDetailPage() {
                               result.general_labeling.net_quantity.status === 'non_compliant' ? 'bg-red-100 text-red-800' :
                               'bg-gray-100 text-gray-800'
                             }`}>
-                              {result.general_labeling.net_quantity.status}
+                              {formatComplianceStatus(result.general_labeling.net_quantity.status)}
                             </span>
                           </div>
                           <p className="text-sm text-slate-700 mb-2">{result.general_labeling.net_quantity.details}</p>
@@ -306,7 +325,7 @@ export default function AnalysisDetailPage() {
                               result.general_labeling.manufacturer_address.status === 'non_compliant' ? 'bg-red-100 text-red-800' :
                               'bg-gray-100 text-gray-800'
                             }`}>
-                              {result.general_labeling.manufacturer_address.status}
+                              {formatComplianceStatus(result.general_labeling.manufacturer_address.status)}
                             </span>
                           </div>
                           <p className="text-sm text-slate-700 mb-2">{result.general_labeling.manufacturer_address.details}</p>
@@ -331,13 +350,43 @@ export default function AnalysisDetailPage() {
                           result.ingredient_labeling.status === 'non_compliant' ? 'bg-red-100 text-red-800' :
                           'bg-gray-100 text-gray-800'
                         }`}>
-                          {result.ingredient_labeling.status}
+                          {formatComplianceStatus(result.ingredient_labeling.status)}
                         </span>
                       </div>
                       {result.ingredient_labeling.ingredients_list && result.ingredient_labeling.ingredients_list.length > 0 && (
                         <div className="mb-3">
-                          <p className="text-xs font-semibold text-slate-600 mb-1">Ingredients:</p>
-                          <p className="text-sm text-slate-700">{result.ingredient_labeling.ingredients_list.join(', ')}</p>
+                          <p className="text-xs font-semibold text-slate-600 mb-2">Ingredients:</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {result.ingredient_labeling.ingredients_list.map((ingredient: string, idx: number) => {
+                              // Find GRAS status for this ingredient
+                              const grasStatus = result.gras_compliance?.detailed_results?.find(
+                                (r: any) => r.ingredient === ingredient
+                              );
+                              const isGRAS = grasStatus?.isGRAS;
+
+                              return (
+                                <span
+                                  key={idx}
+                                  className={`px-2 py-1 rounded text-sm ${
+                                    isGRAS === true
+                                      ? 'bg-green-100 text-green-800'
+                                      : isGRAS === false
+                                      ? 'bg-red-100 text-red-800'
+                                      : 'bg-slate-100 text-slate-700'
+                                  }`}
+                                  title={
+                                    isGRAS === true
+                                      ? `✓ GRAS Compliant${grasStatus.matchType ? ` (${grasStatus.matchType} match)` : ''}`
+                                      : isGRAS === false
+                                      ? '✗ Not in GRAS database'
+                                      : 'GRAS status unknown'
+                                  }
+                                >
+                                  {ingredient}
+                                </span>
+                              );
+                            })}
+                          </div>
                         </div>
                       )}
                       <p className="text-sm text-slate-700 mb-2">{result.ingredient_labeling.details}</p>
@@ -374,7 +423,7 @@ export default function AnalysisDetailPage() {
                             result.allergen_labeling.status === 'potentially_non_compliant' ? 'bg-yellow-100 text-yellow-800' :
                             'bg-red-100 text-red-800'
                           }`}>
-                            {result.allergen_labeling.status}
+                            {formatComplianceStatus(result.allergen_labeling.status)}
                           </span>
                         </div>
                       </div>
@@ -408,7 +457,7 @@ export default function AnalysisDetailPage() {
                           result.nutrition_labeling.status === 'non_compliant' ? 'bg-red-100 text-red-800' :
                           'bg-gray-100 text-gray-800'
                         }`}>
-                          {result.nutrition_labeling.status}
+                          {formatComplianceStatus(result.nutrition_labeling.status)}
                         </span>
                       </div>
                       <div className="grid grid-cols-2 gap-3 mb-3 text-sm">
@@ -449,7 +498,7 @@ export default function AnalysisDetailPage() {
                               result.additional_requirements.fortification.status === 'non_compliant' ? 'bg-red-100 text-red-800' :
                               'bg-gray-100 text-gray-800'
                             }`}>
-                              {result.additional_requirements.fortification.status}
+                              {formatComplianceStatus(result.additional_requirements.fortification.status)}
                             </span>
                           </div>
                           <p className="text-sm text-slate-700">{result.additional_requirements.fortification.details}</p>
@@ -465,7 +514,7 @@ export default function AnalysisDetailPage() {
                                 req.status === 'non_compliant' ? 'bg-red-100 text-red-800' :
                                 'bg-gray-100 text-gray-800'
                               }`}>
-                                {req.status}
+                                {formatComplianceStatus(req.status)}
                               </span>
                             </div>
                             <p className="text-sm text-slate-700">{req.details}</p>

@@ -4,13 +4,16 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check } from 'lucide-react';
+import { Check, Loader2 } from 'lucide-react';
 import { PLAN_LIMITS, PLAN_PRICES } from '@/lib/constants';
 import { useUser } from '@clerk/nextjs';
+import { useToast } from '@/hooks/use-toast';
 
 export default function PricingPage() {
   const [billingInterval, setBillingInterval] = useState<'monthly' | 'annual'>('monthly');
   const { isSignedIn } = useUser();
+  const { toast } = useToast();
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
   const plans = [
     {
@@ -48,6 +51,8 @@ export default function PricingPage() {
       return;
     }
 
+    setLoadingPlan(tier);
+
     try {
       const formData = new FormData();
       formData.append('plan', tier);
@@ -57,12 +62,28 @@ export default function PricingPage() {
         body: formData,
       });
 
-      const data = await response.json();
-      if (data.url) {
-        window.location.href = data.url;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create checkout session');
       }
-    } catch (error) {
+
+      const data = await response.json();
+
+      if (!data.url) {
+        console.error('No URL in response:', data);
+        throw new Error('No checkout URL received');
+      }
+
+      // Redirect to Stripe checkout
+      window.location.href = data.url;
+    } catch (error: any) {
       console.error('Error creating checkout session:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to start checkout process. Please try again.',
+        variant: 'destructive',
+      });
+      setLoadingPlan(null);
     }
   };
 
@@ -150,8 +171,16 @@ export default function PricingPage() {
                       onClick={() => handleSelectPlan(plan.tier)}
                       className="w-full"
                       variant={plan.popular ? 'default' : 'outline'}
+                      disabled={loadingPlan !== null}
                     >
-                      {plan.cta}
+                      {loadingPlan === plan.tier ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Loading...
+                        </>
+                      ) : (
+                        plan.cta
+                      )}
                     </Button>
                   </CardFooter>
                 </Card>

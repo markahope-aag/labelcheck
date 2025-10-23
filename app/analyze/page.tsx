@@ -14,6 +14,25 @@ import { useToast } from '@/hooks/use-toast';
 import { AnalysisChat } from '@/components/AnalysisChat';
 import { TextChecker } from '@/components/TextChecker';
 
+// Helper function to format compliance status for display
+const formatComplianceStatus = (status: string): string => {
+  if (!status) return '';
+
+  // Handle specific cases
+  const statusMap: Record<string, string> = {
+    'compliant': 'Compliant',
+    'likely_compliant': 'Likely Compliant',
+    'non_compliant': 'Non-Compliant',
+    'potentially_non_compliant': 'Potentially-Non-Compliant',
+    'not_applicable': 'Not Applicable',
+    'warning': 'Warning',
+  };
+
+  return statusMap[status] || status.split('_').map(word =>
+    word.charAt(0).toUpperCase() + word.slice(1)
+  ).join('-');
+};
+
 export default function AnalyzePage() {
   const { userId } = useAuth();
   const router = useRouter();
@@ -34,12 +53,20 @@ export default function AnalyzePage() {
   const [previousResult, setPreviousResult] = useState<any>(null);
 
   const processFile = (file: File) => {
+    console.log('Processing file:', file.name, 'Type:', file.type, 'Size:', file.size);
+
     // Accept both images and PDFs
     const isImage = file.type.startsWith('image/');
-    const isPdf = file.type === 'application/pdf';
+    const isPdf = file.type === 'application/pdf' ||
+                  file.type === 'application/x-pdf' ||
+                  file.name.toLowerCase().endsWith('.pdf');
+
+    console.log('File validation - isImage:', isImage, 'isPdf:', isPdf);
 
     if (!isImage && !isPdf) {
-      setError('Please select a valid image or PDF file');
+      const errorMsg = `Please select a valid image or PDF file (received: ${file.type || 'unknown type'})`;
+      console.error(errorMsg);
+      setError(errorMsg);
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
@@ -75,8 +102,13 @@ export default function AnalyzePage() {
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    // Only set to false if we're leaving the drop zone entirely
-    if (e.currentTarget === e.target) {
+    // Only set to false if we're actually leaving the drop zone
+    // Check if the related target is outside the current target
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX;
+    const y = e.clientY;
+
+    if (x <= rect.left || x >= rect.right || y <= rect.top || y >= rect.bottom) {
       setIsDragging(false);
     }
   };
@@ -91,9 +123,14 @@ export default function AnalyzePage() {
     e.stopPropagation();
     setIsDragging(false);
 
+    console.log('Drop event triggered');
     const files = e.dataTransfer.files;
+    console.log('Files dropped:', files.length);
+
     if (files && files.length > 0) {
       processFile(files[0]);
+    } else {
+      console.error('No files in drop event');
     }
   };
 
@@ -364,13 +401,14 @@ export default function AnalyzePage() {
                 </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                  {!previewUrl ? (
+                  {!selectedFile ? (
                     <div
                       onDragEnter={handleDragEnter}
                       onDragLeave={handleDragLeave}
                       onDragOver={handleDragOver}
                       onDrop={handleDrop}
-                      className={`border-2 border-dashed rounded-lg p-12 text-center transition-all ${
+                      onClick={() => document.getElementById('file-upload')?.click()}
+                      className={`border-2 border-dashed rounded-lg p-12 text-center transition-all cursor-pointer ${
                         isDragging
                           ? 'border-blue-500 bg-blue-50'
                           : 'border-slate-300 hover:border-blue-400'
@@ -383,19 +421,17 @@ export default function AnalyzePage() {
                         className="hidden"
                         id="file-upload"
                       />
-                      <label htmlFor="file-upload" className="cursor-pointer block">
-                        <div className="flex flex-col items-center pointer-events-none">
-                          <div className={`p-4 rounded-full mb-4 transition-colors ${
-                            isDragging ? 'bg-blue-200' : 'bg-blue-100'
-                          }`}>
-                            <Upload className="h-8 w-8 text-blue-600" />
-                          </div>
-                          <p className="text-lg font-medium text-slate-900 mb-2">
-                            {isDragging ? 'Drop file here' : 'Click to upload or drag and drop'}
-                          </p>
-                          <p className="text-sm text-slate-500">PNG, JPG, JPEG or PDF up to 10MB</p>
+                      <div className="flex flex-col items-center pointer-events-none">
+                        <div className={`p-4 rounded-full mb-4 transition-colors ${
+                          isDragging ? 'bg-blue-200' : 'bg-blue-100'
+                        }`}>
+                          <Upload className="h-8 w-8 text-blue-600" />
                         </div>
-                      </label>
+                        <p className="text-lg font-medium text-slate-900 mb-2">
+                          {isDragging ? 'Drop file here' : 'Click to upload or drag and drop'}
+                        </p>
+                        <p className="text-sm text-slate-500">PNG, JPG, JPEG or PDF up to 10MB</p>
+                      </div>
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -650,7 +686,7 @@ export default function AnalyzePage() {
                                 result.overall_assessment.primary_compliance_status === 'potentially_non_compliant' ? 'bg-yellow-100 text-yellow-800' :
                                 'bg-red-100 text-red-800'
                               }`}>
-                                {result.overall_assessment.primary_compliance_status?.replace('_', ' ').toUpperCase()}
+                                {formatComplianceStatus(result.overall_assessment.primary_compliance_status)}
                               </span>
                               <span className="ml-3 text-sm text-blue-700">
                                 Confidence: {result.overall_assessment.confidence_level}
@@ -688,7 +724,7 @@ export default function AnalyzePage() {
                                   result.general_labeling.statement_of_identity.status === 'non_compliant' ? 'bg-red-100 text-red-800' :
                                   'bg-gray-100 text-gray-800'
                                 }`}>
-                                  {result.general_labeling.statement_of_identity.status}
+                                  {formatComplianceStatus(result.general_labeling.statement_of_identity.status)}
                                 </span>
                               </div>
                               <p className="text-sm text-slate-700 mb-2">{result.general_labeling.statement_of_identity.details}</p>
@@ -704,7 +740,7 @@ export default function AnalyzePage() {
                                   result.general_labeling.net_quantity.status === 'non_compliant' ? 'bg-red-100 text-red-800' :
                                   'bg-gray-100 text-gray-800'
                                 }`}>
-                                  {result.general_labeling.net_quantity.status}
+                                  {formatComplianceStatus(result.general_labeling.net_quantity.status)}
                                 </span>
                               </div>
                               <p className="text-sm text-slate-700 mb-2">{result.general_labeling.net_quantity.details}</p>
@@ -720,7 +756,7 @@ export default function AnalyzePage() {
                                   result.general_labeling.manufacturer_address.status === 'non_compliant' ? 'bg-red-100 text-red-800' :
                                   'bg-gray-100 text-gray-800'
                                 }`}>
-                                  {result.general_labeling.manufacturer_address.status}
+                                  {formatComplianceStatus(result.general_labeling.manufacturer_address.status)}
                                 </span>
                               </div>
                               <p className="text-sm text-slate-700 mb-2">{result.general_labeling.manufacturer_address.details}</p>
@@ -745,13 +781,43 @@ export default function AnalyzePage() {
                               result.ingredient_labeling.status === 'non_compliant' ? 'bg-red-100 text-red-800' :
                               'bg-gray-100 text-gray-800'
                             }`}>
-                              {result.ingredient_labeling.status}
+                              {formatComplianceStatus(result.ingredient_labeling.status)}
                             </span>
                           </div>
                           {result.ingredient_labeling.ingredients_list && result.ingredient_labeling.ingredients_list.length > 0 && (
                             <div className="mb-3">
-                              <p className="text-xs font-semibold text-slate-600 mb-1">Ingredients:</p>
-                              <p className="text-sm text-slate-700">{result.ingredient_labeling.ingredients_list.join(', ')}</p>
+                              <p className="text-xs font-semibold text-slate-600 mb-2">Ingredients:</p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {result.ingredient_labeling.ingredients_list.map((ingredient: string, idx: number) => {
+                                  // Find GRAS status for this ingredient
+                                  const grasStatus = result.gras_compliance?.detailed_results?.find(
+                                    (r: any) => r.ingredient === ingredient
+                                  );
+                                  const isGRAS = grasStatus?.isGRAS;
+
+                                  return (
+                                    <span
+                                      key={idx}
+                                      className={`px-2 py-1 rounded text-sm ${
+                                        isGRAS === true
+                                          ? 'bg-green-100 text-green-800'
+                                          : isGRAS === false
+                                          ? 'bg-red-100 text-red-800'
+                                          : 'bg-slate-100 text-slate-700'
+                                      }`}
+                                      title={
+                                        isGRAS === true
+                                          ? `✓ GRAS Compliant${grasStatus.matchType ? ` (${grasStatus.matchType} match)` : ''}`
+                                          : isGRAS === false
+                                          ? '✗ Not in GRAS database'
+                                          : 'GRAS status unknown'
+                                      }
+                                    >
+                                      {ingredient}
+                                    </span>
+                                  );
+                                })}
+                              </div>
                             </div>
                           )}
                           <p className="text-sm text-slate-700 mb-2">{result.ingredient_labeling.details}</p>
@@ -788,7 +854,7 @@ export default function AnalyzePage() {
                                 result.allergen_labeling.status === 'potentially_non_compliant' ? 'bg-yellow-100 text-yellow-800' :
                                 'bg-red-100 text-red-800'
                               }`}>
-                                {result.allergen_labeling.status}
+                                {formatComplianceStatus(result.allergen_labeling.status)}
                               </span>
                             </div>
                           </div>
@@ -822,7 +888,7 @@ export default function AnalyzePage() {
                               result.nutrition_labeling.status === 'non_compliant' ? 'bg-red-100 text-red-800' :
                               'bg-gray-100 text-gray-800'
                             }`}>
-                              {result.nutrition_labeling.status}
+                              {formatComplianceStatus(result.nutrition_labeling.status)}
                             </span>
                           </div>
                           <div className="grid grid-cols-2 gap-3 mb-3 text-sm">
@@ -863,7 +929,7 @@ export default function AnalyzePage() {
                                   result.additional_requirements.fortification.status === 'non_compliant' ? 'bg-red-100 text-red-800' :
                                   'bg-gray-100 text-gray-800'
                                 }`}>
-                                  {result.additional_requirements.fortification.status}
+                                  {formatComplianceStatus(result.additional_requirements.fortification.status)}
                                 </span>
                               </div>
                               <p className="text-sm text-slate-700">{result.additional_requirements.fortification.details}</p>
@@ -879,7 +945,7 @@ export default function AnalyzePage() {
                                     req.status === 'non_compliant' ? 'bg-red-100 text-red-800' :
                                     'bg-gray-100 text-gray-800'
                                   }`}>
-                                    {req.status}
+                                    {formatComplianceStatus(req.status)}
                                   </span>
                                 </div>
                                 <p className="text-sm text-slate-700">{req.details}</p>

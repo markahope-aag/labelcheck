@@ -40,7 +40,11 @@
       "Bash(cmd /c \"taskkill /F /PID 50280\")",
       "Bash(cmd /c \"for /f \"tokens=5\" %a in (''netstat -ano ^| findstr :3000 ^| findstr LISTENING'') do taskkill /F /PID %a\")",
       "Bash(cmd /c \"if exist .next rmdir /s /q .next\")",
-      "Bash(cmd /c \"taskkill /F /IM node.exe\")"
+      "Bash(cmd /c \"taskkill /F /IM node.exe\")",
+      "WebSearch",
+      "WebFetch(domain:www.cfsanappsexternal.fda.gov)",
+      "WebFetch(domain:hfpappexternal.fda.gov)",
+      "WebFetch(domain:comptox.epa.gov)"
     ],
     "deny": [],
     "ask": []

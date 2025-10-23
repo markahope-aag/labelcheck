@@ -1,0 +1,720 @@
+[
+  {
+    "ingredient_name": "Almond Oil",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 182.20",
+    "category": "oil",
+    "synonyms": ["sweet almond oil", "prunus amygdalus dulcis oil"],
+    "common_name": "Almond Oil"
+  },
+  {
+    "ingredient_name": "Canola Oil",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1555",
+    "category": "oil",
+    "synonyms": ["rapeseed oil", "low erucic acid rapeseed oil"],
+    "common_name": "Canola Oil"
+  },
+  {
+    "ingredient_name": "Coconut Oil",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1555",
+    "category": "oil",
+    "synonyms": ["copra oil", "cocos nucifera oil"],
+    "common_name": "Coconut Oil"
+  },
+  {
+    "ingredient_name": "Corn Oil",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1555",
+    "category": "oil",
+    "synonyms": ["maize oil", "zea mays oil"],
+    "common_name": "Corn Oil"
+  },
+  {
+    "ingredient_name": "Cottonseed Oil",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1555",
+    "category": "oil",
+    "synonyms": ["gossypium oil"],
+    "common_name": "Cottonseed Oil"
+  },
+  {
+    "ingredient_name": "Olive Oil",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1555",
+    "category": "oil",
+    "synonyms": ["olea europaea oil", "extra virgin olive oil"],
+    "common_name": "Olive Oil"
+  },
+  {
+    "ingredient_name": "Palm Oil",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1555",
+    "category": "oil",
+    "synonyms": ["elaeis guineensis oil", "palm kernel oil"],
+    "common_name": "Palm Oil"
+  },
+  {
+    "ingredient_name": "Peanut Oil",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1555",
+    "category": "oil",
+    "synonyms": ["groundnut oil", "arachis oil"],
+    "common_name": "Peanut Oil"
+  },
+  {
+    "ingredient_name": "Safflower Oil",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1555",
+    "category": "oil",
+    "synonyms": ["carthamus tinctorius oil"],
+    "common_name": "Safflower Oil"
+  },
+  {
+    "ingredient_name": "Sesame Oil",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1555",
+    "category": "oil",
+    "synonyms": ["sesamum indicum oil", "gingelly oil"],
+    "common_name": "Sesame Oil"
+  },
+  {
+    "ingredient_name": "Soybean Oil",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1555",
+    "category": "oil",
+    "synonyms": ["soy oil", "glycine max oil"],
+    "common_name": "Soybean Oil"
+  },
+  {
+    "ingredient_name": "Sunflower Oil",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1555",
+    "category": "oil",
+    "synonyms": ["helianthus annuus oil"],
+    "common_name": "Sunflower Oil"
+  },
+  {
+    "ingredient_name": "Milk",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 131",
+    "category": "dairy",
+    "synonyms": ["whole milk", "cow's milk", "dairy milk"],
+    "common_name": "Milk"
+  },
+  {
+    "ingredient_name": "Cream",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 131.150",
+    "category": "dairy",
+    "synonyms": ["heavy cream", "whipping cream"],
+    "common_name": "Cream"
+  },
+  {
+    "ingredient_name": "Butter",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 163.111",
+    "category": "dairy",
+    "synonyms": ["dairy butter", "butterfat"],
+    "common_name": "Butter"
+  },
+  {
+    "ingredient_name": "Cheese",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 133",
+    "category": "dairy",
+    "synonyms": ["cheddar", "mozzarella", "dairy cheese"],
+    "common_name": "Cheese"
+  },
+  {
+    "ingredient_name": "Eggs",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 160.105",
+    "category": "protein",
+    "synonyms": ["whole eggs", "chicken eggs"],
+    "common_name": "Eggs"
+  },
+  {
+    "ingredient_name": "Egg White",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 160.110",
+    "category": "protein",
+    "synonyms": ["albumen", "egg whites"],
+    "common_name": "Egg White"
+  },
+  {
+    "ingredient_name": "Egg Yolk",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 160.115",
+    "category": "protein",
+    "synonyms": ["egg yolks"],
+    "common_name": "Egg Yolk"
+  },
+  {
+    "ingredient_name": "Vitamin A",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1930",
+    "category": "nutrient",
+    "synonyms": ["retinol", "retinyl palmitate", "beta-carotene"],
+    "common_name": "Vitamin A"
+  },
+  {
+    "ingredient_name": "Vitamin B12",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1945",
+    "category": "nutrient",
+    "synonyms": ["cobalamin", "cyanocobalamin"],
+    "common_name": "Vitamin B12"
+  },
+  {
+    "ingredient_name": "Vitamin D",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1950",
+    "category": "nutrient",
+    "synonyms": ["vitamin D2", "vitamin D3", "cholecalciferol", "ergocalciferol"],
+    "common_name": "Vitamin D"
+  },
+  {
+    "ingredient_name": "Vitamin K",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 182.5985",
+    "category": "nutrient",
+    "synonyms": ["phylloquinone", "vitamin K1", "menadione"],
+    "common_name": "Vitamin K"
+  },
+  {
+    "ingredient_name": "Biotin",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 172.345",
+    "category": "nutrient",
+    "synonyms": ["vitamin B7", "vitamin H"],
+    "common_name": "Biotin"
+  },
+  {
+    "ingredient_name": "Folic Acid",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 172.345",
+    "category": "nutrient",
+    "synonyms": ["folate", "vitamin B9", "pteroylglutamic acid"],
+    "common_name": "Folic Acid"
+  },
+  {
+    "ingredient_name": "Pantothenic Acid",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1604",
+    "category": "nutrient",
+    "synonyms": ["vitamin B5", "calcium pantothenate"],
+    "common_name": "Vitamin B5"
+  },
+  {
+    "ingredient_name": "Calcium",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1191",
+    "category": "nutrient",
+    "synonyms": ["calcium supplement", "elemental calcium"],
+    "common_name": "Calcium"
+  },
+  {
+    "ingredient_name": "Iron",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1375",
+    "category": "nutrient",
+    "synonyms": ["ferrous sulfate", "ferrous fumarate", "ferric orthophosphate"],
+    "common_name": "Iron"
+  },
+  {
+    "ingredient_name": "Magnesium",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1426",
+    "category": "nutrient",
+    "synonyms": ["magnesium oxide", "magnesium citrate"],
+    "common_name": "Magnesium"
+  },
+  {
+    "ingredient_name": "Zinc",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1979a",
+    "category": "nutrient",
+    "synonyms": ["zinc oxide", "zinc sulfate", "zinc gluconate"],
+    "common_name": "Zinc"
+  },
+  {
+    "ingredient_name": "Potassium",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1613",
+    "category": "nutrient",
+    "synonyms": ["potassium supplement"],
+    "common_name": "Potassium"
+  },
+  {
+    "ingredient_name": "Selenium",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 172.350",
+    "category": "nutrient",
+    "synonyms": ["sodium selenite", "selenium yeast"],
+    "common_name": "Selenium"
+  },
+  {
+    "ingredient_name": "Iodine",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1265",
+    "category": "nutrient",
+    "synonyms": ["potassium iodide", "iodized salt"],
+    "common_name": "Iodine"
+  },
+  {
+    "ingredient_name": "Chromium",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 172.379",
+    "category": "nutrient",
+    "synonyms": ["chromium picolinate", "chromium chloride"],
+    "common_name": "Chromium"
+  },
+  {
+    "ingredient_name": "Manganese",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1452",
+    "category": "nutrient",
+    "synonyms": ["manganese sulfate", "manganese gluconate"],
+    "common_name": "Manganese"
+  },
+  {
+    "ingredient_name": "Copper",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1261",
+    "category": "nutrient",
+    "synonyms": ["copper gluconate", "cupric sulfate"],
+    "common_name": "Copper"
+  },
+  {
+    "ingredient_name": "L-Glutamine",
+    "gras_status": "notice",
+    "gras_notice_number": "GRN 000135",
+    "source_reference": "GRN 000135",
+    "category": "amino acid",
+    "synonyms": ["glutamine"],
+    "common_name": "Glutamine"
+  },
+  {
+    "ingredient_name": "L-Arginine",
+    "gras_status": "notice",
+    "gras_notice_number": "GRN 000103",
+    "source_reference": "GRN 000103",
+    "category": "amino acid",
+    "synonyms": ["arginine"],
+    "common_name": "Arginine"
+  },
+  {
+    "ingredient_name": "L-Leucine",
+    "gras_status": "notice",
+    "gras_notice_number": "GRN 000134",
+    "source_reference": "GRN 000134",
+    "category": "amino acid",
+    "synonyms": ["leucine"],
+    "common_name": "Leucine"
+  },
+  {
+    "ingredient_name": "L-Isoleucine",
+    "gras_status": "notice",
+    "gras_notice_number": "GRN 000134",
+    "source_reference": "GRN 000134",
+    "category": "amino acid",
+    "synonyms": ["isoleucine"],
+    "common_name": "Isoleucine"
+  },
+  {
+    "ingredient_name": "L-Valine",
+    "gras_status": "notice",
+    "gras_notice_number": "GRN 000134",
+    "source_reference": "GRN 000134",
+    "category": "amino acid",
+    "synonyms": ["valine"],
+    "common_name": "Valine"
+  },
+  {
+    "ingredient_name": "L-Lysine",
+    "gras_status": "notice",
+    "gras_notice_number": "GRN 000135",
+    "source_reference": "GRN 000135",
+    "category": "amino acid",
+    "synonyms": ["lysine"],
+    "common_name": "Lysine"
+  },
+  {
+    "ingredient_name": "L-Threonine",
+    "gras_status": "notice",
+    "gras_notice_number": "GRN 000135",
+    "source_reference": "GRN 000135",
+    "category": "amino acid",
+    "synonyms": ["threonine"],
+    "common_name": "Threonine"
+  },
+  {
+    "ingredient_name": "L-Carnitine",
+    "gras_status": "notice",
+    "gras_notice_number": "GRN 000065",
+    "source_reference": "GRN 000065",
+    "category": "amino acid",
+    "synonyms": ["carnitine", "levocarnitine"],
+    "common_name": "L-Carnitine"
+  },
+  {
+    "ingredient_name": "Taurine",
+    "gras_status": "notice",
+    "gras_notice_number": "GRN 000261",
+    "source_reference": "GRN 000261",
+    "category": "amino acid",
+    "synonyms": ["2-aminoethanesulfonic acid"],
+    "common_name": "Taurine"
+  },
+  {
+    "ingredient_name": "Beta-Alanine",
+    "gras_status": "notice",
+    "gras_notice_number": "GRN 000504",
+    "source_reference": "GRN 000504",
+    "category": "amino acid",
+    "synonyms": ["β-alanine", "3-aminopropanoic acid"],
+    "common_name": "Beta-Alanine"
+  },
+  {
+    "ingredient_name": "Allulose",
+    "gras_status": "notice",
+    "gras_notice_number": "GRN 000400",
+    "source_reference": "GRN 000400",
+    "category": "sweetener",
+    "synonyms": ["D-psicose", "D-allulose"],
+    "common_name": "Allulose"
+  },
+  {
+    "ingredient_name": "Monk Fruit Extract",
+    "gras_status": "notice",
+    "gras_notice_number": "GRN 000301",
+    "source_reference": "GRN 000301",
+    "category": "sweetener",
+    "synonyms": ["luo han guo", "siraitia grosvenorii extract", "monk fruit sweetener"],
+    "common_name": "Monk Fruit"
+  },
+  {
+    "ingredient_name": "Maltitol",
+    "gras_status": "notice",
+    "gras_notice_number": "GRN 000076",
+    "source_reference": "GRN 000076",
+    "category": "sweetener",
+    "synonyms": ["E965"],
+    "common_name": "Maltitol"
+  },
+  {
+    "ingredient_name": "Isomalt",
+    "gras_status": "notice",
+    "gras_notice_number": "GRN 000184",
+    "source_reference": "GRN 000184",
+    "category": "sweetener",
+    "synonyms": ["E953"],
+    "common_name": "Isomalt"
+  },
+  {
+    "ingredient_name": "Lactitol",
+    "gras_status": "notice",
+    "gras_notice_number": "GRN 000046",
+    "source_reference": "GRN 000046",
+    "category": "sweetener",
+    "synonyms": ["E966"],
+    "common_name": "Lactitol"
+  },
+  {
+    "ingredient_name": "Mannitol",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 180.25",
+    "category": "sweetener",
+    "synonyms": ["E421", "D-mannitol"],
+    "common_name": "Mannitol"
+  },
+  {
+    "ingredient_name": "Neotame",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 172.829",
+    "category": "sweetener",
+    "synonyms": ["E961"],
+    "common_name": "Neotame"
+  },
+  {
+    "ingredient_name": "Advantame",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 172.802",
+    "category": "sweetener",
+    "synonyms": ["E969"],
+    "common_name": "Advantame"
+  },
+  {
+    "ingredient_name": "Tagatose",
+    "gras_status": "notice",
+    "gras_notice_number": "GRN 000032",
+    "source_reference": "GRN 000032",
+    "category": "sweetener",
+    "synonyms": ["D-tagatose"],
+    "common_name": "Tagatose"
+  },
+  {
+    "ingredient_name": "Trehalose",
+    "gras_status": "notice",
+    "gras_notice_number": "GRN 000045",
+    "source_reference": "GRN 000045",
+    "category": "sweetener",
+    "synonyms": ["mycose"],
+    "common_name": "Trehalose"
+  },
+  {
+    "ingredient_name": "Agave Nectar",
+    "gras_status": "notice",
+    "gras_notice_number": "GRN 000209",
+    "source_reference": "GRN 000209",
+    "category": "sweetener",
+    "synonyms": ["agave syrup", "blue agave nectar"],
+    "common_name": "Agave Nectar"
+  },
+  {
+    "ingredient_name": "Molasses",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1490",
+    "category": "sweetener",
+    "synonyms": ["blackstrap molasses", "cane molasses"],
+    "common_name": "Molasses"
+  },
+  {
+    "ingredient_name": "Maple Syrup",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 168.140",
+    "category": "sweetener",
+    "synonyms": ["pure maple syrup"],
+    "common_name": "Maple Syrup"
+  },
+  {
+    "ingredient_name": "Annatto",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 73.30",
+    "category": "colorant",
+    "synonyms": ["E160b", "bixin", "norbixin"],
+    "common_name": "Annatto"
+  },
+  {
+    "ingredient_name": "Carmine",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 73.100",
+    "category": "colorant",
+    "synonyms": ["cochineal extract", "E120", "carminic acid"],
+    "common_name": "Carmine"
+  },
+  {
+    "ingredient_name": "Lycopene",
+    "gras_status": "notice",
+    "gras_notice_number": "GRN 000119",
+    "source_reference": "GRN 000119",
+    "category": "colorant",
+    "synonyms": ["E160d", "tomato lycopene"],
+    "common_name": "Lycopene"
+  },
+  {
+    "ingredient_name": "Lutein",
+    "gras_status": "notice",
+    "gras_notice_number": "GRN 000003",
+    "source_reference": "GRN 000003",
+    "category": "colorant",
+    "synonyms": ["E161b", "marigold extract"],
+    "common_name": "Lutein"
+  },
+  {
+    "ingredient_name": "Grape Skin Extract",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 73.170",
+    "category": "colorant",
+    "synonyms": ["enocianina", "grape color"],
+    "common_name": "Grape Skin Extract"
+  },
+  {
+    "ingredient_name": "Saffron",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 73.500",
+    "category": "colorant",
+    "synonyms": ["crocus sativus"],
+    "common_name": "Saffron"
+  },
+  {
+    "ingredient_name": "Spirulina Extract",
+    "gras_status": "notice",
+    "gras_notice_number": "GRN 000127",
+    "source_reference": "GRN 000127",
+    "category": "colorant",
+    "synonyms": ["phycocyanin", "spirulina blue"],
+    "common_name": "Spirulina Extract"
+  },
+  {
+    "ingredient_name": "Chlorophyll",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 73.125",
+    "category": "colorant",
+    "synonyms": ["E140", "chlorophyllin"],
+    "common_name": "Chlorophyll"
+  },
+  {
+    "ingredient_name": "Acacia Fiber",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1330",
+    "category": "fiber",
+    "synonyms": ["gum arabic fiber", "acacia senegal"],
+    "common_name": "Acacia Fiber"
+  },
+  {
+    "ingredient_name": "Psyllium Husk",
+    "gras_status": "notice",
+    "gras_notice_number": "GRN 000143",
+    "source_reference": "GRN 000143",
+    "category": "fiber",
+    "synonyms": ["plantago ovata", "ispaghula"],
+    "common_name": "Psyllium Husk"
+  },
+  {
+    "ingredient_name": "Oat Fiber",
+    "gras_status": "notice",
+    "gras_notice_number": "GRN 000077",
+    "source_reference": "GRN 000077",
+    "category": "fiber",
+    "synonyms": ["oat bran fiber"],
+    "common_name": "Oat Fiber"
+  },
+  {
+    "ingredient_name": "Pea Fiber",
+    "gras_status": "notice",
+    "gras_notice_number": "GRN 000119",
+    "source_reference": "GRN 000119",
+    "category": "fiber",
+    "synonyms": ["pea hull fiber"],
+    "common_name": "Pea Fiber"
+  },
+  {
+    "ingredient_name": "Chicory Root Fiber",
+    "gras_status": "notice",
+    "gras_notice_number": "GRN 000001",
+    "source_reference": "GRN 000001",
+    "category": "fiber",
+    "synonyms": ["chicory inulin", "oligofructose"],
+    "common_name": "Chicory Root Fiber"
+  },
+  {
+    "ingredient_name": "Resistant Starch",
+    "gras_status": "notice",
+    "gras_notice_number": "GRN 000252",
+    "source_reference": "GRN 000252",
+    "category": "fiber",
+    "synonyms": ["resistant maltodextrin", "modified starch"],
+    "common_name": "Resistant Starch"
+  },
+  {
+    "ingredient_name": "Coenzyme Q10",
+    "gras_status": "notice",
+    "gras_notice_number": "GRN 000000",
+    "source_reference": "GRN 000000",
+    "category": "antioxidant",
+    "synonyms": ["CoQ10", "ubiquinone"],
+    "common_name": "CoQ10"
+  },
+  {
+    "ingredient_name": "Resveratrol",
+    "gras_status": "notice",
+    "gras_notice_number": "GRN 000092",
+    "source_reference": "GRN 000092",
+    "category": "antioxidant",
+    "synonyms": ["trans-resveratrol"],
+    "common_name": "Resveratrol"
+  },
+  {
+    "ingredient_name": "Green Tea Extract",
+    "gras_status": "notice",
+    "gras_notice_number": "GRN 000000",
+    "source_reference": "GRN 000000",
+    "category": "antioxidant",
+    "synonyms": ["EGCG", "camellia sinensis extract"],
+    "common_name": "Green Tea Extract"
+  },
+  {
+    "ingredient_name": "Rosemary Extract",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 182.10",
+    "category": "antioxidant",
+    "synonyms": ["rosmarinus officinalis"],
+    "common_name": "Rosemary Extract"
+  },
+  {
+    "ingredient_name": "Sodium Metabisulfite",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 182.3640",
+    "category": "preservative",
+    "synonyms": ["E223", "sodium pyrosulfite"],
+    "common_name": "Sodium Metabisulfite"
+  },
+  {
+    "ingredient_name": "Potassium Metabisulfite",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 182.3640",
+    "category": "preservative",
+    "synonyms": ["E224"],
+    "common_name": "Potassium Metabisulfite"
+  },
+  {
+    "ingredient_name": "Nisin",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1538",
+    "category": "preservative",
+    "synonyms": ["E234", "nisin preparation"],
+    "common_name": "Nisin"
+  },
+  {
+    "ingredient_name": "Natamycin",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 172.155",
+    "category": "preservative",
+    "synonyms": ["E235", "pimaricin"],
+    "common_name": "Natamycin"
+  },
+  {
+    "ingredient_name": "Epsilon-Polylysine",
+    "gras_status": "notice",
+    "gras_notice_number": "GRN 000135",
+    "source_reference": "GRN 000135",
+    "category": "preservative",
+    "synonyms": ["ε-polylysine"],
+    "common_name": "Epsilon-Polylysine"
+  },
+  {
+    "ingredient_name": "Propionic Acid",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1784",
+    "category": "preservative",
+    "synonyms": ["E280", "propanoic acid"],
+    "common_name": "Propionic Acid"
+  },
+  {
+    "ingredient_name": "Sodium Propionate",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1784",
+    "category": "preservative",
+    "synonyms": ["E281"],
+    "common_name": "Sodium Propionate"
+  },
+  {
+    "ingredient_name": "Benzoic Acid",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1021",
+    "category": "preservative",
+    "synonyms": ["E210"],
+    "common_name": "Benzoic Acid"
+  },
+  {
+    "ingredient_name": "Potassium Benzoate",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 182.3640",
+    "category": "preservative",
+    "synonyms": ["E212"],
+    "common_name": "Potassium Benzoate"
+  }
+]

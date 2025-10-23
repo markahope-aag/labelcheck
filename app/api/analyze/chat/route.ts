@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { supabase } from '@/lib/supabase';
 import { getSessionWithIterations, addIteration } from '@/lib/session-helpers';
+import { getActiveRegulatoryDocuments, buildRegulatoryContext } from '@/lib/regulatory-documents';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -59,8 +60,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Build context from iterations
-    let contextMessage = 'You are a regulatory compliance expert helping a user understand their label analysis.\n\n';
+    // Get regulatory documents for reference
+    const regulatoryDocuments = await getActiveRegulatoryDocuments();
+    const regulatoryContext = buildRegulatoryContext(regulatoryDocuments);
+
+    // Build cached context (regulatory docs + latest analysis - these don't change often)
+    let cachedContext = regulatoryContext + '\n\n';
+    cachedContext += 'You are a regulatory compliance expert helping a user understand their label analysis.\n\n';
 
     // Find the most recent analysis iteration
     const analysisIterations = iterations.filter(
@@ -72,33 +78,36 @@ export async function POST(request: NextRequest) {
 
     if (analysisIterations.length > 0) {
       const latestAnalysis = analysisIterations[analysisIterations.length - 1];
-      contextMessage += '## Latest Analysis Results\n\n';
-      contextMessage += `**Product:** ${latestAnalysis.result_data?.product_name || 'Unknown'}\n`;
-      contextMessage += `**Product Type:** ${latestAnalysis.result_data?.product_type || 'Unknown'}\n\n`;
+      cachedContext += '## Latest Analysis Results\n\n';
+      cachedContext += `**Product:** ${latestAnalysis.result_data?.product_name || 'Unknown'}\n`;
+      cachedContext += `**Product Type:** ${latestAnalysis.result_data?.product_type || 'Unknown'}\n\n`;
 
       if (latestAnalysis.result_data?.overall_assessment) {
-        contextMessage += '**Overall Compliance Status:** ';
-        contextMessage += `${latestAnalysis.result_data.overall_assessment.primary_compliance_status}\n`;
-        contextMessage += `**Summary:** ${latestAnalysis.result_data.overall_assessment.summary}\n\n`;
+        cachedContext += '**Overall Compliance Status:** ';
+        cachedContext += `${latestAnalysis.result_data.overall_assessment.primary_compliance_status}\n`;
+        cachedContext += `**Summary:** ${latestAnalysis.result_data.overall_assessment.summary}\n\n`;
       }
 
       if (latestAnalysis.result_data?.recommendations) {
-        contextMessage += '**Key Recommendations:**\n';
+        cachedContext += '**Key Recommendations:**\n';
         latestAnalysis.result_data.recommendations.forEach((rec: any, idx: number) => {
-          contextMessage += `${idx + 1}. [${rec.priority.toUpperCase()}] ${rec.recommendation} (${rec.regulation})\n`;
+          cachedContext += `${idx + 1}. [${rec.priority.toUpperCase()}] ${rec.recommendation} (${rec.regulation})\n`;
         });
-        contextMessage += '\n';
+        cachedContext += '\n';
       }
 
       if (latestAnalysis.result_data?.allergen_labeling) {
-        contextMessage += '**Allergen Status:** ';
-        contextMessage += `${latestAnalysis.result_data.allergen_labeling.status}\n`;
+        cachedContext += '**Allergen Status:** ';
+        cachedContext += `${latestAnalysis.result_data.allergen_labeling.status}\n`;
         if (latestAnalysis.result_data.allergen_labeling.potential_allergens?.length > 0) {
-          contextMessage += `**Potential Allergens:** ${latestAnalysis.result_data.allergen_labeling.potential_allergens.join(', ')}\n`;
+          cachedContext += `**Potential Allergens:** ${latestAnalysis.result_data.allergen_labeling.potential_allergens.join(', ')}\n`;
         }
-        contextMessage += '\n';
+        cachedContext += '\n';
       }
     }
+
+    // Build dynamic context (chat history + current question - these change frequently)
+    let dynamicContext = '';
 
     // Include recent chat history for context
     const chatIterations = iterations.filter(
@@ -106,28 +115,38 @@ export async function POST(request: NextRequest) {
     );
 
     if (chatIterations.length > 0) {
-      contextMessage += '## Recent Conversation History\n\n';
+      dynamicContext += '## Recent Conversation History\n\n';
       const recentChats = chatIterations.slice(-5); // Last 5 chat exchanges
       recentChats.forEach((chat) => {
-        contextMessage += `**User:** ${chat.input_data?.message || ''}\n`;
-        contextMessage += `**Assistant:** ${chat.result_data?.response || ''}\n\n`;
+        dynamicContext += `**User:** ${chat.input_data?.message || ''}\n`;
+        dynamicContext += `**Assistant:** ${chat.result_data?.response || ''}\n\n`;
       });
     }
 
-    contextMessage += '## Current Question\n\n';
-    contextMessage += `The user is now asking: "${message}"\n\n`;
-    contextMessage += 'Please provide a clear, helpful answer based on the analysis context above. ';
-    contextMessage += 'If the question is about a specific regulation, cite the relevant CFR section. ';
-    contextMessage += 'If the question is about how to fix an issue, provide specific, actionable guidance.';
+    dynamicContext += '## Current Question\n\n';
+    dynamicContext += `The user is now asking: "${message}"\n\n`;
+    dynamicContext += 'Please provide a clear, helpful answer based on the analysis context above. ';
+    dynamicContext += 'If the question is about a specific regulation, cite the relevant CFR section. ';
+    dynamicContext += 'If the question is about how to fix an issue, provide specific, actionable guidance.';
 
-    // Call Claude API
+    // Call Claude API with cached context
     const response = await anthropic.messages.create({
       model: 'claude-3-5-sonnet-20241022',
       max_tokens: 2048,
       messages: [
         {
           role: 'user',
-          content: contextMessage,
+          content: [
+            {
+              type: 'text',
+              text: cachedContext,
+              cache_control: { type: 'ephemeral' },
+            },
+            {
+              type: 'text',
+              text: dynamicContext,
+            },
+          ],
         },
       ],
     });

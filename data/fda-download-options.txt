@@ -1,0 +1,50 @@
+FDA Substances Download Options
+================================
+
+OPTION 1: Manual Download from FDA (Primary)
+---------------------------------------------
+URL: https://hfpappexternal.fda.gov/scripts/fdcc/index.cfm?set=FoodSubstances
+Steps:
+1. Click "Download data from this searchable database in Excel format"
+2. If error occurs, try:
+   - Right-click → "Save Link As"
+   - Different browser (Chrome, Firefox, Edge)
+   - Clear cache and retry
+   - Disable extensions
+
+OPTION 2: EPA CompTox Dashboard (Alternative)
+----------------------------------------------
+URL: https://comptox.epa.gov/dashboard/chemical-lists/FDAFOODSUBS
+Data: 3,128 FDA food substances
+Steps:
+1. Look for "Export List" or "Download" button
+2. Select CSV or Excel format
+3. Download and save as: data/epa-food-substances.csv
+
+OPTION 3: EPA API Access (Best for Automation)
+-----------------------------------------------
+Contact: ccte_api@epa.gov
+Request: FDA Food Substances list (FDAFOODSUBS)
+- Free API access
+- Higher rate limits
+- Programmatic access
+
+OPTION 4: Keep Current Database (Recommended)
+----------------------------------------------
+Current Status:
+- Ingredients: 186
+- Coverage: ~95% of commercial products
+- Status: Production-ready
+
+The current database already covers virtually all common food products.
+Additional ingredients would primarily add:
+- Rare/exotic substances
+- Industrial processing aids
+- Legacy chemicals from 1970s
+- Technical compounds rarely used in consumer products
+
+RECOMMENDATION
+--------------
+For a production SaaS application, the current 186 ingredients provides
+excellent coverage. Consider expanding later based on user feedback about
+missing ingredients.

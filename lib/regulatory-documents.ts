@@ -14,7 +14,7 @@ export async function getActiveRegulatoryDocuments(): Promise<RegulatoryDocument
     .from('regulatory_documents')
     .select('*')
     .eq('is_active', true)
-    .limit(10);
+    .limit(50);
 
   if (error) {
     console.error('Error fetching regulatory documents:', error);
@@ -29,7 +29,7 @@ export async function getRegulatoryDocumentsByCategory(categoryName: string): Pr
     .from('regulatory_documents')
     .select('*')
     .eq('is_active', true)
-    .limit(10);
+    .limit(50);
 
   if (error) {
     console.error('Error fetching documents by category:', error);
@@ -94,7 +94,7 @@ export async function searchDocuments(query: string): Promise<RegulatoryDocument
     .select('*')
     .eq('is_active', true)
     .or(`title.ilike.%${query}%,content.ilike.%${query}%`)
-    .limit(10);
+    .limit(50);
 
   if (error) {
     console.error('Error searching documents:', error);

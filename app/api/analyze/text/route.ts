@@ -118,9 +118,7 @@ export async function POST(request: NextRequest) {
       const buffer = Buffer.from(bytes);
       const base64Pdf = buffer.toString('base64');
 
-      const prompt = `${regulatoryContext}
-
-You are a labeling regulatory compliance expert. A user has uploaded a PDF of their prospective label design to check compliance BEFORE finalizing it.
+      const analysisInstructions = `You are a labeling regulatory compliance expert. A user has uploaded a PDF of their prospective label design to check compliance BEFORE finalizing it.
 
 ${originalContext}
 
@@ -152,6 +150,11 @@ Return your response as a JSON object with the same structure used for image ana
             role: 'user',
             content: [
               {
+                type: 'text',
+                text: regulatoryContext,
+                cache_control: { type: 'ephemeral' },
+              },
+              {
                 type: 'document',
                 source: {
                   type: 'base64',
@@ -161,7 +164,7 @@ Return your response as a JSON object with the same structure used for image ana
               },
               {
                 type: 'text',
-                text: prompt,
+                text: analysisInstructions,
               },
             ],
           },
@@ -169,9 +172,7 @@ Return your response as a JSON object with the same structure used for image ana
       });
     } else {
       // Text mode - analyze plain text
-      const prompt = `${regulatoryContext}
-
-You are a labeling regulatory compliance expert. A user is testing prospective label content (text-only, not an image) to check compliance BEFORE creating a physical label.
+      const analysisInstructions = `You are a labeling regulatory compliance expert. A user is testing prospective label content (text-only, not an image) to check compliance BEFORE creating a physical label.
 
 ${originalContext}
 
@@ -224,7 +225,17 @@ Additionally, include a "comparison" field if original analysis exists:
         messages: [
           {
             role: 'user',
-            content: prompt,
+            content: [
+              {
+                type: 'text',
+                text: regulatoryContext,
+                cache_control: { type: 'ephemeral' },
+              },
+              {
+                type: 'text',
+                text: analysisInstructions,
+              },
+            ],
           },
         ],
       });

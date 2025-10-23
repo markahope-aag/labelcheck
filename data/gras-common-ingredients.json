@@ -1,0 +1,646 @@
+[
+  {
+    "ingredient_name": "Acesulfame Potassium",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 172.800",
+    "category": "sweetener",
+    "synonyms": ["Ace-K", "E950", "acesulfame K"],
+    "common_name": "Acesulfame K"
+  },
+  {
+    "ingredient_name": "Alpha-Tocopherol",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 182.3890",
+    "category": "antioxidant",
+    "synonyms": ["vitamin E", "E307", "tocopherol"],
+    "common_name": "Vitamin E"
+  },
+  {
+    "ingredient_name": "Annatto Extract",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 73.30",
+    "category": "colorant",
+    "synonyms": ["E160b", "annatto", "achiote"],
+    "common_name": "Annatto"
+  },
+  {
+    "ingredient_name": "Aspartame",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 172.804",
+    "category": "sweetener",
+    "synonyms": ["E951", "NutraSweet", "Equal"],
+    "common_name": "Aspartame"
+  },
+  {
+    "ingredient_name": "Baking Soda",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1736",
+    "category": "leavening agent",
+    "synonyms": ["sodium bicarbonate", "E500", "bicarbonate of soda"],
+    "common_name": "Sodium Bicarbonate"
+  },
+  {
+    "ingredient_name": "Beet Juice",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 73.40",
+    "category": "colorant",
+    "synonyms": ["beet red", "beetroot extract", "E162"],
+    "common_name": "Beet Extract"
+  },
+  {
+    "ingredient_name": "Beta-Carotene",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 73.95",
+    "category": "colorant",
+    "synonyms": ["E160a", "provitamin A", "carotene"],
+    "common_name": "Beta Carotene"
+  },
+  {
+    "ingredient_name": "BHA",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 172.110",
+    "category": "antioxidant",
+    "synonyms": ["butylated hydroxyanisole", "E320"],
+    "common_name": "Butylated Hydroxyanisole"
+  },
+  {
+    "ingredient_name": "BHT",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 172.115",
+    "category": "antioxidant",
+    "synonyms": ["butylated hydroxytoluene", "E321"],
+    "common_name": "Butylated Hydroxytoluene"
+  },
+  {
+    "ingredient_name": "Calcium Chloride",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1193",
+    "category": "firming agent",
+    "synonyms": ["E509", "calcium dichloride"],
+    "common_name": "Calcium Chloride"
+  },
+  {
+    "ingredient_name": "Calcium Propionate",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1784",
+    "category": "preservative",
+    "synonyms": ["E282", "calcium propanoate"],
+    "common_name": "Calcium Propionate"
+  },
+  {
+    "ingredient_name": "Caramel Color",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 73.85",
+    "category": "colorant",
+    "synonyms": ["E150", "caramel", "caramel coloring"],
+    "common_name": "Caramel"
+  },
+  {
+    "ingredient_name": "Cellulose",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 182.90",
+    "category": "anticaking agent",
+    "synonyms": ["E460", "microcrystalline cellulose", "MCC"],
+    "common_name": "Cellulose"
+  },
+  {
+    "ingredient_name": "Citric Acid Monohydrate",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1033",
+    "category": "acidulant",
+    "synonyms": ["E330"],
+    "common_name": "Citric Acid"
+  },
+  {
+    "ingredient_name": "Cocoa",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 163.111",
+    "category": "flavor",
+    "synonyms": ["cacao", "cocoa powder", "chocolate powder"],
+    "common_name": "Cocoa Powder"
+  },
+  {
+    "ingredient_name": "Corn Syrup",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1857",
+    "category": "sweetener",
+    "synonyms": ["glucose syrup", "corn sugar syrup"],
+    "common_name": "Corn Syrup"
+  },
+  {
+    "ingredient_name": "Dextrose",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1857",
+    "category": "sweetener",
+    "synonyms": ["glucose", "D-glucose", "grape sugar"],
+    "common_name": "Dextrose"
+  },
+  {
+    "ingredient_name": "Diglycerides",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1505",
+    "category": "emulsifier",
+    "synonyms": ["E471", "glycerol distearate"],
+    "common_name": "Diglycerides"
+  },
+  {
+    "ingredient_name": "Disodium Phosphate",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 182.1778",
+    "category": "buffering agent",
+    "synonyms": ["E339", "DSP", "sodium phosphate dibasic"],
+    "common_name": "Disodium Phosphate"
+  },
+  {
+    "ingredient_name": "EDTA",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 172.135",
+    "category": "preservative",
+    "synonyms": ["E385", "ethylenediaminetetraacetic acid", "calcium disodium EDTA"],
+    "common_name": "EDTA"
+  },
+  {
+    "ingredient_name": "Erythorbic Acid",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 182.3041",
+    "category": "antioxidant",
+    "synonyms": ["E315", "isoascorbic acid"],
+    "common_name": "Erythorbic Acid"
+  },
+  {
+    "ingredient_name": "Erythritol",
+    "gras_status": "notice",
+    "gras_notice_number": "GRN 000076",
+    "source_reference": "GRN 000076",
+    "category": "sweetener",
+    "synonyms": ["E968"],
+    "common_name": "Erythritol"
+  },
+  {
+    "ingredient_name": "Fructose",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1859",
+    "category": "sweetener",
+    "synonyms": ["fruit sugar", "levulose", "D-fructose"],
+    "common_name": "Fructose"
+  },
+  {
+    "ingredient_name": "Fumaric Acid",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 172.350",
+    "category": "acidulant",
+    "synonyms": ["E297"],
+    "common_name": "Fumaric Acid"
+  },
+  {
+    "ingredient_name": "Glucose",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1857",
+    "category": "sweetener",
+    "synonyms": ["dextrose", "grape sugar", "blood sugar"],
+    "common_name": "Glucose"
+  },
+  {
+    "ingredient_name": "Glycerin",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 182.1320",
+    "category": "humectant",
+    "synonyms": ["glycerol", "E422", "glycerine"],
+    "common_name": "Glycerin"
+  },
+  {
+    "ingredient_name": "Gum Arabic",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1330",
+    "category": "thickener",
+    "synonyms": ["E414", "acacia gum", "acacia"],
+    "common_name": "Acacia Gum"
+  },
+  {
+    "ingredient_name": "High Fructose Corn Syrup",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1866",
+    "category": "sweetener",
+    "synonyms": ["HFCS", "corn syrup solids", "glucose-fructose syrup"],
+    "common_name": "HFCS"
+  },
+  {
+    "ingredient_name": "Honey",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1555",
+    "category": "sweetener",
+    "synonyms": ["bee honey", "pure honey"],
+    "common_name": "Honey"
+  },
+  {
+    "ingredient_name": "Hydrochloric Acid",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1057",
+    "category": "acidulant",
+    "synonyms": ["HCl", "muriatic acid"],
+    "common_name": "Hydrochloric Acid"
+  },
+  {
+    "ingredient_name": "Inulin",
+    "gras_status": "notice",
+    "gras_notice_number": "GRN 000118",
+    "source_reference": "GRN 000118",
+    "category": "fiber",
+    "synonyms": ["chicory root fiber", "oligofructose"],
+    "common_name": "Inulin"
+  },
+  {
+    "ingredient_name": "Lactic Acid",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1061",
+    "category": "acidulant",
+    "synonyms": ["E270", "milk acid"],
+    "common_name": "Lactic Acid"
+  },
+  {
+    "ingredient_name": "Lactose",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1443",
+    "category": "sweetener",
+    "synonyms": ["milk sugar"],
+    "common_name": "Lactose"
+  },
+  {
+    "ingredient_name": "Locust Bean Gum",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1343",
+    "category": "thickener",
+    "synonyms": ["E410", "carob gum", "LBG"],
+    "common_name": "Locust Bean Gum"
+  },
+  {
+    "ingredient_name": "Magnesium Stearate",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1440",
+    "category": "anticaking agent",
+    "synonyms": ["E572", "magnesium salt"],
+    "common_name": "Magnesium Stearate"
+  },
+  {
+    "ingredient_name": "Malic Acid",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1069",
+    "category": "acidulant",
+    "synonyms": ["E296", "apple acid"],
+    "common_name": "Malic Acid"
+  },
+  {
+    "ingredient_name": "Maltodextrin",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1444",
+    "category": "bulking agent",
+    "synonyms": ["dextrin", "maltodextrin powder"],
+    "common_name": "Maltodextrin"
+  },
+  {
+    "ingredient_name": "Maltose",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1444",
+    "category": "sweetener",
+    "synonyms": ["malt sugar", "maltobiose"],
+    "common_name": "Maltose"
+  },
+  {
+    "ingredient_name": "Methylcellulose",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 182.1480",
+    "category": "thickener",
+    "synonyms": ["E461", "MC"],
+    "common_name": "Methylcellulose"
+  },
+  {
+    "ingredient_name": "Monocalcium Phosphate",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 182.1217",
+    "category": "leavening agent",
+    "synonyms": ["E341", "MCP", "calcium acid phosphate"],
+    "common_name": "Monocalcium Phosphate"
+  },
+  {
+    "ingredient_name": "Monoglycerides",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1505",
+    "category": "emulsifier",
+    "synonyms": ["E471", "glycerol monostearate"],
+    "common_name": "Monoglycerides"
+  },
+  {
+    "ingredient_name": "Monosodium Glutamate",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 182.1",
+    "category": "flavor enhancer",
+    "synonyms": ["MSG", "E621", "sodium glutamate"],
+    "common_name": "MSG"
+  },
+  {
+    "ingredient_name": "Natural Flavors",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 101.22",
+    "category": "flavor",
+    "synonyms": ["natural flavoring", "natural flavor extracts"],
+    "common_name": "Natural Flavors"
+  },
+  {
+    "ingredient_name": "Niacin",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1535",
+    "category": "nutrient",
+    "synonyms": ["vitamin B3", "nicotinic acid", "niacinamide"],
+    "common_name": "Vitamin B3"
+  },
+  {
+    "ingredient_name": "Paprika Extract",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 73.345",
+    "category": "colorant",
+    "synonyms": ["E160c", "paprika oleoresin"],
+    "common_name": "Paprika"
+  },
+  {
+    "ingredient_name": "Phosphoric Acid",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 182.1073",
+    "category": "acidulant",
+    "synonyms": ["E338", "orthophosphoric acid"],
+    "common_name": "Phosphoric Acid"
+  },
+  {
+    "ingredient_name": "Polysorbate 80",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 172.840",
+    "category": "emulsifier",
+    "synonyms": ["E433", "tween 80", "polyoxyethylene sorbitan monooleate"],
+    "common_name": "Polysorbate 80"
+  },
+  {
+    "ingredient_name": "Potassium Chloride",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1622",
+    "category": "salt substitute",
+    "synonyms": ["E508", "KCl"],
+    "common_name": "Potassium Chloride"
+  },
+  {
+    "ingredient_name": "Potassium Citrate",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 182.1625",
+    "category": "buffering agent",
+    "synonyms": ["E332", "tripotassium citrate"],
+    "common_name": "Potassium Citrate"
+  },
+  {
+    "ingredient_name": "Propylene Glycol",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1666",
+    "category": "humectant",
+    "synonyms": ["E1520", "1,2-propanediol"],
+    "common_name": "Propylene Glycol"
+  },
+  {
+    "ingredient_name": "Pyridoxine Hydrochloride",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1676",
+    "category": "nutrient",
+    "synonyms": ["vitamin B6", "pyridoxine HCl"],
+    "common_name": "Vitamin B6"
+  },
+  {
+    "ingredient_name": "Riboflavin",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1695",
+    "category": "colorant",
+    "synonyms": ["vitamin B2", "E101"],
+    "common_name": "Vitamin B2"
+  },
+  {
+    "ingredient_name": "Silicon Dioxide",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 172.480",
+    "category": "anticaking agent",
+    "synonyms": ["E551", "silica", "SiO2"],
+    "common_name": "Silicon Dioxide"
+  },
+  {
+    "ingredient_name": "Sodium Alginate",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1724",
+    "category": "thickener",
+    "synonyms": ["E401", "algin"],
+    "common_name": "Sodium Alginate"
+  },
+  {
+    "ingredient_name": "Sodium Ascorbate",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 182.3731",
+    "category": "antioxidant",
+    "synonyms": ["E301", "vitamin C sodium"],
+    "common_name": "Sodium Ascorbate"
+  },
+  {
+    "ingredient_name": "Sodium Caseinate",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1320",
+    "category": "protein",
+    "synonyms": ["casein sodium", "milk protein"],
+    "common_name": "Sodium Caseinate"
+  },
+  {
+    "ingredient_name": "Sodium Citrate",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 182.1748",
+    "category": "buffering agent",
+    "synonyms": ["E331", "trisodium citrate"],
+    "common_name": "Sodium Citrate"
+  },
+  {
+    "ingredient_name": "Sodium Erythorbate",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 182.3041",
+    "category": "antioxidant",
+    "synonyms": ["E316", "sodium isoascorbate"],
+    "common_name": "Sodium Erythorbate"
+  },
+  {
+    "ingredient_name": "Sodium Hexametaphosphate",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 182.1778",
+    "category": "sequestrant",
+    "synonyms": ["E452", "SHMP", "sodium polyphosphate"],
+    "common_name": "Sodium Hexametaphosphate"
+  },
+  {
+    "ingredient_name": "Sodium Lactate",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1768",
+    "category": "preservative",
+    "synonyms": ["E325"],
+    "common_name": "Sodium Lactate"
+  },
+  {
+    "ingredient_name": "Sodium Nitrate",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 172.175",
+    "category": "preservative",
+    "synonyms": ["E251", "chile saltpeter"],
+    "common_name": "Sodium Nitrate"
+  },
+  {
+    "ingredient_name": "Sodium Nitrite",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 172.175",
+    "category": "preservative",
+    "synonyms": ["E250"],
+    "common_name": "Sodium Nitrite"
+  },
+  {
+    "ingredient_name": "Sodium Stearoyl Lactylate",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 172.846",
+    "category": "emulsifier",
+    "synonyms": ["E481", "SSL"],
+    "common_name": "SSL"
+  },
+  {
+    "ingredient_name": "Sodium Tripolyphosphate",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 182.1778",
+    "category": "sequestrant",
+    "synonyms": ["E451", "STPP", "pentasodium triphosphate"],
+    "common_name": "STPP"
+  },
+  {
+    "ingredient_name": "Sorbic Acid",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 182.3089",
+    "category": "preservative",
+    "synonyms": ["E200"],
+    "common_name": "Sorbic Acid"
+  },
+  {
+    "ingredient_name": "Sorbitan Monostearate",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 172.842",
+    "category": "emulsifier",
+    "synonyms": ["E491", "span 60"],
+    "common_name": "Sorbitan Monostearate"
+  },
+  {
+    "ingredient_name": "Sorbitol",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1835",
+    "category": "sweetener",
+    "synonyms": ["E420", "D-sorbitol", "glucitol"],
+    "common_name": "Sorbitol"
+  },
+  {
+    "ingredient_name": "Soy Protein Isolate",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1540",
+    "category": "protein",
+    "synonyms": ["SPI", "isolated soy protein"],
+    "common_name": "Soy Protein"
+  },
+  {
+    "ingredient_name": "Stevia",
+    "gras_status": "notice",
+    "gras_notice_number": "GRN 000304",
+    "source_reference": "GRN 000304",
+    "category": "sweetener",
+    "synonyms": ["steviol glycosides", "E960", "rebaud ianaA"],
+    "common_name": "Stevia"
+  },
+  {
+    "ingredient_name": "Sucralose",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 172.831",
+    "category": "sweetener",
+    "synonyms": ["E955", "Splenda", "trichlorogalactosucrose"],
+    "common_name": "Sucralose"
+  },
+  {
+    "ingredient_name": "Sunflower Lecithin",
+    "gras_status": "notice",
+    "gras_notice_number": "GRN 000470",
+    "source_reference": "GRN 000470",
+    "category": "emulsifier",
+    "synonyms": ["sunflower phospholipids"],
+    "common_name": "Sunflower Lecithin"
+  },
+  {
+    "ingredient_name": "Tartaric Acid",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1099",
+    "category": "acidulant",
+    "synonyms": ["E334", "L-tartaric acid"],
+    "common_name": "Tartaric Acid"
+  },
+  {
+    "ingredient_name": "TBHQ",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 172.185",
+    "category": "antioxidant",
+    "synonyms": ["tertiary butylhydroquinone", "E319", "tert-butylhydroquinone"],
+    "common_name": "TBHQ"
+  },
+  {
+    "ingredient_name": "Thiamine Mononitrate",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1875",
+    "category": "nutrient",
+    "synonyms": ["vitamin B1", "thiamin mononitrate"],
+    "common_name": "Vitamin B1"
+  },
+  {
+    "ingredient_name": "Titanium Dioxide",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 73.575",
+    "category": "colorant",
+    "synonyms": ["E171", "TiO2", "titania"],
+    "common_name": "Titanium Dioxide"
+  },
+  {
+    "ingredient_name": "Tocopherols",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 182.3890",
+    "category": "antioxidant",
+    "synonyms": ["E306", "mixed tocopherols", "vitamin E"],
+    "common_name": "Tocopherols"
+  },
+  {
+    "ingredient_name": "Turmeric",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 73.600",
+    "category": "colorant",
+    "synonyms": ["E100", "curcumin", "turmeric extract"],
+    "common_name": "Turmeric"
+  },
+  {
+    "ingredient_name": "Whey Protein Concentrate",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1979",
+    "category": "protein",
+    "synonyms": ["WPC", "whey protein"],
+    "common_name": "Whey Protein"
+  },
+  {
+    "ingredient_name": "Xylitol",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 172.395",
+    "category": "sweetener",
+    "synonyms": ["E967", "wood sugar"],
+    "common_name": "Xylitol"
+  },
+  {
+    "ingredient_name": "Yeast Extract",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1983",
+    "category": "flavor enhancer",
+    "synonyms": ["autolyzed yeast", "yeast autolysate"],
+    "common_name": "Yeast Extract"
+  }
+]
