@@ -198,6 +198,45 @@ export async function POST(request: NextRequest) {
     // Separate cached context from dynamic prompt
     const analysisInstructions = `You are a labeling regulatory compliance expert. Analyze this label ${isPdf ? 'PDF document' : 'image'} and provide a comprehensive evaluation of its compliance with FDA and USDA labeling requirements based on the regulatory documents provided above.
 
+**STEP 1: PRODUCT CATEGORY CLASSIFICATION**
+
+Before performing the detailed compliance analysis, you MUST first determine which regulatory category this product falls into. This is CRITICAL because different product categories have entirely different regulatory requirements.
+
+Classify the product into ONE of these four categories based on the following criteria:
+
+1. **DIETARY_SUPPLEMENT** - Select this if ANY of these are true:
+   - Label explicitly states "dietary supplement" or "supplement facts"
+   - Contains vitamins, minerals, herbs, botanicals, amino acids, or other dietary ingredients intended to supplement the diet
+   - Has a "Supplement Facts" panel (NOT "Nutrition Facts")
+   - Makes structure/function claims (e.g., "supports immune health", "promotes joint function")
+   - Contains ingredients like: multivitamins, probiotics, protein powder, herbal extracts, omega-3, CoQ10, etc.
+
+2. **ALCOHOLIC_BEVERAGE** - Select this if ANY of these are true:
+   - Contains alcohol ≥0.5% ABV (alcohol by volume)
+   - Label shows "% ALC BY VOL" or "PROOF"
+   - Has TTB (Alcohol and Tobacco Tax and Trade Bureau) approval number or statement
+   - Is beer, wine, spirits, hard seltzer, or malt beverage
+   - Contains government warning about alcohol consumption and pregnancy
+
+3. **NON_ALCOHOLIC_BEVERAGE** - Select this if ALL of these are true:
+   - Ready-to-drink liquid product (juice, soda, energy drink, coffee drink, tea, water, sports drink, etc.)
+   - Contains <0.5% alcohol OR no alcohol
+   - NOT a dietary supplement (no "supplement facts")
+   - Intended for direct consumption as a beverage
+
+4. **CONVENTIONAL_FOOD** - Select this if NONE of the above apply:
+   - Standard packaged foods (snacks, cereals, baked goods, frozen meals, etc.)
+   - Condiments, sauces, seasonings
+   - Fresh or processed meats, dairy, eggs
+   - Infant formula and baby food
+   - Any food product that doesn't fit the other three categories
+
+**IMPORTANT CLASSIFICATION NOTES:**
+- If a product has BOTH beverage and supplement characteristics (e.g., "protein shake" with supplement facts), classify as DIETARY_SUPPLEMENT
+- If uncertain between categories, use the PRIMARY intended use and regulatory panel type (Supplement Facts vs Nutrition Facts)
+- Coffee beans/ground coffee = CONVENTIONAL_FOOD (unless supplement facts present)
+- Ready-to-drink coffee/energy drinks = NON_ALCOHOLIC_BEVERAGE (unless supplement facts present)
+
 ${isPdf ? `IMPORTANT INSTRUCTIONS FOR READING THE PDF:
 This is a PDF of a label design mockup. READ THE TEXT from this PDF carefully and analyze it for compliance. The PDF may have complex design elements:
 - Text in various orientations (rotated, vertical, sideways, upside-down)
@@ -258,6 +297,8 @@ Return your response as a JSON object with the following structure:
 {
   "product_name": "Name of the product from the label",
   "product_type": "Type of product (e.g., 'Coffee', 'Snack Food', 'Beverage', 'Packaged Meal')",
+  "product_category": "MUST be one of: DIETARY_SUPPLEMENT | ALCOHOLIC_BEVERAGE | NON_ALCOHOLIC_BEVERAGE | CONVENTIONAL_FOOD (determined from STEP 1)",
+  "category_rationale": "Brief explanation of why this category was selected (2-3 sentences citing specific label elements)",
   "general_labeling": {
     "statement_of_identity": {
       "status": "compliant|non_compliant|not_applicable",
@@ -562,6 +603,8 @@ Return your response as a JSON object with the following structure:
         compliance_status: dbComplianceStatus,
         issues_found: analysisData.recommendations?.filter((r: any) => r.priority === 'critical' || r.priority === 'high')?.length || 0,
         session_id: sessionId || null,
+        product_category: analysisData.product_category || null,
+        category_rationale: analysisData.category_rationale || null,
       })
       .select()
       .single();

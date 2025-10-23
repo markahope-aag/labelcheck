@@ -19,6 +19,7 @@ export const supabaseAdmin = supabaseServiceKey
 
 export type PlanTier = 'basic' | 'pro' | 'enterprise';
 export type SubscriptionStatus = 'active' | 'canceled' | 'past_due' | 'trialing';
+export type ProductCategory = 'CONVENTIONAL_FOOD' | 'DIETARY_SUPPLEMENT' | 'ALCOHOLIC_BEVERAGE' | 'NON_ALCOHOLIC_BEVERAGE';
 
 export interface User {
   id: string;
@@ -79,6 +80,8 @@ export interface Analysis {
   compliance_status: string;
   issues_found: number;
   session_id: string | null;
+  product_category: ProductCategory | null;
+  category_rationale: string | null;
   created_at: string;
 }
 
