@@ -13,6 +13,8 @@ import { exportSingleAnalysisAsPDF } from '@/lib/export-helpers';
 import { useToast } from '@/hooks/use-toast';
 import { AnalysisChat } from '@/components/AnalysisChat';
 import { TextChecker } from '@/components/TextChecker';
+import CategorySelector from '@/components/CategorySelector';
+import { ProductCategory } from '@/lib/supabase';
 
 // Helper function to format compliance status for display
 const formatComplianceStatus = (status: string): string => {
@@ -51,6 +53,8 @@ export default function AnalyzePage() {
   const [isTextCheckerOpen, setIsTextCheckerOpen] = useState(false);
   const [isRevisedMode, setIsRevisedMode] = useState(false);
   const [previousResult, setPreviousResult] = useState<any>(null);
+  const [showCategorySelector, setShowCategorySelector] = useState(false);
+  const [analysisData, setAnalysisData] = useState<any>(null);
 
   const processFile = (file: File) => {
     console.log('Processing file:', file.name, 'Type:', file.type, 'Size:', file.size);
@@ -160,11 +164,21 @@ export default function AnalyzePage() {
         throw new Error(data.error || 'Failed to analyze image');
       }
 
-      setResult(data);
-
       // Store session ID if present
       if (data.session?.id) {
         setSessionId(data.session.id);
+      }
+
+      // Check if category selector should be shown
+      if (data.show_category_selector) {
+        // Store analysis data temporarily
+        setAnalysisData(data);
+        setShowCategorySelector(true);
+        // Don't set result yet - wait for category selection
+      } else {
+        // No category selection needed, show results immediately
+        setResult(data);
+        setShowCategorySelector(false);
       }
 
       // If this was a revised upload, exit revised mode
@@ -184,6 +198,49 @@ export default function AnalyzePage() {
     setResult(null);
     setError('');
     setSessionId(null);
+    setShowCategorySelector(false);
+    setAnalysisData(null);
+  };
+
+  const handleCategorySelect = async (category: ProductCategory, reason?: string) => {
+    if (!analysisData) return;
+
+    // Update the database with user's category selection
+    if (analysisData.id && category !== analysisData.product_category) {
+      try {
+        await fetch('/api/analyze/select-category', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            analysisId: analysisData.id,
+            selectedCategory: category,
+            selectionReason: reason || null,
+          }),
+        });
+      } catch (error) {
+        console.error('Error saving category selection:', error);
+        // Continue anyway - don't block user from seeing results
+      }
+    }
+
+    // Show the results with the selected category
+    setResult(analysisData);
+    setShowCategorySelector(false);
+    setAnalysisData(null);
+  };
+
+  const handleCompare = () => {
+    // TODO: Implement comparison mode
+    // For now, just skip to results
+    toast({
+      title: 'Comparison Mode',
+      description: 'Comparison mode coming soon! Showing analysis results.',
+    });
+    if (analysisData) {
+      setResult(analysisData);
+      setShowCategorySelector(false);
+      setAnalysisData(null);
+    }
   };
 
   const handleDownloadPDF = async () => {
@@ -369,7 +426,20 @@ export default function AnalyzePage() {
             </Alert>
           )}
 
-          {!result || isRevisedMode ? (
+          {showCategorySelector && analysisData ? (
+            // Show Category Selector when ambiguity is detected
+            <CategorySelector
+              aiCategory={analysisData.product_category}
+              confidence={analysisData.category_confidence || 'medium'}
+              categoryRationale={analysisData.category_rationale || ''}
+              alternatives={analysisData.category_ambiguity?.alternative_categories || []}
+              categoryOptions={analysisData.category_options || {}}
+              labelConflicts={analysisData.category_ambiguity?.label_conflicts || []}
+              recommendation={analysisData.recommendation}
+              onSelect={handleCategorySelect}
+              onCompare={handleCompare}
+            />
+          ) : !result || isRevisedMode ? (
             <>
               {isRevisedMode && previousResult && (
                 <div className="mb-6 p-4 bg-purple-50 border border-purple-200 rounded-lg">
