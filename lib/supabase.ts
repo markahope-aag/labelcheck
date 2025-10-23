@@ -71,6 +71,8 @@ export interface UsageTracking {
   updated_at: string;
 }
 
+export type CategoryConfidence = 'high' | 'medium' | 'low';
+
 export interface Analysis {
   id: string;
   user_id: string;
@@ -82,6 +84,12 @@ export interface Analysis {
   session_id: string | null;
   product_category: ProductCategory | null;
   category_rationale: string | null;
+  category_confidence: CategoryConfidence | null;
+  is_category_ambiguous: boolean;
+  alternative_categories: ProductCategory[] | null;
+  user_selected_category: ProductCategory | null;
+  category_selection_reason: string | null;
+  compared_categories: boolean;
   created_at: string;
 }
 

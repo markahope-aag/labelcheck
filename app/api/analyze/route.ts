@@ -210,32 +210,96 @@ Classify the product into ONE of these four categories based on the following cr
    - Has a "Supplement Facts" panel (NOT "Nutrition Facts")
    - Makes structure/function claims (e.g., "supports immune health", "promotes joint function")
    - Contains ingredients like: multivitamins, probiotics, protein powder, herbal extracts, omega-3, CoQ10, etc.
+   - **EXCEPTION:** Fortified foods with added vitamins are NOT supplements unless labeled as such
 
 2. **ALCOHOLIC_BEVERAGE** - Select this if ANY of these are true:
    - Contains alcohol ≥0.5% ABV (alcohol by volume)
    - Label shows "% ALC BY VOL" or "PROOF"
    - Has TTB (Alcohol and Tobacco Tax and Trade Bureau) approval number or statement
-   - Is beer, wine, spirits, hard seltzer, or malt beverage
+   - Is beer, wine, spirits, hard seltzer, malt beverage, or alcoholic kombucha
    - Contains government warning about alcohol consumption and pregnancy
+   - **EDGE CASE:** Non-alcoholic beer (<0.5% ABV) = NON_ALCOHOLIC_BEVERAGE
+   - **EDGE CASE:** Kombucha 0.5-2% ABV = ALCOHOLIC_BEVERAGE (TTB regulated)
 
 3. **NON_ALCOHOLIC_BEVERAGE** - Select this if ALL of these are true:
-   - Ready-to-drink liquid product (juice, soda, energy drink, coffee drink, tea, water, sports drink, etc.)
+   - Ready-to-drink liquid marketed as a BEVERAGE for refreshment/hydration
+   - Statement of identity includes: "beverage," "drink," "juice," "soda," "tea," "energy drink," "sports drink," "soft drink"
    - Contains <0.5% alcohol OR no alcohol
    - NOT a dietary supplement (no "supplement facts")
-   - Intended for direct consumption as a beverage
+   - **PRIMARY PURPOSE:** Refreshment, hydration, or enjoyment (NOT meal replacement)
+   - **IMPORTANT:** Serving size typically in fl oz
+
+   **Examples:** Coca-Cola, orange juice, Red Bull, Gatorade, bottled tea, bottled coffee drinks
+   **NOT beverages:** Milk, drinkable yogurt, soup, broth, meal replacement shakes (these are FOOD)
 
 4. **CONVENTIONAL_FOOD** - Select this if NONE of the above apply:
    - Standard packaged foods (snacks, cereals, baked goods, frozen meals, etc.)
    - Condiments, sauces, seasonings
-   - Fresh or processed meats, dairy, eggs
+   - Fresh or processed meats, poultry, seafood
+   - **ALL DAIRY PRODUCTS:** Milk, cheese, yogurt, butter, cream, ice cream, drinkable yogurt, chocolate milk
+   - Soups, broths, bouillon (even though liquid)
    - Infant formula and baby food
+   - Coffee beans, ground coffee, tea leaves (not ready-to-drink)
    - Any food product that doesn't fit the other three categories
 
-**IMPORTANT CLASSIFICATION NOTES:**
-- If a product has BOTH beverage and supplement characteristics (e.g., "protein shake" with supplement facts), classify as DIETARY_SUPPLEMENT
-- If uncertain between categories, use the PRIMARY intended use and regulatory panel type (Supplement Facts vs Nutrition Facts)
-- Coffee beans/ground coffee = CONVENTIONAL_FOOD (unless supplement facts present)
-- Ready-to-drink coffee/energy drinks = NON_ALCOHOLIC_BEVERAGE (unless supplement facts present)
+   **KEY DISTINCTION - Food vs Beverage:**
+   - Dairy liquids (milk, drinkable yogurt) = FOOD (even though drinkable)
+   - Soups/broths = FOOD (nutritional purpose, not refreshment)
+   - Meal replacement liquids = FOOD or SUPPLEMENT (depends on Supplement Facts panel)
+   - The differentiator is MARKETING/PURPOSE: refreshment vs nutrition/meal
+
+**CRITICAL CLASSIFICATION EDGE CASES:**
+
+- **Protein bars/shakes:** If has Supplement Facts = DIETARY_SUPPLEMENT, if Nutrition Facts = CONVENTIONAL_FOOD
+- **Fortified beverages:** If ready-to-drink + marketed as beverage = NON_ALCOHOLIC_BEVERAGE (even with added vitamins)
+- **Drinkable yogurt/kefir:** Always CONVENTIONAL_FOOD (dairy product, not beverage)
+- **Kombucha:** Check ABV - if ≥0.5% = ALCOHOLIC_BEVERAGE, if <0.5% = NON_ALCOHOLIC_BEVERAGE
+- **Energy shots:** If Supplement Facts = DIETARY_SUPPLEMENT, if Nutrition Facts = NON_ALCOHOLIC_BEVERAGE
+- **Herbal tea (ready-to-drink):** NON_ALCOHOLIC_BEVERAGE (unless supplement facts)
+- **Herbal tea (dry leaves):** CONVENTIONAL_FOOD (unless supplement facts)
+
+**STEP 2: CLASSIFICATION CONFIDENCE & AMBIGUITY DETECTION**
+
+After determining the category, evaluate your confidence and check for ambiguity:
+
+**A. CONFIDENCE LEVEL:**
+- **HIGH (90-100%):** Multiple clear indicators, no conflicting evidence
+  - Example: Label states "Dietary Supplement" + has Supplement Facts + makes structure/function claim
+  - Example: Shows 5% ABV + government warning + TTB number
+- **MEDIUM (60-89%):** Some indicators present but missing key elements OR minor conflicts
+  - Example: Contains vitamins/protein but has Nutrition Facts (could be food OR supplement)
+  - Example: Ready-to-drink liquid but unclear if beverage or meal replacement
+- **LOW (<60%):** Conflicting indicators or insufficient information
+  - Example: Has Supplement Facts panel but no "dietary supplement" statement
+  - Example: Makes health claims but labeled as conventional food
+
+**B. AMBIGUITY CHECK - Could this product fit ANOTHER category?**
+
+Check if the product could reasonably be classified differently:
+
+**Common Ambiguous Products:**
+1. **Protein bars:** Could be FOOD or SUPPLEMENT depending on panel type and claims
+2. **Protein shakes:** Could be FOOD (meal replacement) or SUPPLEMENT or BEVERAGE depending on positioning
+3. **Fortified beverages:** Could be BEVERAGE or SUPPLEMENT depending on claim types
+4. **Functional beverages:** Energy drinks, wellness shots - could be BEVERAGE or SUPPLEMENT
+5. **Herbal products:** Could be FOOD (tea) or SUPPLEMENT depending on format and claims
+
+**If ambiguous, you MUST:**
+1. Set "is_ambiguous: true"
+2. List "alternative_categories" with rationale for each
+3. Identify any "label_conflicts" (e.g., food claims but supplement panel)
+4. Provide guidance for EACH viable category option
+
+**STEP 3: CATEGORY OPTIONS & GUIDANCE** (Required if ambiguous OR confidence < HIGH)
+
+For EACH viable category (detected + alternatives), provide:
+
+1. **Current Label Compliance:** Is the current label configuration compliant for this category?
+2. **Required Changes:** What MUST change to be compliant in this category?
+3. **Allowed Claims:** What can the manufacturer say/claim in this category?
+4. **Prohibited Claims:** What is NOT allowed in this category?
+5. **Pros & Cons:** Trade-offs of choosing this category
+6. **Recommendation:** Which category makes most sense given current label and likely manufacturer intent?
 
 ${isPdf ? `IMPORTANT INSTRUCTIONS FOR READING THE PDF:
 This is a PDF of a label design mockup. READ THE TEXT from this PDF carefully and analyze it for compliance. The PDF may have complex design elements:
@@ -299,6 +363,40 @@ Return your response as a JSON object with the following structure:
   "product_type": "Type of product (e.g., 'Coffee', 'Snack Food', 'Beverage', 'Packaged Meal')",
   "product_category": "MUST be one of: DIETARY_SUPPLEMENT | ALCOHOLIC_BEVERAGE | NON_ALCOHOLIC_BEVERAGE | CONVENTIONAL_FOOD (determined from STEP 1)",
   "category_rationale": "Brief explanation of why this category was selected (2-3 sentences citing specific label elements)",
+  "category_confidence": "high|medium|low (from STEP 2)",
+  "category_ambiguity": {
+    "is_ambiguous": true|false,
+    "alternative_categories": ["Array of other viable categories if ambiguous"],
+    "ambiguity_reason": "Explanation of why multiple categories could apply",
+    "label_conflicts": [
+      {
+        "severity": "critical|high|medium|low",
+        "conflict": "Description of the conflict",
+        "current_category": "Category as detected",
+        "violation": "What regulation is violated"
+      }
+    ]
+  },
+  "category_options": {
+    "DETECTED_CATEGORY_NAME": {
+      "current_label_compliant": true|false,
+      "required_changes": ["List of changes needed for compliance"],
+      "allowed_claims": ["What claims/statements are permitted"],
+      "prohibited_claims": ["What claims/statements are NOT allowed"],
+      "regulatory_requirements": ["Key regulatory requirements for this category"],
+      "pros": ["Advantages of choosing this category"],
+      "cons": ["Disadvantages/restrictions of this category"]
+    },
+    "ALTERNATIVE_CATEGORY_NAME": {
+      "...": "Same structure for each alternative category"
+    }
+  },
+  "recommendation": {
+    "suggested_category": "CATEGORY_NAME",
+    "confidence": "high|medium|low",
+    "reasoning": "Detailed explanation of recommendation",
+    "key_decision_factors": ["Factor 1", "Factor 2", "Factor 3"]
+  },
   "general_labeling": {
     "statement_of_identity": {
       "status": "compliant|non_compliant|not_applicable",
@@ -605,6 +703,11 @@ Return your response as a JSON object with the following structure:
         session_id: sessionId || null,
         product_category: analysisData.product_category || null,
         category_rationale: analysisData.category_rationale || null,
+        category_confidence: analysisData.category_confidence || null,
+        is_category_ambiguous: analysisData.category_ambiguity?.is_ambiguous || false,
+        alternative_categories: analysisData.category_ambiguity?.alternative_categories || null,
+        // user_selected_category, category_selection_reason, compared_categories remain NULL initially
+        // These are set when user makes a selection in the Category Selector UI
       })
       .select()
       .single();
@@ -669,6 +772,13 @@ Return your response as a JSON object with the following structure:
       console.error('Error sending email notification:', emailError);
     }
 
+    // Determine if category selector should be shown
+    const showCategorySelector =
+      analysisData.category_confidence !== 'high' ||
+      analysisData.category_ambiguity?.is_ambiguous ||
+      (analysisData.category_ambiguity?.label_conflicts &&
+       analysisData.category_ambiguity.label_conflicts.length > 0);
+
     return NextResponse.json({
       id: analysis.id,
       image_name: analysis.image_name,
@@ -676,6 +786,7 @@ Return your response as a JSON object with the following structure:
       issues_found: analysis.issues_found,
       created_at: analysis.created_at,
       ...analysisData,
+      show_category_selector: showCategorySelector,
       usage: {
         used: currentUsage.analyses_used + 1,
         limit: currentUsage.analyses_limit,
