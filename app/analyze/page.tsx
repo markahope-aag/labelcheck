@@ -234,7 +234,8 @@ export default function AnalyzePage() {
     setError('');
     setSessionId(null);
     setShowCategorySelector(false);
-    setAnalysisData(null);
+    setShowComparison(false);
+    setAnalysisData(null); // Clear when starting completely new analysis
   };
 
   const handleCategorySelect = async (category: ProductCategory, reason?: string) => {
@@ -261,7 +262,14 @@ export default function AnalyzePage() {
     // Show the results with the selected category
     setResult(analysisData);
     setShowCategorySelector(false);
-    setAnalysisData(null);
+    setShowComparison(false);
+    // DON'T clear analysisData - keep it so user can go back and try other categories
+  };
+
+  const handleChangeCategoryClick = () => {
+    // Go back to category selector to try a different classification
+    setShowCategorySelector(true);
+    setShowComparison(false);
   };
 
   const handleCompare = () => {
@@ -642,7 +650,18 @@ export default function AnalyzePage() {
                       </CardTitle>
                       <CardDescription>{result.product_type || 'Regulatory Compliance Analysis'}</CardDescription>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
+                      {/* Show "Change Category" button if this result came from category selection */}
+                      {analysisData && analysisData.category_ambiguity?.alternative_categories?.length > 0 && (
+                        <Button
+                          onClick={handleChangeCategoryClick}
+                          variant="outline"
+                          className="border-orange-400 text-orange-700 hover:bg-orange-50 gap-2"
+                        >
+                          <AlertCircle className="h-4 w-4" />
+                          Change Category
+                        </Button>
+                      )}
                       <Button onClick={handleShare} variant="outline" className="border-slate-300 hover:bg-slate-50 gap-2">
                         <Share2 className="h-4 w-4" />
                         Share
