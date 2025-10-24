@@ -445,15 +445,28 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
 
    - **ACCEPTABLE CLAIMS** (These are COMPLIANT - do NOT flag as violations):
 
-     **A. Nutrient Content Claims** (describing nutrient levels):
+     **A. Nutrient Content Claims** (quantitative statements about nutrient levels - governed by 21 CFR 101.13):
+     • "High in vitamin C" / "Low sodium" / "Good source of fiber"
+     • "Contains 100% of the Daily Value for vitamin D"
      • "Provides X mg of vitamin C per serving"
-     • "Low sodium" / "Low fat"
-     • "High in fiber" / "High in vitamin D"
-     • "Good source of calcium"
      • "Excellent source of B vitamins"
      • Validate against regulatory definitions: "High" ≥20% DV, "Good Source" 10-19% DV, "Low" meets FDA thresholds
+     • **❌ DISCLAIMER NOT REQUIRED** - These are quantitative, factual statements
 
-     **B. Structure/Function Claims** (describing normal body structure/function - THESE ARE LEGAL FOR SUPPLEMENTS):
+     **B. General Nutritional Statements** (basic factual information):
+     • "Contains 20 grams of protein per serving"
+     • "Includes natural herbal extracts"
+     • "Gluten-free" / "Non-GMO" / "Vegan"
+     • **❌ DISCLAIMER NOT REQUIRED** - These are factual statements (but must be truthful)
+
+     **C. Authorized Health Claims** (FDA-approved disease risk reduction claims - must use exact FDA wording):
+     • "Diets low in sodium may reduce the risk of high blood pressure"
+     • "Soluble fiber from whole oats as part of a diet low in saturated fat and cholesterol may reduce the risk of heart disease"
+     • "Adequate calcium and vitamin D throughout life may reduce the risk of osteoporosis"
+     • **❌ DISCLAIMER NOT REQUIRED** - These follow FDA's pre-approved wording
+     • Must use exact FDA-authorized wording and conditions of use
+
+     **D. Structure/Function Claims** (describing normal body structure/function - LEGAL for supplements under DSHEA):
      • "Supports healthy immune system function"
      • "Promotes healthy joints and cartilage"
      • "Helps maintain healthy cholesterol levels already within the normal range"
@@ -467,13 +480,62 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
      • "Iron helps support cognitive development in children"
      • "Calcium contributes to the normal function of digestive enzymes"
      • "Full-spectrum B-vitamin complex helps convert food into energy"
-     • **REQUIREMENT**: Check for required disclaimer: "This statement has not been evaluated by the FDA. This product is not intended to diagnose, treat, cure, or prevent any disease."
+     • **✅ DISCLAIMER REQUIRED**: "This statement has not been evaluated by the Food and Drug Administration. This product is not intended to diagnose, treat, cure, or prevent any disease."
+     • Must be truthful, not misleading, and have substantiation (scientific evidence)
 
-     **C. Authorized Health Claims** (FDA-approved disease risk reduction claims - LEGAL if properly worded):
-     • "Diets low in sodium may reduce the risk of high blood pressure"
-     • "Soluble fiber from whole oats as part of a diet low in saturated fat and cholesterol may reduce the risk of heart disease"
-     • "Adequate calcium and vitamin D throughout life may reduce the risk of osteoporosis"
-     • Must use exact FDA-authorized wording
+     **E. General Well-Being Claims** (overall wellness without specific function):
+     • "Promotes vitality and energy"
+     • "Supports overall wellness"
+     • "Enhances quality of life"
+     • **✅ DISCLAIMER REQUIRED** (same as structure/function claims)
+
+     **F. Nutrient Deficiency Claims** (addressing deficiencies):
+     • "Helps prevent vitamin D deficiency"
+     • "Addresses iron deficiency"
+     • **✅ DISCLAIMER REQUIRED** (same as structure/function claims)
+
+     **G. Sexual Health/Performance Structure/Function Claims** (SPECIAL CATEGORY - FDA closely scrutinizes these):
+     • **✅ ACCEPTABLE** (with required disclaimer):
+       - "Supports healthy sexual function"
+       - "Promotes sexual vitality"
+       - "Enhances sexual wellness"
+       - "Supports energy and stamina"
+       - "Helps maintain normal testosterone levels already within the normal range"
+       - "Promotes relaxation and mood associated with intimacy"
+       - "Supports normal blood flow"
+       - "May help improve sexual performance and pleasure" (ONLY if context refers to general wellness, NOT a disease condition like ED)
+     • **⚠️ GRAY ZONE - "pleasure" and "performance"**:
+       - Words like "pleasure," "satisfaction," "endurance," "performance" CAN be used ONLY if they clearly relate to general well-being, NOT medical outcomes
+       - ✅ Compliant: "Supports sexual performance and overall pleasure as part of a healthy lifestyle"
+       - ❌ Noncompliant: "Improves performance for men with erectile dysfunction" (references medical condition)
+     • **❌ PROHIBITED - Sexual Disease/Dysfunction Claims**:
+       - "Treats erectile dysfunction" / "Cures impotence"
+       - "Restores lost libido"
+       - "Increases testosterone levels in men with low T" (implies treating medical condition)
+       - "Prevents premature ejaculation"
+       - "Improves sexual performance for men with ED"
+       - "Boosts fertility or guarantees conception"
+       - "Works like Viagra" / "Natural Viagra alternative"
+       - "Reverses sexual decline due to aging"
+     • **KEY DIFFERENTIATOR**: Any claim that references or implies a medical condition (ED, impotence, dysfunction, low T as disorder) = DRUG CLAIM = PROHIBITED
+     • **⚠️ HEIGHTENED SCRUTINY**: FDA and FTC closely monitor sexual enhancement supplements due to:
+       - History of adulteration (hidden prescription drug analogs like sildenafil)
+       - Substantiation requirement: Must have scientific evidence supporting claims
+       - FTC may challenge "pleasure" or "performance" claims without adequate proof
+       - If product makes sexual health claims, recommend noting: "Sexual enhancement supplements are subject to heightened FDA/FTC scrutiny and substantiation requirements"
+     • **✅ DISCLAIMER REQUIRED** (same as all structure/function claims)
+
+   - **📋 DISCLAIMER REQUIREMENT SUMMARY**:
+     • Nutrient Content Claims → ❌ NO disclaimer required (quantitative statements)
+     • General Nutritional Statements → ❌ NO disclaimer required (factual information)
+     • Authorized Health Claims → ❌ NO disclaimer required (use FDA exact wording)
+     • Structure/Function Claims → ✅ DISCLAIMER REQUIRED
+     • General Well-Being Claims → ✅ DISCLAIMER REQUIRED
+     • Nutrient Deficiency Claims → ✅ DISCLAIMER REQUIRED
+     • Sexual Health S/F Claims → ✅ DISCLAIMER REQUIRED
+     • Disease/Drug Claims → 🚫 NOT PERMITTED (illegal regardless of disclaimer)
+
+     **CRITICAL**: Adding the disclaimer does NOT make a disease claim compliant. Disease claims are NEVER allowed for dietary supplements.
 
    - **PROHIBITED CLAIMS** (Flag these as NON-COMPLIANT - supplements CANNOT make disease claims):
 
@@ -510,13 +572,34 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
      • "Detox" / "Cleanse" (implies disease treatment)
      • "Natural cure" / "Alternative to surgery"
 
-   - **ANALYSIS APPROACH**:
+   - **ANALYSIS APPROACH - THREE-TIER CLASSIFICATION SYSTEM**:
      • List ALL claims found on the label
-     • Categorize each claim as: Nutrient Content, Structure/Function, Health Claim, or Prohibited
-     • For S/F claims, verify FDA disclaimer is present
-     • For prohibited claims, explain why they violate FD&C Act
-     • **Status should be COMPLIANT if only acceptable claims are present**
-     • **Status should be NON-COMPLIANT only if prohibited disease claims are present**
+     • For EACH claim, assign one of three classifications:
+
+       **1. ✅ COMPLIANT** - Use when you are CERTAIN the claim is acceptable:
+       • Clear nutrient content claims with proper validation ("Provides 100mg vitamin C per serving")
+       • Standard structure/function claims with required disclaimer ("Supports healthy immune function")
+       • FDA-authorized health claims using exact wording
+
+       **2. ❌ PROHIBITED** - Use when you are CERTAIN the claim is illegal:
+       • Explicit disease treatment/cure claims ("Cures arthritis", "Treats depression")
+       • Drug replacement claims ("Works like Viagra", "Replaces blood pressure medication")
+       • References to medical conditions/diseases ("for men with ED", "reverses diabetes")
+
+       **3. ⚠️ NEEDS REVIEW** - Use when claim falls in gray zone or requires expert judgment:
+       • Sexual health "pleasure"/"performance" claims without clear wellness context
+       • Ambiguous wording that could imply disease treatment
+       • Claims lacking required disclaimers or substantiation
+       • Marketing terms that may be misleading ("detox", "cleanse", "breakthrough")
+       • Any claim where compliance depends on context, substantiation, or interpretation
+
+     • For COMPLIANT claims: Note claim type and confirm compliance elements
+     • For PROHIBITED claims: Explain specifically why they violate FD&C Act
+     • For NEEDS REVIEW claims: Explain the ambiguity and what needs expert evaluation
+     • **Overall Status**:
+       - COMPLIANT: All claims are clearly compliant
+       - NON-COMPLIANT: One or more claims are clearly prohibited
+       - POTENTIALLY-NON-COMPLIANT: Contains claims that need expert review (no clear violations, but uncertain claims present)
 
 6. **Additional Regulatory Considerations for Supplements**:
    - **DHEA Warning Requirements** (Anabolic Steroid Control Act of 2004):
@@ -534,6 +617,60 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
      • If asked about NDI in the AI prompt, note: "NDI compliance is automatically verified against FDA databases after analysis"
    - **Good Manufacturing Practices (cGMP)**: Note if relevant
    - **Other Supplement-Specific Requirements**: Product-specific labeling requirements
+
+7. **Disclaimer Requirements** (CRITICAL for supplements with structure/function claims):
+   - **🔍 SEARCH FOR DISCLAIMER**: Scan the ENTIRE label for the FDA-required disclaimer text
+   - **REQUIRED EXACT WORDING** (must match verbatim or be substantially similar):
+     • "This statement has not been evaluated by the Food and Drug Administration. This product is not intended to diagnose, treat, cure, or prevent any disease."
+     • Acceptable variations: "These statements have not been evaluated..." (for multiple claims)
+
+   - **ANALYSIS STEPS**:
+
+     **STEP 1: Determine if disclaimer is required**
+     • Review the claims analysis from Section 5
+     • ✅ DISCLAIMER REQUIRED if label contains:
+       - Structure/Function Claims
+       - General Well-Being Claims
+       - Nutrient Deficiency Claims
+       - Sexual Health S/F Claims
+     • ❌ DISCLAIMER NOT REQUIRED if label ONLY contains:
+       - Nutrient Content Claims
+       - General Nutritional Statements
+       - Authorized Health Claims
+
+     **STEP 2: Check if disclaimer is present**
+     • Is disclaimer text visible on the label?
+     • Location: Can appear anywhere on the label (often near claims or on back panel)
+     • Size/Readability: Must be prominently displayed in legible font size
+
+     **STEP 3: Validate disclaimer wording**
+     • Does it match the required FDA wording exactly or substantially?
+     • Common mistakes to flag:
+       - Abbreviated text ("Not FDA evaluated" = INSUFFICIENT)
+       - Missing key phrases ("not intended to diagnose, treat, cure" without "or prevent any disease" = INCOMPLETE)
+       - Paraphrased wording that changes meaning
+
+     **STEP 4: Determine compliance status**
+     • **COMPLIANT**:
+       - Disclaimer NOT required AND not present (or present but unnecessary)
+       - Disclaimer required AND present with correct wording and prominent display
+     • **NON-COMPLIANT**:
+       - Disclaimer required but MISSING entirely
+       - Disclaimer present but INCORRECT wording (abbreviated/incomplete)
+       - Disclaimer present but NOT prominently displayed (too small to read)
+     • **POTENTIALLY-NON-COMPLIANT**:
+       - Disclaimer wording is close but not exact (may need expert review)
+       - Disclaimer placement/size is questionable
+
+   - **OUTPUT FIELDS**:
+     • disclaimer_required: boolean (based on claim types present)
+     • disclaimer_present: boolean (whether disclaimer text was found on label)
+     • disclaimer_text_found: string (exact text found on label, or null if not found)
+     • disclaimer_wording_correct: boolean (whether it matches FDA requirements)
+     • disclaimer_prominent: boolean (whether it's displayed prominently/legibly)
+     • status: "compliant" | "non_compliant" | "potentially_non_compliant"
+     • details: Explanation of finding (e.g., "Disclaimer required for structure/function claims. Correct FDA disclaimer found prominently displayed on back panel.")
+     • recommendations: Array of specific actions if non-compliant (e.g., "Add FDA-required disclaimer: 'This statement has not been evaluated...'")
 
 **IF product_category is CONVENTIONAL_FOOD, NON_ALCOHOLIC_BEVERAGE, or ALCOHOLIC_BEVERAGE, your analysis MUST include:**
 
@@ -793,6 +930,17 @@ Return your response as a JSON object with the following structure:
       "status": "compliant|non_compliant|not_applicable"
     },
     "details": "Overall claims compliance analysis"
+  },
+  "disclaimer_requirements": {
+    "note": "CRITICAL for dietary supplements with structure/function claims. Include for ALL product types to assess disclaimer compliance.",
+    "disclaimer_required": true|false,
+    "disclaimer_present": true|false,
+    "disclaimer_text_found": "Exact disclaimer text found on label, or null if not found",
+    "disclaimer_wording_correct": true|false,
+    "disclaimer_prominent": true|false,
+    "status": "compliant|non_compliant|potentially_non_compliant",
+    "details": "Full explanation of disclaimer requirements and compliance (e.g., 'Disclaimer required for structure/function claims. Correct FDA disclaimer found prominently displayed on back panel.')",
+    "recommendations": ["Specific actions if non-compliant, e.g., 'Add FDA-required disclaimer text'"]
   },
   "additional_requirements": {
     "note": "Include fortification ONLY for conventional foods/beverages, NOT supplements",

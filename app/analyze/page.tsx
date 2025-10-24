@@ -150,23 +150,40 @@ export default function AnalyzePage() {
     setAnalysisProgress(0);
     setAnalysisStep('Uploading file...');
 
+    // Track start time for long-running analyses
+    const startTime = Date.now();
+
     // Simulate progress updates
     const progressInterval = setInterval(() => {
       setAnalysisProgress(prev => {
-        if (prev < 90) {
-          // Slowly increment progress
-          const increment = Math.random() * 3 + 1;
-          const newProgress = Math.min(prev + increment, 90);
+        const elapsed = Date.now() - startTime;
+        const elapsedSeconds = Math.floor(elapsed / 1000);
+
+        // Continue progressing beyond 90%, but more slowly
+        if (prev < 98) {
+          // Faster progress up to 90%
+          const increment = prev < 90
+            ? Math.random() * 3 + 1  // 1-4% increment
+            : Math.random() * 0.5 + 0.1; // 0.1-0.6% increment (much slower)
+
+          const newProgress = Math.min(prev + increment, 98);
 
           // Update step message based on progress
           if (newProgress < 20) {
             setAnalysisStep('Uploading file...');
           } else if (newProgress < 40) {
             setAnalysisStep('Processing image...');
-          } else if (newProgress < 80) {
+          } else if (newProgress < 70) {
             setAnalysisStep('Analyzing with AI (this may take 60-90 seconds)...');
+          } else if (newProgress < 90) {
+            setAnalysisStep('Performing comprehensive regulatory analysis...');
           } else {
-            setAnalysisStep('Finalizing results...');
+            // Show different messages based on elapsed time
+            if (elapsedSeconds > 60) {
+              setAnalysisStep('Complex label detected - performing detailed analysis...');
+            } else {
+              setAnalysisStep('Finalizing results...');
+            }
           }
 
           return newProgress;
