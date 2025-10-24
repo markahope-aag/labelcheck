@@ -19,7 +19,10 @@
       "Bash(findstr:*)",
       "Bash(npm run dev:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git push)",
+      "WebSearch",
+      "Bash(node check-ingredients.js:*)"
     ],
     "deny": [],
     "ask": []
