@@ -402,7 +402,7 @@ export async function exportSingleAnalysisAsPDF(analysis: AnalysisData) {
 
     doc.setFontSize(12);
     doc.setTextColor(37, 99, 235);
-    doc.text('4. Nutrition Labeling and Claims', 14, yPos);
+    doc.text('4. Nutrition Labeling', 14, yPos);
     doc.setTextColor(0, 0, 0);
     yPos += 7;
 

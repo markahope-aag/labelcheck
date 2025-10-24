@@ -410,57 +410,83 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
    - Specific Ingredient Requirements: Are colors specifically named? Are preservatives listed with their function?
 
 3. **Food Allergen Labeling Requirements (FALCPA/FASTER Act)**: Critical compliance check
+   - **APPLIES TO ALL PRODUCTS**: Allergen labeling requirements apply to ALL foods including dietary supplements per FALCPA Section 403(w)
    - Major Food Allergens (MFAs): The nine major allergens are: Milk, Egg, Fish, Crustacean shellfish, Tree nuts, Wheat, Peanuts, Soybeans, and Sesame
    - **STEP 1**: Identify if ANY of the 9 MFAs are actually present in the ingredients list
-   - **STEP 2**: IF NO allergens are present in ingredients → status: "compliant" or "not_applicable", potential_allergens: []
+   - **STEP 2**: IF NO allergens are present in ingredients → status: "compliant", potential_allergens: []
    - **STEP 3**: IF allergens ARE present → Check if there's a "Contains" statement OR parenthetical declarations
    - **STEP 4**: Use conditional language for ambiguous ingredients - "IF ingredient X contains [allergen], THEN declaration is required"
    - **CRITICAL**: Do NOT flag as "potentially_non_compliant" if there are zero allergens in the product. Only flag if allergens ARE present but declarations are missing.
+   - **NEVER use "not_applicable" status** - even if no allergens are present, the status should be "compliant" (meaning compliant with FALCPA because no allergens to declare)
 
-4. **Nutrition Labeling and Claims**: Assess nutrition facts panel requirements and exemptions
+**IF product_category is DIETARY_SUPPLEMENT, your analysis MUST include these sections in order:**
 
-   **🚨 CRITICAL: PANEL TYPE VALIDATION - CHECK THIS FIRST:**
+4. **Supplement Facts Panel**: Evaluate the dietary supplement panel compliance
+   - **REQUIRED PANEL**: Label MUST have a "Supplement Facts" panel (21 CFR 101.36), supplements do NOT have exemptions
+   - **CHECK FOR WRONG PANEL TYPE**:
+     • Does label show "Nutrition Facts" panel? If YES → Status = NON-COMPLIANT, explanation = "Dietary supplements must use Supplement Facts panel, not Nutrition Facts panel per 21 CFR 101.36"
+     • Does label show "Supplement Facts" panel? If NO → Status = NON-COMPLIANT, explanation = "Supplement Facts panel is required but missing"
+   - **IF CORRECT PANEL TYPE PRESENT** (Supplement Facts), validate:
+     • Serving size clearly stated
+     • Amount per serving listed for each dietary ingredient
+     • % Daily Value (DV) shown for vitamins/minerals with established DVs
+     • Proprietary blend disclosures (if applicable)
+     • Format compliance (title, headings, layout per 21 CFR 101.36)
+   - **DO NOT validate Nutrition Facts rounding rules** on a Supplement Facts panel (different requirements)
+   - Set panel_present: true/false, panel_type_correct: true/false, exemption_applicable: false
 
-   **IF product_category is DIETARY_SUPPLEMENT:**
-   - ✅ **REQUIRED**: Label MUST have a "Supplement Facts" panel (21 CFR 101.36)
-   - ❌ **PROHIBITED**: Label MUST NOT have a "Nutrition Facts" panel
-   - **CHECK THE LABEL:**
-     • Does it show "Supplement Facts"? (REQUIRED - if missing, mark NON-COMPLIANT)
-     • Does it show "Nutrition Facts"? (WRONG PANEL TYPE - if present, mark NON-COMPLIANT)
-   - **If wrong panel type found**: Status = NON-COMPLIANT, details = "Product classified as dietary supplement but label has Nutrition Facts panel instead of Supplement Facts panel. Dietary supplements must use Supplement Facts format per 21 CFR 101.36. This panel must be removed and replaced with a Supplement Facts panel."
-   - **DO NOT validate rounding rules** if wrong panel type - the entire panel needs to be replaced
-   - **IMPORTANT**: Dietary supplements do NOT have exemptions - a Supplement Facts panel is ALWAYS required. Do NOT mention exemptions for dietary supplements.
-   - Set exemption_applicable: false for all dietary supplements
+5. **Claims**: Evaluate all claims made on the supplement label
+   - **Structure/Function Claims**: Look for claims about body functions (e.g., "supports immune health", "promotes joint function")
+     • List ALL S/F claims found
+     • Verify substantiation requirements
+     • Check for required disclaimer: "This statement has not been evaluated by the FDA. This product is not intended to diagnose, treat, cure, or prevent any disease."
+   - **Nutrient Content Claims**: Look for claims about nutrient levels (e.g., "high in vitamin C", "good source of calcium")
+     • Validate against regulatory definitions (high ≥20% DV, good source 10-19% DV)
+   - **Health Claims**: Check if any FDA-authorized health claims are made (rare on supplements)
+   - **Prohibited Claims**: Flag any disease treatment/cure claims (illegal for supplements)
 
-   **IF product_category is CONVENTIONAL_FOOD, NON_ALCOHOLIC_BEVERAGE, or ALCOHOLIC_BEVERAGE:**
-   - ✅ **REQUIRED**: Label MUST have a "Nutrition Facts" panel (21 CFR 101.9), unless exempt
-   - ❌ **PROHIBITED**: Label MUST NOT have a "Supplement Facts" panel
-   - **CHECK THE LABEL:**
-     • Does it show "Nutrition Facts"? (CORRECT - proceed with validation)
-     • Does it show "Supplement Facts"? (WRONG - if present, mark NON-COMPLIANT)
-   - **If wrong panel type found**: Status = NON-COMPLIANT, details = "Product classified as food/beverage but label has Supplement Facts panel instead of Nutrition Facts panel. This panel type is only for dietary supplements. Panel must be changed to Nutrition Facts format."
+6. **Additional Regulatory Considerations for Supplements**:
+   - **NDI (New Dietary Ingredient) Compliance**:
+     • **IMPORTANT**: The database check will automatically validate ingredients against TWO databases:
+       1. **Old Dietary Ingredients Database (2,193 ingredients)**: Pre-October 15, 1994 ingredients that are grandfathered and do NOT require NDI notifications
+       2. **NDI Notifications Database (1,253 ingredients)**: Post-1994 ingredients that HAVE filed NDI notifications with FDA
+     • **YOU DO NOT need to flag NDI issues in the AI analysis** - the database check handles this automatically
+     • If asked about NDI in the AI prompt, note: "NDI compliance is automatically verified against FDA databases after analysis"
+   - **Good Manufacturing Practices (cGMP)**: Note if relevant
+   - **Other Supplement-Specific Requirements**: Product-specific labeling requirements
 
-   **AFTER PANEL TYPE VALIDATION (FOR CONVENTIONAL FOODS/BEVERAGES ONLY):**
-   - Mandatory Nutrition Labeling: Is a Nutrition Facts panel required for this product type?
-   - **Exemptions**: Does this product qualify for exemption (e.g., coffee, spices, foods of no nutritional significance)?
-   - Evaluation of Claims: Are there any nutrient content claims (NCCs) or health claims that would trigger mandatory nutrition labeling?
-   - **Important**: Consider exemptions for foods with insignificant amounts of all required nutrients
-   - If nutrition panel is missing but product qualifies for exemption, mark as COMPLIANT with explanation
+**IF product_category is CONVENTIONAL_FOOD, NON_ALCOHOLIC_BEVERAGE, or ALCOHOLIC_BEVERAGE, your analysis MUST include:**
 
-   **🔍 NUTRITION FACTS VALIDATION - CHECK ROUNDING RULES:**
-   If a Nutrition Facts panel is present AND product is NOT a dietary supplement, validate ALL nutrient values against FDA rounding rules:
-   - **Calories**: <5 cal must be "0" or "5" (NOT "1", "2", "3", or "4"). Values like "1 calorie" are NON-COMPLIANT.
-   - **Fiber**: <0.5g must be "0g" (NOT "0.1g", "0.2g", etc.). Values 0.5-1g should be "less than 1g".
-   - **Protein**: <0.5g rounds to 0g. If 0.5g or more, round to nearest gram.
-   - **Fat (Total, Sat, Trans)**: <0.5g must be "0g". Round to nearest 0.5g above that.
-   - **Cholesterol**: <2mg must be "0mg". Round to nearest 5mg above that.
-   - **Sodium**: <5mg must be "0mg". Round to nearest 5mg (5-140mg) or 10mg (>140mg).
-   - **Carbs/Sugars**: <0.5g must be "0g". Round to nearest gram.
-   - **Vitamins/Minerals**: Report as % DV, round to nearest 2% (0-10%), 5% (10-50%), or 10% (>50%).
+4. **Nutrition Labeling**: Assess nutrition facts panel requirements and exemptions
+   - **REQUIRED PANEL** (unless exempt): Label should have "Nutrition Facts" panel per 21 CFR 101.9
+   - **CHECK FOR WRONG PANEL TYPE**:
+     • Does label show "Supplement Facts" panel? If YES → Status = NON-COMPLIANT, explanation = "This panel type is only for dietary supplements. Food/beverage products must use Nutrition Facts panel."
+     • Does label show "Nutrition Facts" panel? If NO → Check if exemption applies (see below)
+   - **EXEMPTIONS CHECK** (if Nutrition Facts panel is missing):
+     • Coffee, tea, spices with no added nutrients
+     • Foods with no significant nutritional value
+     • Foods in small packages
+     • If exempt → Status = COMPLIANT, provide exemption reason
+     • If NOT exempt → Status = NON-COMPLIANT
+   - **IF NUTRITION FACTS PANEL PRESENT**, validate rounding rules:
+     • Calories: <5 cal must be "0" or "5"
+     • Fiber/Protein/Fat/Carbs: <0.5g must be "0g"
+     • Cholesterol: <2mg must be "0mg", round to nearest 5mg
+     • Sodium: <5mg must be "0mg", round to 5mg or 10mg
+     • Flag violations as NON-COMPLIANT
 
-   **FLAG AS NON-COMPLIANT:** If ANY nutrient value violates rounding rules.
+5. **Claims**: Evaluate all claims made on the food/beverage label
+   - **Nutrient Content Claims** (e.g., "low fat", "high fiber", "fortified"):
+     • List ALL claims found
+     • Validate against definitions (21 CFR 101.13, 101.54, 101.62)
+     • Example: "High" requires ≥20% DV, "Good Source" requires 10-19% DV
+   - **Health Claims**: Check for FDA-authorized health claims (e.g., "calcium reduces risk of osteoporosis")
+     • Verify claim is authorized and properly worded
+   - **Structure/Function Claims**: Generally not allowed on conventional foods (only supplements)
+     • If found, flag as potential violation
+   - **Prohibited Claims**: Flag any disease treatment/cure claims (illegal)
 
-5. **Additional Regulatory Considerations**: Evaluate any other applicable requirements
+6. **Additional Regulatory Considerations**: Evaluate any other applicable requirements
 
    **🚨 FORTIFICATION POLICY COMPLIANCE - CRITICAL CHECK:**
 
@@ -602,31 +628,39 @@ Return your response as a JSON object with the following structure:
     "regulation_citation": "21 CFR 101.4"
   },
   "allergen_labeling": {
-    "status": "compliant|potentially_non_compliant|not_applicable",
+    "status": "compliant|potentially_non_compliant (NEVER use not_applicable - use compliant if no allergens present)",
     "details": "Detailed analysis with conditional statements about potential allergen-containing ingredients",
     "potential_allergens": ["List of ingredients that may contain MFAs"],
     "has_contains_statement": true|false,
     "risk_level": "low|medium|high",
     "regulation_citation": "FALCPA Section 403(w), FASTER Act"
   },
-  "nutrition_labeling": {
-    "status": "compliant|non_compliant|not_applicable",
-    "panel_type_present": "Nutrition Facts|Supplement Facts|None|Both (describe what's actually on the label)",
-    "panel_type_required": "Nutrition Facts (for foods/beverages) or Supplement Facts (for dietary supplements)",
-    "panel_type_correct": true|false,
-    "panel_type_mismatch": {
-      "has_mismatch": true|false,
-      "issue": "Description of panel type problem (e.g., 'Has Nutrition Facts but requires Supplement Facts')",
-      "resolution": "What needs to change (e.g., 'Remove Nutrition Facts panel and replace with Supplement Facts panel per 21 CFR 101.36')"
-    },
+  "supplement_facts_panel": {
+    "note": "ONLY include this section if product_category is DIETARY_SUPPLEMENT",
+    "status": "compliant|non_compliant",
     "panel_present": true|false,
+    "panel_type_correct": true|false,
+    "wrong_panel_issue": "Description if Nutrition Facts panel is present instead of Supplement Facts",
+    "panel_compliance": {
+      "serving_size_clear": true|false,
+      "amount_per_serving_listed": true|false,
+      "daily_values_shown": true|false,
+      "format_compliant": true|false,
+      "issues": ["List any format or content issues"]
+    },
+    "details": "Full explanation of Supplement Facts panel compliance",
+    "regulation_citation": "21 CFR 101.36"
+  },
+  "nutrition_labeling": {
+    "note": "ONLY include this section if product_category is CONVENTIONAL_FOOD, NON_ALCOHOLIC_BEVERAGE, or ALCOHOLIC_BEVERAGE",
+    "status": "compliant|non_compliant|not_applicable",
+    "panel_present": true|false,
+    "panel_type_correct": true|false,
+    "wrong_panel_issue": "Description if Supplement Facts panel is present instead of Nutrition Facts",
     "exemption_applicable": true|false,
-    "exemption_reason": "Explanation if exemption applies (e.g., 'Foods of no nutritional significance')",
-    "details": "Full explanation of nutrition labeling compliance or exemption, including panel type validation",
-    "regulation_citation": "21 CFR 101.9 (foods) or 21 CFR 101.36 (supplements)",
+    "exemption_reason": "Explanation if exemption applies (e.g., 'Coffee with no added nutrients qualifies for exemption')",
     "rounding_validation": {
       "has_errors": true|false,
-      "note": "Only validate rounding if correct panel type is present",
       "errors_found": [
         {
           "nutrient": "Nutrient name (e.g., 'Calories', 'Fiber')",
@@ -635,9 +669,53 @@ Return your response as a JSON object with the following structure:
           "rule_violated": "Explanation of rounding rule"
         }
       ]
-    }
+    },
+    "details": "Full explanation of nutrition labeling compliance or exemption",
+    "regulation_citation": "21 CFR 101.9"
+  },
+  "claims": {
+    "note": "ALWAYS include this section for ALL product types",
+    "structure_function_claims": {
+      "claims_present": true|false,
+      "claims_found": [
+        {
+          "claim_text": "Exact text of claim from label",
+          "compliance_issue": "Any compliance issue with this claim",
+          "disclaimer_required": true|false,
+          "disclaimer_present": true|false
+        }
+      ],
+      "status": "compliant|non_compliant|not_applicable"
+    },
+    "nutrient_content_claims": {
+      "claims_present": true|false,
+      "claims_found": [
+        {
+          "claim_type": "Type of claim (e.g., 'high', 'good source', 'fortified')",
+          "claim_text": "Exact text from label",
+          "nutrient": "Nutrient being claimed",
+          "nutrient_level": "% DV or amount per serving",
+          "required_level": "Regulatory threshold",
+          "meets_definition": true|false,
+          "issue": "Any compliance issue"
+        }
+      ],
+      "status": "compliant|non_compliant|not_applicable"
+    },
+    "health_claims": {
+      "claims_present": true|false,
+      "claims_found": ["List of health claims if any"],
+      "status": "compliant|non_compliant|not_applicable"
+    },
+    "prohibited_claims": {
+      "claims_present": true|false,
+      "claims_found": ["List of disease/cure claims that are prohibited"],
+      "status": "compliant|non_compliant|not_applicable"
+    },
+    "details": "Overall claims compliance analysis"
   },
   "additional_requirements": {
+    "note": "Include fortification ONLY for conventional foods/beverages, NOT supplements",
     "fortification": {
       "status": "compliant|non_compliant|not_applicable",
       "is_fortified": true|false,
@@ -654,39 +732,9 @@ Return your response as a JSON object with the following structure:
       "details": "Full analysis of fortification compliance and policy",
       "regulation_citation": "21 CFR 104, FDA Fortification Policy"
     },
-    "structure_function_claims": {
-      "claims_present": true|false,
-      "claims_found": [
-        {
-          "claim_text": "Exact text of claim from label",
-          "nutrient": "Nutrient making the claim",
-          "nutrient_level": "% DV or amount",
-          "meets_requirements": true|false,
-          "issue": "Any compliance issue with this claim"
-        }
-      ],
-      "status": "compliant|non_compliant|not_applicable",
-      "details": "Analysis of structure/function claims compliance"
-    },
-    "nutrient_content_claims": {
-      "claims_present": true|false,
-      "claims_found": [
-        {
-          "claim_type": "Type of claim (e.g., 'high', 'good source', 'enriched')",
-          "claim_text": "Exact text from label",
-          "nutrient": "Nutrient being claimed",
-          "nutrient_level": "% DV or amount per serving",
-          "required_level": "Regulatory threshold for this claim",
-          "meets_definition": true|false,
-          "issue": "Any compliance issue"
-        }
-      ],
-      "status": "compliant|non_compliant|not_applicable",
-      "details": "Analysis of nutrient content claims compliance"
-    },
     "other_requirements": [
       {
-        "requirement": "Name of requirement (e.g., 'Caffeine Disclosure')",
+        "requirement": "Name of requirement (e.g., 'Caffeine Disclosure', 'cGMP for supplements')",
         "status": "compliant|non_compliant|not_applicable",
         "details": "Explanation"
       }
@@ -947,23 +995,23 @@ Return your response as a JSON object with the following structure:
           detailed_results: ndiCompliance.results,
         };
 
-        // If ingredients without NDI found, add warning recommendations
+        // If ingredients without NDI found, add informational recommendations
         if (ndiCompliance.summary.requiresNotification > 0) {
-          console.log('WARNING: Ingredients without NDI notifications detected');
+          console.log('INFO: Ingredients requiring NDI verification detected');
 
           // Initialize recommendations array if it doesn't exist
           if (!analysisData.recommendations) {
             analysisData.recommendations = [];
           }
 
-          // Add warning for ingredients that may require NDI
+          // Add informational note for ingredients that may require verification
           const ingredientsWithoutNDI = ndiCompliance.results
             .filter(r => r.requiresNDI)
             .map(r => r.ingredient);
 
           analysisData.recommendations.push({
-            priority: 'high',
-            recommendation: `WARNING: The following ingredients do NOT have NDI notifications on file: ${ingredientsWithoutNDI.join(', ')}. Per DSHEA 1994, any dietary ingredient NOT marketed before October 15, 1994 requires an NDI notification 75 days before marketing. Verify these ingredients were on the market pre-1994 or file NDI notifications with FDA.`,
+            priority: 'medium',
+            recommendation: `INFORMATIONAL: The following ingredients are not in our pre-1994 dietary ingredients database (${ingredientsWithoutNDI.join(', ')}). Most dietary supplement ingredients were marketed before October 15, 1994 and are grandfathered under DSHEA (no NDI notification required). However, if any of these ingredients were first marketed AFTER October 15, 1994, they would require an NDI notification filed with FDA 75 days before marketing. Our database contains 2,193 old dietary ingredients and 1,253 ingredients with filed NDI notifications. These ingredients may simply not be in our database yet.`,
             regulation: 'FD&C Act Section 413 (DSHEA), 21 CFR 190.6 (NDI Notification)',
           });
 
@@ -973,8 +1021,8 @@ Return your response as a JSON object with the following structure:
           }
           analysisData.compliance_table.push({
             element: 'NDI (New Dietary Ingredient) Compliance',
-            status: 'Verification Required',
-            rationale: `${ndiCompliance.summary.requiresNotification} ingredient(s) without NDI notifications. Verify pre-1994 market presence or file NDI notifications.`,
+            status: 'Informational',
+            rationale: `${ndiCompliance.summary.requiresNotification} ingredient(s) not found in our database. Likely grandfathered (pre-1994). Verify if truly new ingredients.`,
           });
         } else {
           console.log('All ingredients either have NDI notifications or verification not applicable');
@@ -1072,7 +1120,7 @@ Return your response as a JSON object with the following structure:
             }
             analysisData.compliance_table.push({
               element: 'Major Food Allergen Declaration',
-              status: 'NON-COMPLIANT',
+              status: 'Non-Compliant',
               rationale: `${allergenResults.allergensDetected.length} major allergen(s) detected in ingredients but proper declaration missing or unclear`,
             });
           } else if (aiAllergenStatus === 'compliant') {

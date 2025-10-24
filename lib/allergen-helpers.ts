@@ -119,14 +119,13 @@ export async function checkIngredientForAllergens(
 
   // Strategy 3: Partial matching (fuzzy) for compound ingredients
   // Only if no exact or derivative matches found
+  // Check if the ingredient name CONTAINS any allergen derivative (not the reverse!)
   if (results.length === 0) {
-    const searchTerms = normalized.split(' ').filter((word) => word.length > 3);
-
-    for (const term of searchTerms) {
-      for (const allergen of allAllergens) {
-        // Check if any derivative contains the search term
+    for (const allergen of allAllergens) {
+      if (allergen.derivatives && allergen.derivatives.length > 0) {
+        // Check if the ingredient contains any of the allergen's derivatives
         const fuzzyMatch = allergen.derivatives.some((derivative) =>
-          derivative.toLowerCase().includes(term)
+          normalized.includes(derivative.toLowerCase())
         );
 
         if (fuzzyMatch) {

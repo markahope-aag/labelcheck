@@ -447,7 +447,7 @@ export default function AnalysisDetailPage() {
                 {result.nutrition_labeling && (
                   <div>
                     <h3 className="text-lg font-semibold text-slate-900 mb-4 pb-2 border-b-2 border-slate-200">
-                      4. Nutrition Labeling and Claims
+                      4. Nutrition Labeling
                     </h3>
                     <div className="bg-slate-50 rounded-lg p-4">
                       <div className="flex items-center justify-between mb-3">
@@ -471,9 +471,9 @@ export default function AnalysisDetailPage() {
                         </div>
                       </div>
                       {result.nutrition_labeling.exemption_reason && (
-                        <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded">
-                          <p className="text-xs font-semibold text-blue-900 mb-1">Exemption Reason:</p>
-                          <p className="text-sm text-blue-800">{result.nutrition_labeling.exemption_reason}</p>
+                        <div className="mb-3 p-3 bg-slate-100 border border-slate-300 rounded">
+                          <p className="text-xs font-semibold text-slate-700 mb-1">Exemption Reason:</p>
+                          <p className="text-sm text-slate-800">{result.nutrition_labeling.exemption_reason}</p>
                         </div>
                       )}
                       <p className="text-sm text-slate-700 mb-2">{result.nutrition_labeling.details}</p>
@@ -482,11 +482,109 @@ export default function AnalysisDetailPage() {
                   </div>
                 )}
 
+                {/* Supplement Facts Panel (for supplements) */}
+                {result.supplement_facts_panel && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900 mb-4 pb-2 border-b-2 border-slate-200">
+                      4. Supplement Facts Panel
+                    </h3>
+                    <div className="bg-slate-50 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-semibold text-slate-900">Supplement Facts Panel Compliance</h4>
+                        <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                          result.supplement_facts_panel.status === 'compliant' ? 'bg-green-100 text-green-800' :
+                          result.supplement_facts_panel.status === 'non_compliant' ? 'bg-red-100 text-red-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {formatComplianceStatus(result.supplement_facts_panel.status)}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 mb-3 text-sm">
+                        <div>
+                          <span className="font-semibold text-slate-700">Panel Present:</span>
+                          <span className="ml-2 text-slate-600">{result.supplement_facts_panel.panel_present ? 'Yes' : 'No'}</span>
+                        </div>
+                        {result.supplement_facts_panel.wrong_panel_type !== undefined && (
+                          <div>
+                            <span className="font-semibold text-slate-700">Wrong Panel Type:</span>
+                            <span className="ml-2 text-slate-600">{result.supplement_facts_panel.wrong_panel_type ? 'Yes' : 'No'}</span>
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-sm text-slate-700 mb-2">{result.supplement_facts_panel.details}</p>
+                      <p className="text-xs text-slate-500">{result.supplement_facts_panel.regulation_citation}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Claims */}
+                {result.claims && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900 mb-4 pb-2 border-b-2 border-slate-200">
+                      5. Claims
+                    </h3>
+                    <div className="bg-slate-50 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-semibold text-slate-900">Claims Compliance</h4>
+                        <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                          result.claims.status === 'compliant' ? 'bg-green-100 text-green-800' :
+                          result.claims.status === 'non_compliant' ? 'bg-red-100 text-red-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {formatComplianceStatus(result.claims.status)}
+                        </span>
+                      </div>
+                      {result.claims.structure_function_claims && result.claims.structure_function_claims.length > 0 && (
+                        <div className="mb-3 p-3 bg-slate-100 border border-slate-300 rounded">
+                          <p className="text-xs font-semibold text-slate-700 mb-1">Structure/Function Claims:</p>
+                          <ul className="text-sm text-slate-800 space-y-1">
+                            {result.claims.structure_function_claims.map((claim: string, idx: number) => (
+                              <li key={idx}>• {claim}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {result.claims.nutrient_content_claims && result.claims.nutrient_content_claims.length > 0 && (
+                        <div className="mb-3 p-3 bg-slate-100 border border-slate-300 rounded">
+                          <p className="text-xs font-semibold text-slate-700 mb-1">Nutrient Content Claims:</p>
+                          <ul className="text-sm text-slate-800 space-y-1">
+                            {result.claims.nutrient_content_claims.map((claim: string, idx: number) => (
+                              <li key={idx}>• {claim}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {result.claims.health_claims && result.claims.health_claims.length > 0 && (
+                        <div className="mb-3 p-3 bg-slate-100 border border-slate-300 rounded">
+                          <p className="text-xs font-semibold text-slate-700 mb-1">Health Claims:</p>
+                          <ul className="text-sm text-slate-800 space-y-1">
+                            {result.claims.health_claims.map((claim: string, idx: number) => (
+                              <li key={idx}>• {claim}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {result.claims.prohibited_claims && result.claims.prohibited_claims.length > 0 && (
+                        <div className="mb-3 p-3 bg-red-100 border border-red-300 rounded">
+                          <p className="text-xs font-semibold text-red-700 mb-1">⚠️ Prohibited Claims Detected:</p>
+                          <ul className="text-sm text-red-800 space-y-1">
+                            {result.claims.prohibited_claims.map((claim: string, idx: number) => (
+                              <li key={idx}>• {claim}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      <p className="text-sm text-slate-700 mb-2">{result.claims.details}</p>
+                      <p className="text-xs text-slate-500">{result.claims.regulation_citation}</p>
+                    </div>
+                  </div>
+                )}
+
                 {/* Additional Requirements */}
                 {result.additional_requirements && (
                   <div>
                     <h3 className="text-lg font-semibold text-slate-900 mb-4 pb-2 border-b-2 border-slate-200">
-                      5. Additional Regulatory Requirements
+                      6. Additional Regulatory Requirements
                     </h3>
                     <div className="space-y-3">
                       {result.additional_requirements.fortification && (

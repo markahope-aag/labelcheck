@@ -46,7 +46,16 @@
       "WebFetch(domain:hfpappexternal.fda.gov)",
       "WebFetch(domain:comptox.epa.gov)",
       "Bash(cmd /c \"if exist nul del nul\")",
-      "Read(//g/My Drive/Downloads/**)"
+      "Read(//g/My Drive/Downloads/**)",
+      "Bash(git checkout:*)",
+      "Bash(psql $DATABASE_URL)",
+      "Bash(psql:*)",
+      "Bash(cmd /c \"del setup-allergen-database.js fix-hazelnut-variant.js apply-allergen-migration.js update-allergen-derivatives.js add-high-priority-ingredients.js add-methylcobalamin.js add-missing-gras-ingredients.js audit-gras-synonyms.js check-b12-direct.js check-vitamin-b12.js count-synonyms.js debug-synonym-matching.js enhance-gras-synonyms.js test-actual-ingredients.js test-improved-matching.js test-ingredient-descriptions.js test-pagination-fix.js test-preservatives-additives.js test-synonyms.js verify-added-ingredients.js\")",
+      "Bash(aws:*)",
+      "Bash(jobs)",
+      "Bash(cmd /c \"del test-gras-matching.js test-actual-gras-matching.js add-missing-gras-synonyms.js add-missing-gras-ingredients.js\")",
+      "Bash(cmd /c \"taskkill /F /PID 50568\")",
+      "Bash(cmd /c \"del debug-allergen-match.js\")"
     ],
     "deny": [],
     "ask": []

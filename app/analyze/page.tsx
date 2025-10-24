@@ -990,6 +990,8 @@ export default function AnalyzePage() {
                           3. Food Allergen Labeling (FALCPA/FASTER Act)
                         </h3>
                         <div className={`rounded-lg p-4 border-2 ${
+                          result.allergen_labeling.status === 'not_applicable' || result.allergen_labeling.status === 'compliant'
+                            ? 'bg-slate-50 border-slate-300' :
                           result.allergen_labeling.risk_level === 'high' ? 'bg-red-50 border-red-300' :
                           result.allergen_labeling.risk_level === 'medium' ? 'bg-yellow-50 border-yellow-300' :
                           'bg-green-50 border-green-300'
@@ -997,7 +999,7 @@ export default function AnalyzePage() {
                           <div className="flex items-center justify-between mb-3">
                             <h4 className="font-semibold text-slate-900">Allergen Declaration Compliance</h4>
                             <div className="flex gap-2 items-center">
-                              {result.allergen_labeling.risk_level && (
+                              {result.allergen_labeling.risk_level && result.allergen_labeling.status !== 'not_applicable' && (
                                 <span className={`px-2 py-1 rounded text-xs font-semibold ${
                                   result.allergen_labeling.risk_level === 'high' ? 'bg-red-200 text-red-900' :
                                   result.allergen_labeling.risk_level === 'medium' ? 'bg-yellow-200 text-yellow-900' :
@@ -1035,7 +1037,7 @@ export default function AnalyzePage() {
                     {result.nutrition_labeling && (
                       <div>
                         <h3 className="text-lg font-semibold text-slate-900 mb-4 pb-2 border-b-2 border-slate-200">
-                          4. Nutrition Labeling and Claims
+                          4. Nutrition Labeling
                         </h3>
                         <div className="bg-slate-50 rounded-lg p-4">
                           <div className="flex items-center justify-between mb-3">
@@ -1059,9 +1061,9 @@ export default function AnalyzePage() {
                             </div>
                           </div>
                           {result.nutrition_labeling.exemption_reason && (
-                            <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded">
-                              <p className="text-xs font-semibold text-blue-900 mb-1">Exemption Reason:</p>
-                              <p className="text-sm text-blue-800">{result.nutrition_labeling.exemption_reason}</p>
+                            <div className="mb-3 p-3 bg-slate-100 border border-slate-300 rounded">
+                              <p className="text-xs font-semibold text-slate-700 mb-1">Exemption Reason:</p>
+                              <p className="text-sm text-slate-800">{result.nutrition_labeling.exemption_reason}</p>
                             </div>
                           )}
                           <p className="text-sm text-slate-700 mb-2">{result.nutrition_labeling.details}</p>
@@ -1070,11 +1072,109 @@ export default function AnalyzePage() {
                       </div>
                     )}
 
+                    {/* Supplement Facts Panel (for supplements) */}
+                    {result.supplement_facts_panel && (
+                      <div>
+                        <h3 className="text-lg font-semibold text-slate-900 mb-4 pb-2 border-b-2 border-slate-200">
+                          4. Supplement Facts Panel
+                        </h3>
+                        <div className="bg-slate-50 rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="font-semibold text-slate-900">Supplement Facts Panel Compliance</h4>
+                            <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                              result.supplement_facts_panel.status === 'compliant' ? 'bg-green-100 text-green-800' :
+                              result.supplement_facts_panel.status === 'non_compliant' ? 'bg-red-100 text-red-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {formatComplianceStatus(result.supplement_facts_panel.status)}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3 mb-3 text-sm">
+                            <div>
+                              <span className="font-semibold text-slate-700">Panel Present:</span>
+                              <span className="ml-2 text-slate-600">{result.supplement_facts_panel.panel_present ? 'Yes' : 'No'}</span>
+                            </div>
+                            {result.supplement_facts_panel.wrong_panel_type !== undefined && (
+                              <div>
+                                <span className="font-semibold text-slate-700">Wrong Panel Type:</span>
+                                <span className="ml-2 text-slate-600">{result.supplement_facts_panel.wrong_panel_type ? 'Yes' : 'No'}</span>
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-sm text-slate-700 mb-2">{result.supplement_facts_panel.details}</p>
+                          <p className="text-xs text-slate-500">{result.supplement_facts_panel.regulation_citation}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Claims */}
+                    {result.claims && (
+                      <div>
+                        <h3 className="text-lg font-semibold text-slate-900 mb-4 pb-2 border-b-2 border-slate-200">
+                          5. Claims
+                        </h3>
+                        <div className="bg-slate-50 rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="font-semibold text-slate-900">Claims Compliance</h4>
+                            <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                              result.claims.status === 'compliant' ? 'bg-green-100 text-green-800' :
+                              result.claims.status === 'non_compliant' ? 'bg-red-100 text-red-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {formatComplianceStatus(result.claims.status)}
+                            </span>
+                          </div>
+                          {result.claims.structure_function_claims && result.claims.structure_function_claims.length > 0 && (
+                            <div className="mb-3 p-3 bg-slate-100 border border-slate-300 rounded">
+                              <p className="text-xs font-semibold text-slate-700 mb-1">Structure/Function Claims:</p>
+                              <ul className="text-sm text-slate-800 space-y-1">
+                                {result.claims.structure_function_claims.map((claim: string, idx: number) => (
+                                  <li key={idx}>• {claim}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          {result.claims.nutrient_content_claims && result.claims.nutrient_content_claims.length > 0 && (
+                            <div className="mb-3 p-3 bg-slate-100 border border-slate-300 rounded">
+                              <p className="text-xs font-semibold text-slate-700 mb-1">Nutrient Content Claims:</p>
+                              <ul className="text-sm text-slate-800 space-y-1">
+                                {result.claims.nutrient_content_claims.map((claim: string, idx: number) => (
+                                  <li key={idx}>• {claim}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          {result.claims.health_claims && result.claims.health_claims.length > 0 && (
+                            <div className="mb-3 p-3 bg-slate-100 border border-slate-300 rounded">
+                              <p className="text-xs font-semibold text-slate-700 mb-1">Health Claims:</p>
+                              <ul className="text-sm text-slate-800 space-y-1">
+                                {result.claims.health_claims.map((claim: string, idx: number) => (
+                                  <li key={idx}>• {claim}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          {result.claims.prohibited_claims && result.claims.prohibited_claims.length > 0 && (
+                            <div className="mb-3 p-3 bg-red-100 border border-red-300 rounded">
+                              <p className="text-xs font-semibold text-red-700 mb-1">⚠️ Prohibited Claims Detected:</p>
+                              <ul className="text-sm text-red-800 space-y-1">
+                                {result.claims.prohibited_claims.map((claim: string, idx: number) => (
+                                  <li key={idx}>• {claim}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          <p className="text-sm text-slate-700 mb-2">{result.claims.details}</p>
+                          <p className="text-xs text-slate-500">{result.claims.regulation_citation}</p>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Additional Requirements */}
                     {result.additional_requirements && (
                       <div>
                         <h3 className="text-lg font-semibold text-slate-900 mb-4 pb-2 border-b-2 border-slate-200">
-                          5. Additional Regulatory Requirements
+                          6. Additional Regulatory Requirements
                         </h3>
                         <div className="space-y-3">
                           {result.additional_requirements.fortification && (
@@ -1115,10 +1215,15 @@ export default function AnalyzePage() {
 
                     {/* Compliance Summary Table */}
                     {result.compliance_table && result.compliance_table.length > 0 && (
-                      <div>
-                        <h3 className="text-lg font-semibold text-slate-900 mb-4 pb-2 border-b-2 border-slate-200">
-                          Summary of Compliance Evaluation
-                        </h3>
+                      <div className="mt-12 pt-8 border-t-4 border-slate-300">
+                        <div className="mb-6">
+                          <h3 className="text-xl font-bold text-slate-900 mb-2">
+                            Summary of Compliance Evaluation
+                          </h3>
+                          <p className="text-sm text-slate-600">
+                            This table summarizes the compliance status for all sections analyzed above
+                          </p>
+                        </div>
                         <div className="overflow-x-auto">
                           <table className="w-full border-collapse">
                             <thead>
@@ -1129,7 +1234,68 @@ export default function AnalyzePage() {
                               </tr>
                             </thead>
                             <tbody>
-                              {result.compliance_table.map((row: any, idx: number) => (
+                              {[...result.compliance_table]
+                                .sort((a, b) => {
+                                  // Define section order to match analysis structure
+                                  const sectionOrder: Record<string, number> = {
+                                    // Section 1: General Labeling
+                                    'Statement of Identity': 100,
+                                    'Product Name': 101,
+                                    'Net Quantity': 110,
+                                    'Manufacturer': 120,
+                                    'Manufacturer Address': 121,
+                                    'Distributor': 122,
+
+                                    // Section 2: Ingredient Labeling
+                                    'Ingredient': 200,
+                                    'Ingredients': 200,
+                                    'Ingredient List': 201,
+                                    'Ingredient Declaration': 202,
+                                    'Ingredient Labeling': 203,
+
+                                    // Section 3: Allergen Labeling
+                                    'Allergen': 300,
+                                    'Major Food Allergen': 301,
+                                    'Allergen Labeling': 302,
+                                    'Allergen Declaration': 303,
+                                    'FALCPA': 304,
+
+                                    // Section 4: Nutrition/Supplement Facts
+                                    'Nutrition': 400,
+                                    'Nutrition Facts': 401,
+                                    'Nutrition Labeling': 402,
+                                    'Supplement Facts': 410,
+                                    'Supplement Facts Panel': 411,
+
+                                    // Section 5: Claims
+                                    'Claims': 500,
+                                    'Structure': 501,
+                                    'Nutrient Content': 502,
+                                    'Health Claims': 503,
+
+                                    // Section 6: Additional Requirements
+                                    'Fortification': 600,
+                                    'GRAS': 610,
+                                    'GRAS Ingredient': 611,
+                                    'NDI': 620,
+                                    'New Dietary Ingredient': 621,
+                                    'cGMP': 630,
+                                  };
+
+                                  // Find the lowest matching order value for each element
+                                  const getOrder = (element: string) => {
+                                    const lowerElement = element.toLowerCase();
+                                    for (const [key, value] of Object.entries(sectionOrder)) {
+                                      if (lowerElement.includes(key.toLowerCase())) {
+                                        return value;
+                                      }
+                                    }
+                                    return 999; // Unknown items go to the end
+                                  };
+
+                                  return getOrder(a.element) - getOrder(b.element);
+                                })
+                                .map((row: any, idx: number) => (
                                 <tr key={idx} className="hover:bg-slate-50">
                                   <td className="border border-slate-300 px-4 py-2 text-sm text-slate-900">{row.element}</td>
                                   <td className="border border-slate-300 px-4 py-2 text-sm">
@@ -1158,7 +1324,13 @@ export default function AnalyzePage() {
                           Recommendations
                         </h3>
                         <div className="space-y-3">
-                          {result.recommendations.map((rec: any, index: number) => (
+                          {[...result.recommendations]
+                            .sort((a, b) => {
+                              // Sort by priority: critical > high > medium > low
+                              const priorityOrder: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
+                              return (priorityOrder[a.priority] || 999) - (priorityOrder[b.priority] || 999);
+                            })
+                            .map((rec: any, index: number) => (
                             <div key={index} className={`rounded-lg p-4 border-l-4 ${
                               rec.priority === 'critical' ? 'bg-red-50 border-red-500' :
                               rec.priority === 'high' ? 'bg-orange-50 border-orange-500' :
@@ -1181,6 +1353,61 @@ export default function AnalyzePage() {
                               </div>
                             </div>
                           ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Duplicate Analysis Session Active Component at Bottom */}
+                    {sessionId && (
+                      <div className="mt-12 pt-8 border-t-2 border-slate-200">
+                        <h3 className="text-lg font-semibold text-slate-900 mb-4">
+                          Continue Improving This Analysis
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <button
+                            onClick={() => setIsChatOpen(true)}
+                            className="flex items-center gap-3 p-4 bg-white border-2 border-blue-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-all"
+                          >
+                            <div className="p-2 bg-blue-100 rounded">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                              </svg>
+                            </div>
+                            <div className="text-left">
+                              <div className="font-semibold text-slate-900">Ask AI Questions</div>
+                              <div className="text-xs text-slate-600">Get expert help</div>
+                            </div>
+                          </button>
+
+                          <button
+                            onClick={() => setIsTextCheckerOpen(true)}
+                            className="flex items-center gap-3 p-4 bg-white border-2 border-blue-200 rounded-lg hover:border-green-400 hover:bg-green-50 transition-all"
+                          >
+                            <div className="p-2 bg-green-100 rounded">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                            </div>
+                            <div className="text-left">
+                              <div className="font-semibold text-slate-900">Check Text Alternative</div>
+                              <div className="text-xs text-slate-600">Test revised content</div>
+                            </div>
+                          </button>
+
+                          <button
+                            onClick={handleUploadRevised}
+                            className="flex items-center gap-3 p-4 bg-white border-2 border-blue-200 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all"
+                          >
+                            <div className="p-2 bg-purple-100 rounded">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                            </div>
+                            <div className="text-left">
+                              <div className="font-semibold text-slate-900">Upload Revised Label</div>
+                              <div className="text-xs text-slate-600">Test your improvements</div>
+                            </div>
+                          </button>
                         </div>
                       </div>
                     )}
