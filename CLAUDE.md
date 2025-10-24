@@ -110,7 +110,7 @@ The system automatically detects all 9 FDA-recognized major food allergens in in
 **Matching Strategies** (implemented in `lib/allergen-helpers.ts`):
 1. **Exact match**: Direct allergen name in ingredient (e.g., "milk", "eggs")
 2. **Derivative match**: Hidden sources (e.g., "casein" → milk, "lecithin" → eggs)
-3. **Fuzzy match**: Partial matching for complex ingredient names
+3. **Fuzzy match**: Checks if ingredient CONTAINS allergen derivative (e.g., "shrimp extract" contains "shrimp"), NOT if derivative contains word (prevents false positives like "cordyceps extract" matching "shellfish extract" via "extract")
 
 **Dual-Layer Validation:**
 - **AI Analysis**: Reads label text and identifies potential allergens, checks for "Contains:" statements
@@ -485,11 +485,31 @@ The application supports team collaboration through organization invitations:
 - Helper function `formatComplianceStatus()` ensures consistent formatting across all pages
 - Applied to: analyze page, analysis detail page, and all compliance badges
 
+**Analysis Section Structure:**
+- **Section 1**: General Labeling (Statement of Identity, Net Quantity, Manufacturer Info)
+- **Section 2**: Ingredient Labeling (Ingredient List with GRAS compliance color-coding)
+- **Section 3**: Food Allergen Labeling (FALCPA/FASTER Act)
+- **Section 4**: Nutrition Labeling (for conventional foods) OR Supplement Facts Panel (for dietary supplements)
+- **Section 5**: Claims (Structure/Function, Nutrient Content, Health Claims, Prohibited Claims)
+- **Section 6**: Additional Regulatory Requirements (Fortification, GRAS, NDI, cGMP)
+- Separate sections prevent confusion between nutrition panels and claims
+- Supplement Facts Panel checks for wrong panel type (e.g., Nutrition Facts on supplement)
+
 **Ingredient Display:**
 - Color-coded tags: Green background for GRAS-compliant, Red background for non-GRAS
 - Hover tooltips show match type and compliance status
 - Responsive layout with flex-wrap for mobile compatibility
 - Consistent styling across analyze and history pages
+
+**Allergen Section Display:**
+- Neutral slate background for compliant/not_applicable status (not green)
+- Risk rating badge hidden when status is not_applicable
+- Prevents misleading visual cues for products without allergens
+
+**Section Detail Boxes:**
+- Consistent slate styling across all detail/reason boxes (exemption reasons, claims lists, etc.)
+- Prohibited claims highlighted in red for immediate visibility
+- Uniform padding and border styling throughout analysis results
 
 ## Environment Variables Required
 
