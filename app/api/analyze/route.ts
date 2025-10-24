@@ -475,19 +475,40 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
      • "Adequate calcium and vitamin D throughout life may reduce the risk of osteoporosis"
      • Must use exact FDA-authorized wording
 
-   - **PROHIBITED CLAIMS** (Flag these as NON-COMPLIANT):
+   - **PROHIBITED CLAIMS** (Flag these as NON-COMPLIANT - supplements CANNOT make disease claims):
 
-     **Disease Claims** (diagnose, treat, cure, prevent disease):
-     • "Treats diabetes" / "Cures arthritis" / "Prevents cancer"
-     • "Reduces blood pressure" (implies treating hypertension - disease)
+     **Disease Treatment/Cure Claims** (treating, curing, or preventing specific diseases):
+     • "Cures arthritis in 30 days" / "Treats depression naturally" / "Reverses diabetes"
+     • "Prevents Alzheimer's disease" / "Stops cancer from spreading"
+     • "Eliminates heart disease risk" / "Treats ADHD without medication"
+     • "Heals psoriasis permanently" / "Fights chronic fatigue syndrome"
+     • "Eradicates viral infections" / "Eliminates migraines and headaches forever"
+     • "Reduces blood pressure" (treating hypertension = disease treatment)
      • "Lowers cholesterol" (unless part of authorized health claim)
-     • "Fights infections" / "Kills bacteria/viruses"
-     • Any claim about treating, curing, or preventing a specific disease
 
-     **Misleading/Exaggerated Claims**:
+     **Organ Regeneration/Restoration Claims** (impossible/exaggerated):
+     • "Regenerates damaged organs" / "Restores lung function in smokers"
+     • "Detoxifies your liver and pancreas completely"
+     • "Removes heavy metal contamination from your body"
+
+     **Drug/Prescription Replacement Claims** (implies supplement = drug):
+     • "Replaces prescription blood pressure medication"
+     • Any claim suggesting supplement can replace prescribed medication
+
+     **Exaggerated Physical/Cosmetic Claims**:
+     • "Erases wrinkles like cosmetic surgery"
+     • "Grows new hair within one week"
+     • "Instantly boosts IQ and memory"
+
+     **Absolute/Guaranteed Claims with Time Limits**:
+     • "Guarantees conception and fertility improvement"
+     • Claims with "forever", "permanently", "eliminates", "eradicates"
+     • Time-specific cure promises ("in 30 days", "within one week")
+
+     **Misleading Marketing Terms**:
      • "Miracle" / "Breakthrough" / "Revolutionary cure"
-     • Implied disease treatment without explicit statement
-     • Unqualified performance claims without substantiation evidence mentioned
+     • "Detox" / "Cleanse" (implies disease treatment)
+     • "Natural cure" / "Alternative to surgery"
 
    - **ANALYSIS APPROACH**:
      • List ALL claims found on the label
