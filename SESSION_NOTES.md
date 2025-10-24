@@ -1,8 +1,207 @@
 # Session Notes - Analysis Sessions Development
 
-**Last Updated:** 2025-10-23 (Session 5)
+**Last Updated:** 2025-10-24 (Session 6)
 **Branch:** main
-**Status:** Category Ambiguity & Regulatory Enhancement Complete ✅
+**Status:** Sexual Health Claims & Disclaimer Requirements Complete ✅
+
+---
+
+## Session 6 Summary (2025-10-24) - Claims & Disclaimer Enhancement
+
+### ✅ Completed in This Session
+
+**Major Features: Sexual Health Claims Guidance, Disclaimer Requirements Analysis, Progress Bar Improvements**
+
+This session enhanced claims analysis with comprehensive sexual health/performance guidance, added a dedicated disclaimer requirements section, and improved user feedback during long-running analyses.
+
+#### 1. Sexual Health Claims Guidance (FDA/FTC Compliance)
+- ✅ **Added comprehensive sexual health claims section** (lines 471-526)
+  - Acceptable claims: "supports healthy sexual function", "promotes sexual vitality"
+  - Gray zone guidance: "pleasure"/"performance" only acceptable with wellness context
+  - Prohibited claims: ED treatment, impotence cure, "works like Viagra", drug replacement
+  - Key differentiator: Any reference to medical conditions = drug claim = prohibited
+  - Heightened scrutiny warning about FDA/FTC monitoring and substantiation requirements
+  - File: `app/api/analyze/route.ts`
+
+- ✅ **Three-tier classification system for ALL claims** (lines 544-571)
+  - ✅ COMPLIANT: When certain claim is acceptable
+  - ❌ PROHIBITED: When certain claim is illegal
+  - ⚠️ NEEDS REVIEW: Gray zone requiring expert judgment
+  - Overall status: Compliant, Non-Compliant, or Potentially-Non-Compliant
+  - Avoids false binary (many claims aren't clearly legal or illegal)
+
+#### 2. Disclaimer Requirements Section (NEW)
+- ✅ **Added Section 7: Disclaimer Requirements** (lines 621-673)
+  - 4-step analysis process:
+    - STEP 1: Determine if disclaimer required (based on claim types)
+    - STEP 2: Check if disclaimer present on label
+    - STEP 3: Validate disclaimer wording (exact vs abbreviated/incomplete)
+    - STEP 4: Determine compliance status
+  - Common mistakes flagged: abbreviated text, missing phrases, paraphrased wording
+  - File: `app/api/analyze/route.ts`
+
+- ✅ **Clarified which claims require disclaimers** (lines 528-541)
+  - ❌ NO disclaimer needed: Nutrient content claims, general nutritional statements, authorized health claims
+  - ✅ Disclaimer REQUIRED: Structure/function claims, general well-being claims, nutrient deficiency claims, sexual health S/F claims
+  - 🚫 NOT PERMITTED: Disease/drug claims (illegal regardless of disclaimer)
+  - Critical note: Adding disclaimer does NOT make disease claims compliant
+
+- ✅ **Updated JSON structure with disclaimer_requirements field** (lines 934-944)
+  - `disclaimer_required`: Boolean based on claim types present
+  - `disclaimer_present`: Whether disclaimer text found on label
+  - `disclaimer_text_found`: Exact text from label (or null)
+  - `disclaimer_wording_correct`: Whether it matches FDA requirements
+  - `disclaimer_prominent`: Whether displayed prominently/legibly
+  - `status`: compliant | non_compliant | potentially_non_compliant
+  - `details`: Explanation of findings
+  - `recommendations`: Specific actions if non-compliant
+
+#### 3. Claims Organization Improvements
+- ✅ **Reorganized claim categories with disclaimer requirements** (lines 446-526)
+  - Section A: Nutrient Content Claims (❌ no disclaimer)
+  - Section B: General Nutritional Statements (❌ no disclaimer)
+  - Section C: Authorized Health Claims (❌ no disclaimer - use FDA wording)
+  - Section D: Structure/Function Claims (✅ disclaimer required)
+  - Section E: General Well-Being Claims (✅ disclaimer required)
+  - Section F: Nutrient Deficiency Claims (✅ disclaimer required)
+  - Section G: Sexual Health/Performance S/F Claims (✅ disclaimer required)
+  - Clear labeling of which require FDA disclaimer
+
+- ✅ **Added disclaimer requirement summary table** (lines 528-541)
+  - Quick reference showing all claim types and disclaimer needs
+  - Prevents AI confusion about when disclaimers are needed
+
+#### 4. Progress Bar UX Improvements
+- ✅ **Fixed progress bar stopping at 90%** (`app/analyze/page.tsx`)
+  - Now continues to 98% instead of freezing
+  - Slower increments after 90% (0.1-0.6% vs 1-4%) to show activity
+  - Better user perception of ongoing work
+
+- ✅ **Added time-based feedback for long analyses** (lines 182-186)
+  - After 60 seconds: Shows "Complex label detected - performing detailed analysis..."
+  - Explains why analysis is taking longer
+  - Reduces user frustration during comprehensive regulatory analysis
+
+- ✅ **Improved progress stage messaging** (lines 172-187)
+  - Stage 1: "Uploading file..."
+  - Stage 2: "Processing image..."
+  - Stage 3: "Analyzing with AI (this may take 60-90 seconds)..."
+  - Stage 4: "Performing comprehensive regulatory analysis..."
+  - Stage 5: "Complex label detected..." (if >60s) OR "Finalizing results..."
+
+### 📊 Files Modified
+
+1. **app/api/analyze/route.ts** (major enhancements: ~165 lines added)
+   - Sexual health claims guidance with FDA/FTC rules
+   - Three-tier classification system (Compliant, Prohibited, Needs Review)
+   - Disclaimer requirements section (#7)
+   - Reorganized claim categories with clear disclaimer requirements
+   - Updated JSON schema with disclaimer_requirements field
+
+2. **app/analyze/page.tsx** (UX improvements: ~24 lines modified)
+   - Fixed progress bar to continue beyond 90%
+   - Added time-based feedback for long analyses
+   - Improved progress stage messaging
+
+### 🎯 Current Status
+
+**What's Working:**
+- ✅ Comprehensive sexual health claims guidance (acceptable, gray zone, prohibited)
+- ✅ Three-tier claim classification (not everything is binary legal/illegal)
+- ✅ Dedicated disclaimer requirements analysis section
+- ✅ Clear guidance on which claims need disclaimers and which don't
+- ✅ Progress bar continues smoothly to 98% (no more 90% freeze)
+- ✅ Time-based feedback for complex label analyses
+- ✅ All changes type-checked and committed
+
+**Environment:**
+- Server running on: http://localhost:3005
+- Model: GPT-4o (main analysis)
+- All TypeScript checks: PASSING
+- Git status: Clean (all changes committed)
+
+### 🐛 Known Issues
+
+**1. Analysis Performance** (Not Fixed)
+- Current time: 60-90 seconds for comprehensive analysis
+- Prompt size: ~30KB+ with all guidance
+- Potential optimizations identified (see discussion):
+  - Category-specific regulatory documents (5-10s savings)
+  - Cache regulatory docs in memory (2-3s savings)
+  - Parallel processing (2-5s savings)
+  - Total potential: 10-20 second improvement
+
+**2. Next.js Development Compilation** (Temporary)
+- Large prompt changes cause slow recompilation in dev mode
+- Only affects development, not production
+- Workaround: Restart dev server after major changes
+
+### 📋 Commits in This Session
+
+```
+6cca9ed - Add comprehensive sexual health claims guidance and disclaimer requirements analysis
+139de4d - Enhance claims analysis with comprehensive prohibited claims examples
+```
+
+### 🎓 Key Regulatory Insights Implemented
+
+**From FDA Sexual Health Claims Guidance:**
+- ✅ Structure/function claims acceptable with disclaimer ("supports sexual function")
+- ✅ "Pleasure" and "performance" allowed ONLY with wellness context
+- ✅ Any reference to ED, impotence, dysfunction = drug claim = prohibited
+- ✅ FDA/FTC heightened scrutiny for sexual enhancement supplements
+- ✅ Substantiation required for all claims
+
+**From DSHEA Disclaimer Requirements:**
+- ✅ Disclaimer required for: S/F claims, well-being claims, deficiency claims
+- ✅ Disclaimer NOT required for: Nutrient content, nutritional statements, authorized health claims
+- ✅ Exact wording matters: "This statement has not been evaluated by the FDA..."
+- ✅ Adding disclaimer does NOT legalize disease claims
+
+### 🚀 Ready for Next Session
+
+**Quick Start Commands:**
+```bash
+cd C:\users\markh\projects\labelcheck
+git status                    # Should show: working tree clean
+git log --oneline -5          # View recent commits
+npm run dev                   # Start server (port 3005 or next available)
+```
+
+**Testing Checklist:**
+1. ✅ Upload sexual enhancement supplement label
+2. ✅ Verify sexual health claims properly classified
+3. ✅ Check disclaimer requirements section appears
+4. ✅ Verify "pleasure"/"performance" claims analyzed correctly
+5. ✅ Test progress bar continues beyond 90%
+6. ✅ Verify long analysis shows "Complex label detected" message
+
+### 🔄 Performance Optimization Ideas (For Future)
+
+**Quick Win Optimizations (10-20 second savings):**
+1. Category-specific regulatory documents (filter by product type)
+2. Cache regulatory docs in memory (eliminate DB query)
+3. Parallel processing (image preprocessing + doc fetching)
+
+**Total Current Analysis Time:** 60-90 seconds
+**Target After Optimization:** 40-70 seconds
+
+### 📌 Important Technical Notes
+
+**Sexual Health Claims:**
+- "Supports healthy sexual function" = ✅ Compliant (with disclaimer)
+- "Improves performance and pleasure" = ⚠️ Needs Review (context-dependent)
+- "Treats erectile dysfunction" = ❌ Prohibited (drug claim)
+
+**Disclaimer Requirements:**
+- Structure/Function claims = Disclaimer REQUIRED
+- Nutrient Content claims = Disclaimer NOT required
+- Disease claims = NOT PERMITTED (disclaimer won't help)
+
+**Progress Bar Logic:**
+- 0-90%: Fast progress (1-4% increments)
+- 90-98%: Slow progress (0.1-0.6% increments)
+- >60 seconds: Show "Complex label detected" message
 
 ---
 
