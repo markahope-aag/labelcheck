@@ -279,8 +279,10 @@ Classify the product into ONE of these four categories based on the following cr
 - **Drinkable yogurt/kefir:** Always CONVENTIONAL_FOOD (dairy product, not beverage)
 - **Kombucha:** Check ABV - if ≥0.5% = ALCOHOLIC_BEVERAGE, if <0.5% = NON_ALCOHOLIC_BEVERAGE
 - **Energy shots:** If Supplement Facts = DIETARY_SUPPLEMENT, if Nutrition Facts = NON_ALCOHOLIC_BEVERAGE
-- **Herbal tea (ready-to-drink):** NON_ALCOHOLIC_BEVERAGE (unless supplement facts)
-- **Herbal tea (dry leaves):** CONVENTIONAL_FOOD (unless supplement facts)
+- **Coffee (ready-to-drink, bottled/canned):** NON_ALCOHOLIC_BEVERAGE (unless supplement facts)
+- **Coffee (dry grounds, pods, instant, beans):** CONVENTIONAL_FOOD (unless supplement facts)
+- **Herbal tea (ready-to-drink, bottled):** NON_ALCOHOLIC_BEVERAGE (unless supplement facts)
+- **Herbal tea (dry leaves, tea bags):** CONVENTIONAL_FOOD (unless supplement facts)
 
 **STEP 2: CLASSIFICATION CONFIDENCE & AMBIGUITY DETECTION**
 
@@ -378,7 +380,13 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
 
 1. **General Labeling Requirements**: Evaluate the label against basic FDA/USDA requirements
    - Statement of Identity (Name of Food): Is the product name clear, prominent, and on the principal display panel?
-   - Net Quantity of Contents: Is it properly declared in both US Customary and metric units? Is it in the bottom 30% of the display panel?
+     **🚨 MISLEADING MARKETING TERMS CHECK**: The product name or prominent label text contains ANY of these FDA-discouraged marketing terms, flag as potential violation:
+     • "Superfood" - Not a defined term by FDA; generally considered misleading
+     • "Detox" or "Cleanse" - Implies disease treatment without approval
+     • "Miracle" - Exaggerated, unsubstantiated claim
+     • "Cure" or "Treat" - Drug claims prohibited on foods/supplements
+     If found, add recommendation: "Remove misleading marketing term '[term]' from product name/labeling. This term is not defined by FDA and may constitute a misleading claim that could violate FD&C Act Section 403(a)."
+   - Net Quantity of Contents: Is it properly declared in both US Customary and metric units? Is it in the bottom 30% of the display panel? **IMPORTANT:** Either US customary OR metric may appear first - both orders are FDA compliant (e.g., "15 oz (425 g)" OR "425 g (15 oz)" are both acceptable). The secondary measurement should appear in parentheses.
    - Name and Address of Manufacturer/Distributor: Is the manufacturer or distributor clearly listed with complete address? Are qualifying phrases like "distributed by" used correctly?
 
 2. **Ingredient Labeling**: Review ingredient declaration compliance
@@ -388,10 +396,11 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
 
 3. **Food Allergen Labeling Requirements (FALCPA/FASTER Act)**: Critical compliance check
    - Major Food Allergens (MFAs): The nine major allergens are: Milk, Egg, Fish, Crustacean shellfish, Tree nuts, Wheat, Peanuts, Soybeans, and Sesame
-   - Allergen Declaration Requirement: Is there a "Contains" statement OR are allergens declared parenthetically in the ingredient list?
-   - Evaluation of Ingredients: Analyze each ingredient (especially flavors, additives) for potential MFA content
-   - **CRITICAL**: Use conditional language - "IF ingredient X contains [allergen], THEN declaration is required"
-   - Determine if the label is compliant or potentially non-compliant based on missing allergen declarations
+   - **STEP 1**: Identify if ANY of the 9 MFAs are actually present in the ingredients list
+   - **STEP 2**: IF NO allergens are present in ingredients → status: "compliant" or "not_applicable", potential_allergens: []
+   - **STEP 3**: IF allergens ARE present → Check if there's a "Contains" statement OR parenthetical declarations
+   - **STEP 4**: Use conditional language for ambiguous ingredients - "IF ingredient X contains [allergen], THEN declaration is required"
+   - **CRITICAL**: Do NOT flag as "potentially_non_compliant" if there are zero allergens in the product. Only flag if allergens ARE present but declarations are missing.
 
 4. **Nutrition Labeling and Claims**: Assess nutrition facts panel requirements and exemptions
 
@@ -405,6 +414,8 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
      • Does it show "Nutrition Facts"? (WRONG PANEL TYPE - if present, mark NON-COMPLIANT)
    - **If wrong panel type found**: Status = NON-COMPLIANT, details = "Product classified as dietary supplement but label has Nutrition Facts panel instead of Supplement Facts panel. Dietary supplements must use Supplement Facts format per 21 CFR 101.36. This panel must be removed and replaced with a Supplement Facts panel."
    - **DO NOT validate rounding rules** if wrong panel type - the entire panel needs to be replaced
+   - **IMPORTANT**: Dietary supplements do NOT have exemptions - a Supplement Facts panel is ALWAYS required. Do NOT mention exemptions for dietary supplements.
+   - Set exemption_applicable: false for all dietary supplements
 
    **IF product_category is CONVENTIONAL_FOOD, NON_ALCOHOLIC_BEVERAGE, or ALCOHOLIC_BEVERAGE:**
    - ✅ **REQUIRED**: Label MUST have a "Nutrition Facts" panel (21 CFR 101.9), unless exempt
@@ -414,7 +425,7 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
      • Does it show "Supplement Facts"? (WRONG - if present, mark NON-COMPLIANT)
    - **If wrong panel type found**: Status = NON-COMPLIANT, details = "Product classified as food/beverage but label has Supplement Facts panel instead of Nutrition Facts panel. This panel type is only for dietary supplements. Panel must be changed to Nutrition Facts format."
 
-   **AFTER PANEL TYPE VALIDATION:**
+   **AFTER PANEL TYPE VALIDATION (FOR CONVENTIONAL FOODS/BEVERAGES ONLY):**
    - Mandatory Nutrition Labeling: Is a Nutrition Facts panel required for this product type?
    - **Exemptions**: Does this product qualify for exemption (e.g., coffee, spices, foods of no nutritional significance)?
    - Evaluation of Claims: Are there any nutrient content claims (NCCs) or health claims that would trigger mandatory nutrition labeling?
@@ -437,6 +448,11 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
 5. **Additional Regulatory Considerations**: Evaluate any other applicable requirements
 
    **🚨 FORTIFICATION POLICY COMPLIANCE - CRITICAL CHECK:**
+
+   **⚠️ IMPORTANT**: FDA Fortification Policy (21 CFR 104) ONLY applies to CONVENTIONAL FOODS and BEVERAGES.
+   **DO NOT apply fortification policy to DIETARY SUPPLEMENTS** - they are regulated under DSHEA, not 21 CFR 104.
+
+   IF product_category is CONVENTIONAL_FOOD, NON_ALCOHOLIC_BEVERAGE, or ALCOHOLIC_BEVERAGE:
    If the label uses terms "enriched", "fortified", "added", "with added X", or lists added vitamins/minerals:
 
    A. **Check Product is Appropriate Vehicle for Fortification:**
@@ -791,11 +807,18 @@ Return your response as a JSON object with the following structure:
 
     // GRAS Compliance Checking
     // Check if ingredients are present and validate against GRAS database
-    if (analysisData.ingredient_labeling?.ingredients_list &&
+    // IMPORTANT: GRAS (21 CFR 170.3) only applies to CONVENTIONAL FOODS and BEVERAGES
+    // Dietary supplements are regulated under DSHEA and do NOT require GRAS ingredients
+    const isConventionalFoodProduct = analysisData.product_category === 'CONVENTIONAL_FOOD' ||
+                                       analysisData.product_category === 'NON_ALCOHOLIC_BEVERAGE' ||
+                                       analysisData.product_category === 'ALCOHOLIC_BEVERAGE';
+
+    if (isConventionalFoodProduct &&
+        analysisData.ingredient_labeling?.ingredients_list &&
         Array.isArray(analysisData.ingredient_labeling.ingredients_list) &&
         analysisData.ingredient_labeling.ingredients_list.length > 0) {
 
-      console.log('Checking GRAS compliance for ingredients:', analysisData.ingredient_labeling.ingredients_list);
+      console.log('Checking GRAS compliance for', analysisData.product_category, 'ingredients:', analysisData.ingredient_labeling.ingredients_list);
 
       try {
         const grasCompliance = await checkGRASCompliance(analysisData.ingredient_labeling.ingredients_list);
@@ -874,6 +897,8 @@ Return your response as a JSON object with the following structure:
         // Don't fail the analysis if GRAS check fails, just log the error
         // The analysis will continue without GRAS compliance info
       }
+    } else if (analysisData.product_category === 'DIETARY_SUPPLEMENT') {
+      console.log('Product is a dietary supplement - GRAS compliance not applicable (regulated under DSHEA, not 21 CFR 170.3)');
     } else {
       console.log('No ingredients found in analysis - skipping GRAS check');
     }
@@ -963,7 +988,7 @@ Return your response as a JSON object with the following structure:
       complianceStatus === 'potentially_non_compliant' ? 'minor_issues' :
       'major_violations';
 
-    const { data: analysis, error: insertError} = await supabase
+    const { data: analysis, error: insertError} = await supabaseAdmin
       .from('analyses')
       .insert({
         user_id: user.id,

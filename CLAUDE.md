@@ -36,7 +36,9 @@ The database uses PostgreSQL with Row Level Security (RLS) enabled on all tables
 - **usage_tracking**: Monthly usage limits, keyed by `user_id` + `month` (YYYY-MM format)
 - **analyses**: Stores analysis results with truncated image previews (not full images), includes `share_token` for public sharing
 - **regulatory_documents**: FDA/USDA regulations used for AI analysis context
-- **gras_ingredients**: 1,465 FDA GRAS (Generally Recognized as Safe) ingredients for compliance checking
+- **gras_ingredients**: 1,465 FDA GRAS (Generally Recognized as Safe) ingredients for food/beverage compliance checking
+- **ndi_ingredients**: 1,253 FDA NDI (New Dietary Ingredient) notifications for supplement compliance checking
+- **old_dietary_ingredients**: 1,251 grandfathered dietary ingredients marketed before October 15, 1994 (DSHEA)
 - **organizations** + **organization_members**: Team collaboration features
 - **user_settings**: User preferences (notifications, theme, timezone)
 - **analysis_exports**: Export history tracking
@@ -47,12 +49,13 @@ The database uses PostgreSQL with Row Level Security (RLS) enabled on all tables
 3. Fetch active regulatory documents from database
 4. Send image + regulatory context to Claude 3.5 Sonnet (with retry logic for rate limits)
 5. Parse JSON response containing compliance analysis
-6. **Check GRAS compliance** for all detected ingredients using three-strategy matching
-7. Save to `analyses` table with GRAS results, increment usage counter
-8. Send email notification to user
+6. **Check GRAS compliance** for food/beverage products ONLY (not supplements)
+7. **Check NDI compliance** for dietary supplement products ONLY (not foods/beverages)
+8. Save to `analyses` table with compliance results, increment usage counter
+9. Send email notification to user
 
-### GRAS Ingredient Compliance
-The system automatically validates all ingredients against the FDA GRAS database:
+### GRAS Ingredient Compliance (Foods & Beverages Only)
+The system automatically validates ingredients in CONVENTIONAL_FOOD, NON_ALCOHOLIC_BEVERAGE, and ALCOHOLIC_BEVERAGE products against the FDA GRAS database. GRAS checks are NOT performed on dietary supplements (regulated under DSHEA, not GRAS):
 
 **Database Coverage:**
 - 1,465 total ingredients (848 GRAS notices + 152 affirmed GRAS + 465 comprehensive additions)
@@ -85,8 +88,52 @@ Key implementation in `app/api/analyze/route.ts`:
 - Regulatory context is injected via `lib/regulatory-documents.ts`
 - Images and PDFs are base64 encoded with `detail: 'high'` for better accuracy
 - Images are base64 encoded, but only first 100 chars stored in DB
-- **GRAS compliance checking** runs automatically after analysis completes
+- **GRAS compliance checking** runs automatically for food/beverage products after analysis completes
+- **NDI compliance checking** runs automatically for dietary supplement products after analysis completes
 - Usage limits: Basic (10/month), Pro (100/month), Enterprise (unlimited = -1)
+
+### NDI Compliance (Dietary Supplements Only)
+The system validates dietary supplement ingredients against FDA NDI (New Dietary Ingredient) notifications and Old Dietary Ingredients (grandfathered under DSHEA). NDI checks are ONLY performed on DIETARY_SUPPLEMENT products:
+
+**Regulatory Background:**
+- **DSHEA (1994)**: Dietary Supplement Health and Education Act established October 15, 1994 as the cutoff date
+- **Old Dietary Ingredients (ODI)**: Ingredients marketed before Oct 15, 1994 are "grandfathered" - NO NDI notification required
+- **New Dietary Ingredients (NDI)**: Ingredients marketed after Oct 15, 1994 require FDA notification 75 days before marketing
+
+**Database Coverage:**
+- **1,251 Old Dietary Ingredients** from CRN Grandfather List (September 1998)
+  - Includes vitamins, minerals, amino acids, botanicals, food-based ingredients
+  - Source: Council for Responsible Nutrition (CRN) + National Nutritional Foods Association (NNFA)
+  - Covers most common supplement ingredients marketed pre-1994
+- **1,253 NDI Notifications** from FDA NDI Notification Database
+  - Tracks which ingredients have filed NDI notifications with FDA
+  - Includes notification number, firm, submission date, FDA response
+
+**Matching Logic** (implemented in `lib/ndi-helpers.ts`):
+1. **Exact NDI match**: Check if ingredient has filed NDI notification
+2. **Old ingredient match**: Check if ingredient is in grandfathered list (database + fallback)
+3. **Partial matching**: Handles variations like "pyridoxine hydrochloride" vs "pyridoxine HCL"
+4. **Caching**: 1-hour cache for database lookups to improve performance
+5. **Fallback**: Hardcoded list of 168 common ingredients if database unavailable
+
+**Compliance Outcomes:**
+- ✅ **Has NDI notification**: Compliant (notification on file with FDA)
+- ✅ **Pre-1994 ingredient**: Compliant (grandfathered under DSHEA, no notification required)
+- ⚠️ **No NDI + Not recognized as pre-1994**: Requires verification or NDI filing
+
+**Key Files:**
+- `lib/ndi-helpers.ts`: NDI/ODI matching and compliance checking logic
+- `supabase/migrations/20251024050000_create_old_dietary_ingredients.sql`: ODI table schema
+- `parse-grandfather-list.js`: PDF text extraction from CRN list
+- `extract-ingredients.js`: Parse and clean ingredient names from PDF
+- `setup-old-dietary-ingredients.js`: Database population script
+- `grandfather-ingredients.json`: Parsed list of 1,251 ingredients
+
+**Important Notes:**
+- GRAS regulations (21 CFR 170.3) do NOT apply to dietary supplements
+- Fortification policy (21 CFR 104) does NOT apply to dietary supplements
+- Supplements are regulated under DSHEA, not FDA food additive regulations
+- Always use Supplement Facts panel (not Nutrition Facts) for supplements
 
 ### Analysis Sessions (Iterative Improvement Workflow)
 
@@ -469,6 +516,7 @@ const { data: user } = await supabase
 12. **Organization Member Queries**: When querying `organization_members` with a join to `users`, always specify the exact foreign key relationship (`users!organization_members_user_id_fkey`) to avoid ambiguity errors, since the table has multiple foreign keys to `users` (via `user_id` and `invited_by`).
 13. **Invitation Email Validation**: Invitation acceptance does NOT enforce strict email matching between the invitation email and the signed-in user's email. The invitation token is the authorization mechanism, allowing email aliases to work correctly.
 14. **Team Member API**: Always use `/api/organizations/members` GET endpoint (which uses `supabaseAdmin`) instead of client-side Supabase queries to fetch team members, as RLS policies prevent cross-user data access.
+15. **Net Quantity Declaration Order**: FDA regulations (21 CFR 101.7) do NOT mandate a specific order for US customary vs metric units. Either order is acceptable: "15 oz (425 g)" OR "425 g (15 oz)" are both compliant. The secondary measurement should appear in parentheses. This applies to all food categories (conventional foods, dietary supplements, beverages).
 
 ## Key Files to Reference
 
