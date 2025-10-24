@@ -405,6 +405,10 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
    - Name and Address of Manufacturer/Distributor: Is the manufacturer or distributor clearly listed with complete address? Are qualifying phrases like "distributed by" used correctly?
 
 2. **Ingredient Labeling**: Review ingredient declaration compliance
+   - **🚨 CRITICAL FOR DIETARY SUPPLEMENTS**: For supplements, extract ALL active ingredients from the Supplement Facts panel (including proprietary blends) IN ADDITION TO the separate ingredient list. Both sources must be included in ingredients_list array.
+   - **WHERE TO FIND INGREDIENTS**:
+     • Dietary Supplements: Look in BOTH the "Supplement Facts" panel (active ingredients) AND the "Other Ingredients" or "Ingredients" list below the panel
+     • Conventional Foods: Look for "Ingredients:" list (usually below Nutrition Facts panel or elsewhere on label)
    - List and Order: Are ingredients listed in descending order of predominance by weight?
    - Flavor Declaration: Are artificial flavors, natural flavors, and spices properly declared?
    - Specific Ingredient Requirements: Are colors specifically named? Are preservatives listed with their function?
@@ -413,10 +417,10 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
    - **APPLIES TO ALL PRODUCTS**: Allergen labeling requirements apply to ALL foods including dietary supplements per FALCPA Section 403(w)
    - Major Food Allergens (MFAs): The nine major allergens are: Milk, Egg, Fish, Crustacean shellfish, Tree nuts, Wheat, Peanuts, Soybeans, and Sesame
    - **STEP 1**: Identify if ANY of the 9 MFAs are actually present in the ingredients list
-   - **STEP 2**: IF NO allergens are present in ingredients → status: "compliant", potential_allergens: []
+   - **STEP 2**: IF NO allergens are present in ingredients → status: "compliant", potential_allergens: [], risk_level: "low", details: "No major food allergens detected in ingredients. Product is compliant with FALCPA as there are no allergens to declare."
    - **STEP 3**: IF allergens ARE present → Check if there's a "Contains" statement OR parenthetical declarations
    - **STEP 4**: Use conditional language for ambiguous ingredients - "IF ingredient X contains [allergen], THEN declaration is required"
-   - **CRITICAL**: Do NOT flag as "potentially_non_compliant" if there are zero allergens in the product. Only flag if allergens ARE present but declarations are missing.
+   - **🚨 ABSOLUTE RULE**: ONLY use "potentially_non_compliant" or "non_compliant" if you have CONFIRMED that allergens ARE PRESENT in the ingredients. Do NOT use these statuses based on hypothetical scenarios like "if allergens were present". If ZERO allergens are detected, status MUST be "compliant".
    - **NEVER use "not_applicable" status** - even if no allergens are present, the status should be "compliant" (meaning compliant with FALCPA because no allergens to declare)
 
 **IF product_category is DIETARY_SUPPLEMENT, your analysis MUST include these sections in order:**
@@ -436,8 +440,12 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
    - Set panel_present: true/false, panel_type_correct: true/false, exemption_applicable: false
 
 5. **Claims**: Evaluate all claims made on the supplement label
-   - **Structure/Function Claims**: Look for claims about body functions (e.g., "supports immune health", "promotes joint function")
-     • List ALL S/F claims found
+   - **🚨 CRITICAL**: Scan the ENTIRE label for claims - including front panel, side panels, and any promotional text. Look for subtle marketing language.
+   - **Structure/Function Claims**: Look for claims about body functions - these can be ANYWHERE on the label:
+     • **Common Examples**: "supports immune health", "promotes joint function", "enhances energy", "boosts performance", "increases stamina", "improves vitality"
+     • **Sexual/Performance Claims**: "enhances pleasure", "improves performance", "increases intensity", "boosts libido", "sexual energy", "stamina", "endurance"
+     • **Energy/Athletic Claims**: "pre-workout", "post-workout", "muscle recovery", "athletic performance", "endurance"
+     • List ALL S/F claims found (check product name, taglines, front panel text, side panel descriptions)
      • Verify substantiation requirements
      • Check for required disclaimer: "This statement has not been evaluated by the FDA. This product is not intended to diagnose, treat, cure, or prevent any disease."
    - **Nutrient Content Claims**: Look for claims about nutrient levels (e.g., "high in vitamin C", "good source of calcium")
