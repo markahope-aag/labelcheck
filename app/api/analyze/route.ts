@@ -441,17 +441,61 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
 
 5. **Claims**: Evaluate all claims made on the supplement label
    - **🚨 CRITICAL**: Scan the ENTIRE label for claims - including front panel, side panels, and any promotional text. Look for subtle marketing language.
-   - **Structure/Function Claims**: Look for claims about body functions - these can be ANYWHERE on the label:
-     • **Common Examples**: "supports immune health", "promotes joint function", "enhances energy", "boosts performance", "increases stamina", "improves vitality"
-     • **Sexual/Performance Claims**: "enhances pleasure", "improves performance", "increases intensity", "boosts libido", "sexual energy", "stamina", "endurance"
-     • **Energy/Athletic Claims**: "pre-workout", "post-workout", "muscle recovery", "athletic performance", "endurance"
-     • List ALL S/F claims found (check product name, taglines, front panel text, side panel descriptions)
-     • Verify substantiation requirements
-     • Check for required disclaimer: "This statement has not been evaluated by the FDA. This product is not intended to diagnose, treat, cure, or prevent any disease."
-   - **Nutrient Content Claims**: Look for claims about nutrient levels (e.g., "high in vitamin C", "good source of calcium")
-     • Validate against regulatory definitions (high ≥20% DV, good source 10-19% DV)
-   - **Health Claims**: Check if any FDA-authorized health claims are made (rare on supplements)
-   - **Prohibited Claims**: Flag any disease treatment/cure claims (illegal for supplements)
+   - **IMPORTANT DISTINCTION**: Not all claims are problematic. Distinguish between ACCEPTABLE and PROHIBITED claims.
+
+   - **ACCEPTABLE CLAIMS** (These are COMPLIANT - do NOT flag as violations):
+
+     **A. Nutrient Content Claims** (describing nutrient levels):
+     • "Provides X mg of vitamin C per serving"
+     • "Low sodium" / "Low fat"
+     • "High in fiber" / "High in vitamin D"
+     • "Good source of calcium"
+     • "Excellent source of B vitamins"
+     • Validate against regulatory definitions: "High" ≥20% DV, "Good Source" 10-19% DV, "Low" meets FDA thresholds
+
+     **B. Structure/Function Claims** (describing normal body structure/function - THESE ARE LEGAL FOR SUPPLEMENTS):
+     • "Supports healthy immune system function"
+     • "Promotes healthy joints and cartilage"
+     • "Helps maintain healthy cholesterol levels already within the normal range"
+     • "Supports healthy digestive system and regularity"
+     • "Helps support normal sleep cycles"
+     • "Magnesium helps relax muscles"
+     • "Zinc supports skin health"
+     • "Lutein helps support eye health"
+     • "Protein builds and repairs body tissue"
+     • "Vitamin D helps maintain healthy bones"
+     • "Iron helps support cognitive development in children"
+     • "Calcium contributes to the normal function of digestive enzymes"
+     • "Full-spectrum B-vitamin complex helps convert food into energy"
+     • **REQUIREMENT**: Check for required disclaimer: "This statement has not been evaluated by the FDA. This product is not intended to diagnose, treat, cure, or prevent any disease."
+
+     **C. Authorized Health Claims** (FDA-approved disease risk reduction claims - LEGAL if properly worded):
+     • "Diets low in sodium may reduce the risk of high blood pressure"
+     • "Soluble fiber from whole oats as part of a diet low in saturated fat and cholesterol may reduce the risk of heart disease"
+     • "Adequate calcium and vitamin D throughout life may reduce the risk of osteoporosis"
+     • Must use exact FDA-authorized wording
+
+   - **PROHIBITED CLAIMS** (Flag these as NON-COMPLIANT):
+
+     **Disease Claims** (diagnose, treat, cure, prevent disease):
+     • "Treats diabetes" / "Cures arthritis" / "Prevents cancer"
+     • "Reduces blood pressure" (implies treating hypertension - disease)
+     • "Lowers cholesterol" (unless part of authorized health claim)
+     • "Fights infections" / "Kills bacteria/viruses"
+     • Any claim about treating, curing, or preventing a specific disease
+
+     **Misleading/Exaggerated Claims**:
+     • "Miracle" / "Breakthrough" / "Revolutionary cure"
+     • Implied disease treatment without explicit statement
+     • Unqualified performance claims without substantiation evidence mentioned
+
+   - **ANALYSIS APPROACH**:
+     • List ALL claims found on the label
+     • Categorize each claim as: Nutrient Content, Structure/Function, Health Claim, or Prohibited
+     • For S/F claims, verify FDA disclaimer is present
+     • For prohibited claims, explain why they violate FD&C Act
+     • **Status should be COMPLIANT if only acceptable claims are present**
+     • **Status should be NON-COMPLIANT only if prohibited disease claims are present**
 
 6. **Additional Regulatory Considerations for Supplements**:
    - **DHEA Warning Requirements** (Anabolic Steroid Control Act of 2004):
