@@ -269,8 +269,23 @@ export async function POST(request: NextRequest) {
 
     const regulatoryContext = buildRegulatoryContext(regulatoryDocuments);
 
-    // Separate cached context from dynamic prompt
-    const analysisInstructions = `You are a labeling regulatory compliance expert. Analyze this label ${isPdf ? 'PDF document' : 'image'} and provide a comprehensive evaluation of its compliance with FDA and USDA labeling requirements based on the regulatory documents provided above.
+    // Feature flag: Enable category-specific prompts (more focused, faster analysis)
+    const useCategorySpecificPrompts = process.env.USE_CATEGORY_SPECIFIC_PROMPTS === 'true';
+
+    let analysisInstructions: string;
+
+    if (useCategorySpecificPrompts && ragInfo?.preClassifiedCategory) {
+      // NEW: Use focused category-specific prompt (60-70% smaller)
+      console.log(`📝 Using category-specific prompt for ${ragInfo.preClassifiedCategory}`);
+      const { getCategorySpecificAnalysisPrompt } = await import('@/lib/analysis-prompts');
+      analysisInstructions = getCategorySpecificAnalysisPrompt(
+        ragInfo.preClassifiedCategory,
+        isPdf
+      );
+    } else {
+      // EXISTING: Use comprehensive generic prompt (all categories)
+      console.log('📝 Using generic prompt (all categories)');
+      analysisInstructions = `You are a labeling regulatory compliance expert. Analyze this label ${isPdf ? 'PDF document' : 'image'} and provide a comprehensive evaluation of its compliance with FDA and USDA labeling requirements based on the regulatory documents provided above.
 
 **STEP 1: PRODUCT CATEGORY CLASSIFICATION**
 
@@ -1038,6 +1053,7 @@ Return your response as a JSON object with the following structure:
 6. Base compliance status on visible information; use "potentially non-compliant" when ingredient composition is unknown
 7. In the compliance_table, provide a clear summary similar to the NotebookLM format
 8. **PANEL TYPE MISMATCH = CRITICAL VIOLATION**: If product is classified as DIETARY_SUPPLEMENT but has "Nutrition Facts" panel (or vice versa), this is a CRITICAL priority recommendation. Generate recommendation: "Replace [wrong panel type] with [correct panel type] per [regulation citation]"`;
+    }
 
     // Helper function to call OpenAI API with retry logic for rate limits
     const callOpenAIWithRetry = async (maxRetries = 3) => {
