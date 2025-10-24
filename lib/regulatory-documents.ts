@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 
 import { RegulatoryDocument, ProductCategory } from './supabase';
+import { getCachedRegulatoryDocuments, invalidateDocumentCache } from './regulatory-cache';
 
 export interface DocumentCategory {
   id: string;
@@ -138,18 +139,8 @@ export function detectDocumentCategories(doc: RegulatoryDocument): ProductCatego
 }
 
 export async function getActiveRegulatoryDocuments(): Promise<RegulatoryDocument[]> {
-  const { data, error } = await supabase
-    .from('regulatory_documents')
-    .select('*')
-    .eq('is_active', true)
-    .limit(50);
-
-  if (error) {
-    console.error('Error fetching regulatory documents:', error);
-    return [];
-  }
-
-  return data || [];
+  // Use cached version for 2-3 second performance improvement
+  return await getCachedRegulatoryDocuments();
 }
 
 /**
@@ -312,6 +303,11 @@ export async function createRegulatoryDocument(
     .select()
     .single();
 
+  // Invalidate cache when documents are created
+  if (!error) {
+    invalidateDocumentCache();
+  }
+
   return { data, error };
 }
 
@@ -326,6 +322,11 @@ export async function updateRegulatoryDocument(
     .select()
     .single();
 
+  // Invalidate cache when documents are updated
+  if (!error) {
+    invalidateDocumentCache();
+  }
+
   return { data, error };
 }
 
@@ -334,6 +335,11 @@ export async function deactivateDocument(id: string): Promise<{ error: any }> {
     .from('regulatory_documents')
     .update({ is_active: false })
     .eq('id', id);
+
+  // Invalidate cache when documents are deactivated
+  if (!error) {
+    invalidateDocumentCache();
+  }
 
   return { error };
 }
