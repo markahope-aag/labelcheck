@@ -38,3 +38,7 @@ next-env.d.ts
 # clerk configuration (can include secrets)
 /.clerk/
 nul
+
+# sample product labels (for testing)
+/sample-labels/
+download-sample-labels.js
