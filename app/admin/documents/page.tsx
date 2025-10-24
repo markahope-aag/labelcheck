@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth, useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import { Plus, Edit, Trash2, Search, Filter, FileText, Calendar, CheckCircle, XCircle, Upload } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Filter, FileText, Calendar, CheckCircle, XCircle, Upload, Eye } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RegulatoryDocument } from '@/lib/supabase';
+import { RegulatoryDocument, ProductCategory } from '@/lib/supabase';
 
 export default function AdminDocumentsPage() {
   const { userId } = useAuth();
@@ -44,6 +44,10 @@ export default function AdminDocumentsPage() {
   const [isProcessingPDF, setIsProcessingPDF] = useState(false);
   const [pdfError, setPdfError] = useState('');
 
+  const [showCategories, setShowCategories] = useState(false);
+  const [documentCategories, setDocumentCategories] = useState<Map<string, { categories: ProductCategory[], isCore: boolean }>>(new Map());
+  const [loadingCategories, setLoadingCategories] = useState(false);
+
   const isAdmin = user?.publicMetadata?.role === 'admin';
 
   useEffect(() => {
@@ -73,6 +77,33 @@ export default function AdminDocumentsPage() {
       setError(err.message);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadCategories = async () => {
+    try {
+      setLoadingCategories(true);
+      const response = await fetch('/api/admin/documents/categories');
+      if (!response.ok) {
+        throw new Error('Failed to load categories');
+      }
+      const data = await response.json();
+
+      // Convert array to Map for easy lookup
+      const categoryMap = new Map();
+      data.forEach((item: any) => {
+        categoryMap.set(item.document.id, {
+          categories: item.categories,
+          isCore: item.isCore,
+        });
+      });
+
+      setDocumentCategories(categoryMap);
+      setShowCategories(true);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoadingCategories(false);
     }
   };
 
@@ -221,7 +252,25 @@ export default function AdminDocumentsPage() {
               <h1 className="text-4xl font-bold text-slate-900 mb-2">Regulatory Documents</h1>
               <p className="text-slate-600">Manage rules and regulations for label analysis</p>
             </div>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (showCategories) {
+                    setShowCategories(false);
+                  } else if (documentCategories.size > 0) {
+                    setShowCategories(true);
+                  } else {
+                    loadCategories();
+                  }
+                }}
+                disabled={loadingCategories}
+                className="border-blue-300 text-blue-600 hover:bg-blue-50"
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                {loadingCategories ? 'Loading...' : showCategories ? 'Hide Categories' : 'Preview RAG Categories'}
+              </Button>
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 <Button
                   onClick={() => {
@@ -414,6 +463,7 @@ export default function AdminDocumentsPage() {
                 </form>
               </DialogContent>
             </Dialog>
+            </div>
           </div>
 
           {error && (
@@ -489,6 +539,31 @@ export default function AdminDocumentsPage() {
                           </Badge>
                         </div>
                         {doc.description && <CardDescription>{doc.description}</CardDescription>}
+                        {showCategories && documentCategories.has(doc.id) && (
+                          <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                            <div className="text-sm font-semibold text-blue-900 mb-2">
+                              📚 RAG Lite Categories
+                              {documentCategories.get(doc.id)?.isCore && (
+                                <span className="ml-2 text-xs font-normal text-blue-700">(Core document - applies to all categories)</span>
+                              )}
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {documentCategories.get(doc.id)?.categories.map((category) => {
+                                const categoryColors: Record<ProductCategory, string> = {
+                                  CONVENTIONAL_FOOD: 'bg-amber-100 text-amber-800 border-amber-300',
+                                  DIETARY_SUPPLEMENT: 'bg-purple-100 text-purple-800 border-purple-300',
+                                  ALCOHOLIC_BEVERAGE: 'bg-rose-100 text-rose-800 border-rose-300',
+                                  NON_ALCOHOLIC_BEVERAGE: 'bg-cyan-100 text-cyan-800 border-cyan-300',
+                                };
+                                return (
+                                  <Badge key={category} className={`${categoryColors[category]} text-xs`}>
+                                    {category.replace(/_/g, ' ')}
+                                  </Badge>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
                         <div className="flex items-center gap-4 mt-3 text-sm text-slate-600">
                           <div className="flex items-center gap-1">
                             <FileText className="h-4 w-4" />

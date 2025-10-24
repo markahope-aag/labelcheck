@@ -2,13 +2,14 @@ import { auth, clerkClient } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { supabase, supabaseAdmin } from '@/lib/supabase';
-import { getActiveRegulatoryDocuments, buildRegulatoryContext } from '@/lib/regulatory-documents';
+import { getActiveRegulatoryDocuments, buildRegulatoryContext, getRecommendedDocuments } from '@/lib/regulatory-documents';
 import { sendEmail } from '@/lib/resend';
 import { generateAnalysisResultEmail } from '@/lib/email-templates';
 import { preprocessImage } from '@/lib/image-processing';
 import { createSession, addIteration } from '@/lib/session-helpers';
 import { checkGRASCompliance } from '@/lib/gras-helpers';
 import { checkNDICompliance } from '@/lib/ndi-helpers';
+import { checkIngredientsForAllergens } from '@/lib/allergen-helpers';
 import { processPdfForAnalysis } from '@/lib/pdf-helpers';
 
 const openai = new OpenAI({
@@ -211,8 +212,22 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('📚 Fetching regulatory documents...');
-    const regulatoryDocuments = await getActiveRegulatoryDocuments();
-    console.log(`✅ Fetched ${regulatoryDocuments.length} regulatory documents`);
+    let regulatoryDocuments;
+    let ragInfo = null;
+
+    if (pdfTextContent) {
+      // RAG lite for PDFs - filter by pre-classified category
+      const { documents, preClassifiedCategory, documentCount, totalCount } =
+        await getRecommendedDocuments(pdfTextContent);
+      regulatoryDocuments = documents;
+      ragInfo = { preClassifiedCategory, documentCount, totalCount };
+      console.log(`✅ RAG Lite: Loaded ${documentCount}/${totalCount} documents for ${preClassifiedCategory}`);
+    } else {
+      // Fallback for images - load all documents (can't pre-classify without text)
+      regulatoryDocuments = await getActiveRegulatoryDocuments();
+      console.log(`✅ Loaded all ${regulatoryDocuments.length} documents (image mode)`);
+    }
+
     const regulatoryContext = buildRegulatoryContext(regulatoryDocuments);
 
     // Separate cached context from dynamic prompt
@@ -979,6 +994,120 @@ Return your response as a JSON object with the following structure:
       }
     } else if (analysisData.product_category === 'DIETARY_SUPPLEMENT') {
       console.log('No ingredients found in supplement analysis - skipping NDI check');
+    }
+
+    // Major Food Allergen Compliance Checking (FALCPA/FASTER Act)
+    // Check all products with ingredients for allergen presence and declaration
+    if (analysisData.ingredient_labeling?.ingredients_list &&
+        Array.isArray(analysisData.ingredient_labeling.ingredients_list) &&
+        analysisData.ingredient_labeling.ingredients_list.length > 0) {
+
+      console.log('Checking major allergen compliance for ingredients:', analysisData.ingredient_labeling.ingredients_list);
+
+      try {
+        const allergenResults = await checkIngredientsForAllergens(analysisData.ingredient_labeling.ingredients_list);
+
+        console.log('Allergen compliance check complete:', {
+          totalIngredients: allergenResults.summary.totalIngredients,
+          ingredientsWithAllergens: allergenResults.summary.ingredientsWithAllergens,
+          uniqueAllergensDetected: allergenResults.summary.uniqueAllergensDetected,
+          allergens: allergenResults.allergensDetected.map(a => a.allergen_name),
+        });
+
+        // Add allergen compliance info to analysis data
+        analysisData.allergen_database_check = {
+          total_ingredients: allergenResults.summary.totalIngredients,
+          ingredients_with_allergens: allergenResults.summary.ingredientsWithAllergens,
+          allergens_detected: allergenResults.allergensDetected.map(a => ({
+            name: a.allergen_name,
+            category: a.allergen_category,
+            found_in: allergenResults.ingredientsWithAllergens
+              .filter(i => i.allergens.some(al => al.allergen?.id === a.id))
+              .map(i => i.ingredient),
+          })),
+          high_confidence_matches: allergenResults.summary.highConfidenceMatches,
+          medium_confidence_matches: allergenResults.summary.mediumConfidenceMatches,
+        };
+
+        // If allergens are detected, verify proper declaration
+        if (allergenResults.allergensDetected.length > 0) {
+          console.log('ALLERGENS DETECTED:', allergenResults.allergensDetected.map(a => a.allergen_name).join(', '));
+
+          // Check if AI analysis found proper allergen labeling
+          const aiAllergenStatus = analysisData.allergen_labeling?.status;
+          const hasContainsStatement = analysisData.allergen_labeling?.has_contains_statement;
+
+          // Initialize recommendations array if it doesn't exist
+          if (!analysisData.recommendations) {
+            analysisData.recommendations = [];
+          }
+
+          // Cross-reference database findings with AI analysis
+          if (aiAllergenStatus === 'potentially_non_compliant' || aiAllergenStatus === 'non_compliant' || !hasContainsStatement) {
+            // AI detected missing allergen declarations - validate with database
+            const detectedAllergenNames = allergenResults.allergensDetected.map(a => a.allergen_name);
+
+            analysisData.recommendations.push({
+              priority: 'critical',
+              recommendation: `CRITICAL ALLERGEN VIOLATION: The following major food allergens were detected in ingredients but may not be properly declared: ${detectedAllergenNames.join(', ')}. Per FALCPA Section 403(w) and FASTER Act, all major food allergens MUST be declared either (1) in parentheses following the ingredient (e.g., "Whey (milk)") OR (2) in a "Contains:" statement immediately after the ingredient list. Missing allergen declarations can result in FDA enforcement action and mandatory recalls.`,
+              regulation: 'FALCPA Section 403(w), FASTER Act, 21 USC §343(w)',
+            });
+
+            // Add detailed breakdown of which ingredients contain which allergens
+            const allergenDetails = allergenResults.allergensDetected.map(allergen => {
+              const ingredients = allergenResults.ingredientsWithAllergens
+                .filter(i => i.allergens.some(al => al.allergen?.id === allergen.id))
+                .map(i => i.ingredient);
+              return `${allergen.allergen_name}: found in ${ingredients.join(', ')}`;
+            });
+
+            analysisData.recommendations.push({
+              priority: 'high',
+              recommendation: `Allergen source breakdown: ${allergenDetails.join('; ')}. Ensure proper declaration for ALL listed allergens.`,
+              regulation: 'FALCPA/FASTER Act Compliance',
+            });
+
+            if (!analysisData.compliance_table) {
+              analysisData.compliance_table = [];
+            }
+            analysisData.compliance_table.push({
+              element: 'Major Food Allergen Declaration',
+              status: 'NON-COMPLIANT',
+              rationale: `${allergenResults.allergensDetected.length} major allergen(s) detected in ingredients but proper declaration missing or unclear`,
+            });
+          } else if (aiAllergenStatus === 'compliant') {
+            // AI found proper declarations - confirm with database
+            console.log('Allergens properly declared (validated by both AI and database)');
+
+            if (!analysisData.compliance_table) {
+              analysisData.compliance_table = [];
+            }
+            analysisData.compliance_table.push({
+              element: 'Major Food Allergen Declaration',
+              status: 'Compliant',
+              rationale: `All ${allergenResults.allergensDetected.length} major allergen(s) properly declared per FALCPA/FASTER Act`,
+            });
+          }
+        } else {
+          // No allergens detected by database
+          console.log('No major food allergens detected in ingredients');
+
+          if (!analysisData.compliance_table) {
+            analysisData.compliance_table = [];
+          }
+          analysisData.compliance_table.push({
+            element: 'Major Food Allergen Declaration',
+            status: 'Not Applicable',
+            rationale: 'No major food allergens detected in ingredients',
+          });
+        }
+      } catch (allergenError) {
+        console.error('Error checking allergen compliance:', allergenError);
+        // Don't fail the analysis if allergen check fails, just log the error
+        // The AI-based allergen checking will still be present in analysisData.allergen_labeling
+      }
+    } else {
+      console.log('No ingredients found in analysis - skipping allergen database check');
     }
 
     // Determine compliance status from the new analysis structure

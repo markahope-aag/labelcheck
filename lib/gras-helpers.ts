@@ -38,6 +38,8 @@ export interface GRASComplianceReport {
  * - Convert to lowercase
  * - Remove extra whitespace
  * - Remove common parenthetical notes
+ * - Remove chemical prefixes (D-, L-, DL-, d-, l-, dl-)
+ * - Remove percentage indicators
  */
 function normalizeIngredientName(name: string): string {
   return name
@@ -45,7 +47,10 @@ function normalizeIngredientName(name: string): string {
     .trim()
     .replace(/\s+/g, ' ')
     .replace(/\s*\([^)]*\)/g, '') // Remove (parenthetical notes)
-    .replace(/[,;].*$/, ''); // Remove anything after comma/semicolon
+    .replace(/[,;].*$/, '') // Remove anything after comma/semicolon
+    .replace(/\b(d|l|dl)-/gi, '') // Remove stereoisomer prefixes (D-, L-, DL-)
+    .replace(/\s+\d+%\s*$/, '') // Remove trailing percentages like "1%"
+    .trim();
 }
 
 /**
@@ -78,11 +83,28 @@ async function checkSingleIngredient(ingredientName: string): Promise<GRASCheckR
   // Strategy 2: Check synonyms array
   // Fetch all active ingredients and check synonyms in JavaScript
   // (PostgreSQL TEXT[] array matching is complex with Supabase client)
-  const { data: allIngredients } = await supabase
-    .from('gras_ingredients')
-    .select('*')
-    .eq('is_active', true)
-    .not('synonyms', 'is', null);
+  // IMPORTANT: Supabase has a hard 1000-row server limit, so we need pagination
+  let allIngredients: GRASIngredient[] = [];
+  let page = 0;
+  const pageSize = 1000;
+  let hasMore = true;
+
+  while (hasMore) {
+    const { data: pageData } = await supabase
+      .from('gras_ingredients')
+      .select('*')
+      .eq('is_active', true)
+      .not('synonyms', 'is', null)
+      .range(page * pageSize, (page + 1) * pageSize - 1);
+
+    if (pageData && pageData.length > 0) {
+      allIngredients = [...allIngredients, ...pageData];
+      hasMore = pageData.length === pageSize;
+      page++;
+    } else {
+      hasMore = false;
+    }
+  }
 
   if (allIngredients) {
     for (const ing of allIngredients) {
@@ -99,24 +121,46 @@ async function checkSingleIngredient(ingredientName: string): Promise<GRASCheckR
     }
   }
 
-  // Strategy 3: Fuzzy match using partial string matching
-  // Match any significant word in the ingredient name
+  // Strategy 3: Improved fuzzy match
+  // Prioritize matching the LAST significant word (usually the core ingredient)
+  // e.g., "CALCIUM D-PANTOTHENATE" → try "pantothenate" first, then "calcium"
+  // e.g., "GROUND ROASTED COFFEE" → try "coffee" first, then "roasted", then "ground"
   const searchTerms = normalized.split(' ').filter(word => word.length > 3);
   if (searchTerms.length > 0) {
-    // Try matching each significant word
-    for (const term of searchTerms) {
+    // Try terms in reverse order (last word is usually the core ingredient)
+    const reversedTerms = [...searchTerms].reverse();
+
+    for (const term of reversedTerms) {
       const { data: fuzzyMatches } = await supabase
         .from('gras_ingredients')
         .select('*')
         .eq('is_active', true)
         .ilike('ingredient_name', `%${term}%`)
-        .limit(1);
+        .limit(5); // Get multiple matches to find best one
 
       if (fuzzyMatches && fuzzyMatches.length > 0) {
+        // Prefer shorter matches (more specific)
+        // e.g., prefer "Coffee" over "Coffee fruit extract"
+        const bestMatch = fuzzyMatches.reduce((best, current) => {
+          // Prioritize exact word matches
+          const currentWords = current.ingredient_name.toLowerCase().split(/\s+/);
+          const bestWords = best.ingredient_name.toLowerCase().split(/\s+/);
+
+          if (currentWords.includes(term) && !bestWords.includes(term)) {
+            return current;
+          }
+          if (!currentWords.includes(term) && bestWords.includes(term)) {
+            return best;
+          }
+
+          // If both have exact word match or neither does, prefer shorter name
+          return current.ingredient_name.length < best.ingredient_name.length ? current : best;
+        });
+
         return {
           ingredient: ingredientName,
           isGRAS: true,
-          matchedEntry: fuzzyMatches[0],
+          matchedEntry: bestMatch,
           matchType: 'fuzzy',
         };
       }
