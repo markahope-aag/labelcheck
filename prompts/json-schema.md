@@ -6,6 +6,13 @@ Return ONLY valid JSON (no other text). Use this exact schema:
 {
   "product_category": "CONVENTIONAL_FOOD|DIETARY_SUPPLEMENT|ALCOHOLIC_BEVERAGE|NON_ALCOHOLIC_BEVERAGE",
   "category_rationale": "Why this category was assigned",
+  "category_confidence": "high|medium|low",
+  "category_ambiguity": {
+    "is_ambiguous": true|false,
+    "alternative_categories": ["CATEGORY1", "CATEGORY2"],
+    "ambiguity_reason": "Why this is ambiguous",
+    "label_conflicts": ["Conflict 1", "Conflict 2"]
+  },
   "statement_of_identity": {
     "text": "Product name",
     "status": "compliant|potentially_non_compliant|non_compliant",

@@ -2,6 +2,14 @@
 
 These requirements apply to ALL product categories.
 
+## CATEGORY CONFIDENCE (for response JSON)
+
+Since you've been given a pre-classified category, always set:
+- `"category_confidence": "high"`
+- `"category_ambiguity": { "is_ambiguous": false, "alternative_categories": [], "ambiguity_reason": "", "label_conflicts": [] }`
+
+Only set `is_ambiguous: true` if you find STRONG evidence the pre-classification was wrong (e.g., Nutrition Facts panel on product claimed to be supplement).
+
 ## ANALYSIS APPROACH
 
 ### 1. Extract Information
