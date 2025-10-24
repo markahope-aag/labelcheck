@@ -165,8 +165,43 @@ const CACHE_TTL_MS = 1000 * 60 * 60; // 1 hour
   - Can be toggled without code changes
   - Gradual migration path planned
 
+#### 6. Extract Prompts to External Files (Priority 3 - Complete)
+- ✅ **Created prompts directory structure**
+  - `prompts/categories/` - Category-specific rules
+  - `prompts/common-sections.md` - Common analysis approach
+  - `prompts/json-schema.md` - Response format
+
+- ✅ **Created category prompt files** (4 markdown files)
+  - `dietary-supplement.md` - FDA/DSHEA supplement rules (~1.5 KB)
+  - `conventional-food.md` - FDA food rules (~1.8 KB)
+  - `alcoholic-beverage.md` - TTB alcohol rules (~1.2 KB)
+  - `non-alcoholic-beverage.md` - FDA beverage rules (~1.4 KB)
+
+- ✅ **Created prompt loader utility** (`lib/prompt-loader.ts` - 130 lines)
+  - `buildCategoryPrompt()` - Compose complete prompts from files
+  - File read with caching (avoid repeated disk I/O)
+  - `clearPromptCache()` - For development/testing
+  - `getPromptCacheStats()` - Monitoring function
+
+- ✅ **Refactored analysis-prompts.ts**
+  - Reduced from 360 lines to 32 lines (91% reduction!)
+  - Now just a thin wrapper around prompt-loader
+  - All hard-coded strings moved to markdown files
+
+- ✅ **Created comprehensive documentation**
+  - `prompts/README.md` - Guide for editing prompts
+  - Format guidelines, testing procedures
+  - File structure explanation
+
+**Benefits:**
+- **Maintainability:** Non-developers can edit prompts
+- **Version control:** Cleaner git diffs (markdown vs TypeScript)
+- **A/B testing:** Easy to swap out prompt variations
+- **Separation of concerns:** Code = logic, Files = content
+- **No performance impact:** Files are cached in memory
+
 **What's Next:**
-- Test category-specific prompts with feature flag enabled
+- Test prompts with feature flag enabled
 - Compare analysis quality (new vs old)
 - Measure performance improvement (target: 5-10 seconds)
 - Consider enabling by default after testing
@@ -174,33 +209,37 @@ const CACHE_TTL_MS = 1000 * 60 * 60; // 1 hour
 ### 📋 Commit Message (Ready to Use)
 
 ```
-Add category-specific prompts with feature flag (Priority 2 refactoring)
+Extract prompts to external markdown files (Priority 3 refactoring)
 
-- Create lib/analysis-prompts.ts with focused prompts per category
-  - getDietarySupplementRules() - 21 CFR 101.36, DSHEA (~180 lines)
-  - getConventionalFoodRules() - 21 CFR 101.9, fortification (~200 lines)
-  - getAlcoholicBeverageRules() - TTB, 27 CFR (~150 lines)
-  - getNonAlcoholicBeverageRules() - Beverages, caffeine disclosure (~170 lines)
-  - Each prompt 60-70% smaller than generic (767 lines → ~150-200 lines)
+- Create prompts directory structure
+  - prompts/categories/ for category-specific rules
+  - prompts/common-sections.md for analysis approach
+  - prompts/json-schema.md for response format
+  - prompts/README.md for editing guidelines
 
-- Add feature flag to app/api/analyze/route.ts
-  - USE_CATEGORY_SPECIFIC_PROMPTS environment variable
-  - Default: OFF (uses existing generic prompt)
-  - When enabled: Uses category-specific prompt based on RAG lite
-  - Graceful fallback to generic prompt if no category detected
-  - Zero risk to production (feature flag OFF by default)
+- Create 4 category-specific prompt files
+  - dietary-supplement.md - FDA/DSHEA rules (~1.5 KB)
+  - conventional-food.md - FDA food rules (~1.8 KB)
+  - alcoholic-beverage.md - TTB alcohol rules (~1.2 KB)
+  - non-alcoholic-beverage.md - Beverage rules (~1.4 KB)
 
-- Create CATEGORY_SPECIFIC_PROMPTS.md documentation
-  - How to enable/test the feature
-  - Testing checklist and quality comparison
-  - Migration roadmap (testing → opt-in → default → full)
-  - Rollback procedures
+- Create lib/prompt-loader.ts utility (130 lines)
+  - buildCategoryPrompt() - Compose prompts from files
+  - File read with in-memory caching
+  - clearPromptCache() for development
+  - getPromptCacheStats() for monitoring
+
+- Refactor lib/analysis-prompts.ts
+  - Reduced from 360 lines to 32 lines (91% reduction)
+  - Removed all hard-coded prompt strings
+  - Now thin wrapper around prompt-loader
 
 Benefits:
-- 5-10 second performance improvement (smaller prompts)
-- Better accuracy (AI focuses only on relevant rules)
-- Safer deployment (feature flag with fallback)
-- Gradual migration path
+- Non-developers can edit prompts (no TypeScript syntax)
+- Cleaner git diffs (markdown changes vs code changes)
+- Easy A/B testing of prompt variations
+- Better separation of concerns (code = logic, files = content)
+- No performance impact (files cached in memory)
 ```
 
 ---
