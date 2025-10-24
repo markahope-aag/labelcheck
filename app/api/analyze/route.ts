@@ -214,18 +214,57 @@ export async function POST(request: NextRequest) {
     console.log('📚 Fetching regulatory documents...');
     let regulatoryDocuments;
     let ragInfo = null;
+    let extractedTextForRag: string | undefined;
 
-    if (pdfTextContent) {
-      // RAG lite for PDFs - filter by pre-classified category
+    // For images, do a quick text extraction to enable RAG lite filtering
+    if (!pdfTextContent && base64Data) {
+      try {
+        console.log('🔍 Extracting key text from image for RAG lite...');
+        const quickOcrResponse = await openai.chat.completions.create({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'text',
+                  text: 'Extract the key text from this label image. Focus on: panel type (Supplement Facts vs Nutrition Facts), product name, product type, and any prominent keywords. Keep it brief (max 500 characters).',
+                },
+                {
+                  type: 'image_url',
+                  image_url: {
+                    url: `data:${mediaType};base64,${base64Data}`,
+                    detail: 'low', // Use low detail for speed
+                  },
+                },
+              ],
+            },
+          ],
+          max_completion_tokens: 200,
+          temperature: 0,
+        });
+
+        extractedTextForRag = quickOcrResponse.choices[0]?.message?.content || '';
+        console.log(`✅ Extracted ${extractedTextForRag.length} characters for RAG lite`);
+      } catch (ocrError) {
+        console.warn('⚠️ Quick OCR failed, will use all documents:', ocrError);
+      }
+    }
+
+    // Use RAG lite for both PDFs and images (if text extraction succeeded)
+    const textForRag = pdfTextContent || extractedTextForRag;
+
+    if (textForRag) {
+      // RAG lite - filter by pre-classified category
       const { documents, preClassifiedCategory, documentCount, totalCount } =
-        await getRecommendedDocuments(pdfTextContent);
+        await getRecommendedDocuments(textForRag);
       regulatoryDocuments = documents;
       ragInfo = { preClassifiedCategory, documentCount, totalCount };
       console.log(`✅ RAG Lite: Loaded ${documentCount}/${totalCount} documents for ${preClassifiedCategory}`);
     } else {
-      // Fallback for images - load all documents (can't pre-classify without text)
+      // Fallback - load all documents if text extraction failed
       regulatoryDocuments = await getActiveRegulatoryDocuments();
-      console.log(`✅ Loaded all ${regulatoryDocuments.length} documents (image mode)`);
+      console.log(`✅ Loaded all ${regulatoryDocuments.length} documents (fallback mode)`);
     }
 
     const regulatoryContext = buildRegulatoryContext(regulatoryDocuments);
