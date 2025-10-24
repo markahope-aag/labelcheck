@@ -212,6 +212,52 @@ Both Clerk and Stripe webhooks verify signatures:
 - Organization roles: owner, admin, member, viewer (stored in `organization_members`)
 - RLS policies enforce data isolation between users/orgs
 
+### Security: Row Level Security (RLS)
+All public tables have RLS enabled with appropriate policies:
+
+**Organizations & Teams:**
+- `organizations`: Users can view orgs they're members of; owners can update their orgs
+- `organization_members`: Users can view members of their orgs; owners/admins can manage members
+- `pending_invitations`: Users can view invitations sent to their email; owners/admins can manage invitations
+
+**Regulatory Data:**
+- `gras_ingredients`: All authenticated users can read (public FDA data); admins can manage
+- `ndi_ingredients`: All authenticated users can read (public FDA data); admins can manage
+
+**Trigger Functions:**
+All trigger functions (e.g., `update_updated_at_column`) use `SECURITY DEFINER` with explicit `search_path = public` to prevent security vulnerabilities.
+
+Related migrations:
+- `20251024010000_enable_rls_security_fixes.sql` - Initial RLS setup for organizations table
+- `20251024020000_fix_function_search_path.sql` - Fixed search_path for trigger functions
+- `20251024030000_enable_rls_remaining_tables.sql` - RLS for organization_members
+- `20251024030001_enable_rls_pending_invitations.sql` - RLS for pending_invitations
+- `20251024030002_enable_rls_gras_ingredients.sql` - RLS for gras_ingredients
+
+### NDI (New Dietary Ingredient) Compliance
+For dietary supplement products, the system checks ingredients against the FDA NDI database:
+
+**Database:**
+- `ndi_ingredients` table contains 1,253 FDA NDI notifications
+- Data imported from FDA's NDI Database (as of Oct 2024)
+- Includes notification numbers, ingredient names, firms, submission/response dates
+
+**Compliance Checking:**
+- Only runs for products categorized as `DIETARY_SUPPLEMENT`
+- Matches ingredients via exact and partial name matching
+- Flags ingredients without NDI notifications as "requires_verification"
+- Per DSHEA 1994: ingredients NOT marketed before Oct 15, 1994 require NDI notification 75 days before marketing
+
+**Implementation:**
+- Helper functions in `lib/ndi-helpers.ts`
+- Integration in `app/api/analyze/route.ts` (after GRAS checking)
+- Returns detailed results with match type and compliance notes
+
+Related files:
+- `data/ndi-database.csv` - Source FDA data (1,267 rows, deduplicated to 1,253)
+- `supabase/migrations/20251024000000_add_ndi_ingredients.sql` - Database schema
+- `import-ndi-database.js` - Import script with deduplication
+
 ### Admin Panel
 The admin panel (`/admin`) provides comprehensive management tools for administrators:
 
