@@ -12,7 +12,14 @@
       "Bash(cmd /c \"rmdir /s /q prompts\")",
       "Bash(cmd /c \"del lib\\analysis-prompts.ts\")",
       "Bash(cmd /c \"del lib\\prompt-loader.ts\")",
-      "Bash(cmd /c \"del CATEGORY_SPECIFIC_PROMPTS.md\")"
+      "Bash(cmd /c \"del CATEGORY_SPECIFIC_PROMPTS.md\")",
+      "Bash(cmd /c \"for /f \"\"tokens=5\"\" %a in (''netstat -ano ^| findstr :3000 ^| findstr LISTENING'') do taskkill /F /PID %a\")",
+      "Bash(cmd /c \"taskkill /F /PID 37820 & taskkill /F /PID 38700 & taskkill /F /PID 44112 & taskkill /F /PID 50568 & taskkill /F /PID 38280 & taskkill /F /PID 27744 & taskkill /F /PID 57560 & taskkill /F /PID 11972 & taskkill /F /PID 58164 & taskkill /F /PID 52512\")",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(npm run dev:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
