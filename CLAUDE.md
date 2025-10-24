@@ -38,7 +38,7 @@ The database uses PostgreSQL with Row Level Security (RLS) enabled on all tables
 - **regulatory_documents**: FDA/USDA regulations used for AI analysis context
 - **gras_ingredients**: 1,465 FDA GRAS (Generally Recognized as Safe) ingredients for food/beverage compliance checking
 - **ndi_ingredients**: 1,253 FDA NDI (New Dietary Ingredient) notifications for supplement compliance checking
-- **old_dietary_ingredients**: 1,251 grandfathered dietary ingredients marketed before October 15, 1994 (DSHEA)
+- **old_dietary_ingredients**: 2,193 grandfathered dietary ingredients marketed before October 15, 1994 (DSHEA)
 - **organizations** + **organization_members**: Team collaboration features
 - **user_settings**: User preferences (notifications, theme, timezone)
 - **analysis_exports**: Export history tracking
@@ -101,10 +101,14 @@ The system validates dietary supplement ingredients against FDA NDI (New Dietary
 - **New Dietary Ingredients (NDI)**: Ingredients marketed after Oct 15, 1994 require FDA notification 75 days before marketing
 
 **Database Coverage:**
-- **1,251 Old Dietary Ingredients** from CRN Grandfather List (September 1998)
-  - Includes vitamins, minerals, amino acids, botanicals, food-based ingredients
-  - Source: Council for Responsible Nutrition (CRN) + National Nutritional Foods Association (NNFA)
-  - Covers most common supplement ingredients marketed pre-1994
+- **2,193 Old Dietary Ingredients** from UNPA Consolidated ODI List (1999) and CRN Grandfather List (1998)
+  - Comprehensive list from 4 major industry organizations:
+    - **AHPA**: American Herbal Products Association (botanical/herbal ingredients)
+    - **CRN**: Council for Responsible Nutrition (vitamins, minerals, amino acids)
+    - **NPA**: Natural Products Association (food-based ingredients)
+    - **UNPA**: United Natural Products Alliance (specialty ingredients)
+  - Includes vitamins, minerals, amino acids, botanicals, herbs, food-based ingredients, animal-derived ingredients
+  - Covers the vast majority of supplement ingredients marketed pre-1994
 - **1,253 NDI Notifications** from FDA NDI Notification Database
   - Tracks which ingredients have filed NDI notifications with FDA
   - Includes notification number, firm, submission date, FDA response
@@ -122,12 +126,15 @@ The system validates dietary supplement ingredients against FDA NDI (New Dietary
 - ⚠️ **No NDI + Not recognized as pre-1994**: Requires verification or NDI filing
 
 **Key Files:**
-- `lib/ndi-helpers.ts`: NDI/ODI matching and compliance checking logic
+- `lib/ndi-helpers.ts`: NDI/ODI matching and compliance checking logic (with 1-hour caching)
 - `supabase/migrations/20251024050000_create_old_dietary_ingredients.sql`: ODI table schema
-- `parse-grandfather-list.js`: PDF text extraction from CRN list
-- `extract-ingredients.js`: Parse and clean ingredient names from PDF
-- `setup-old-dietary-ingredients.js`: Database population script
-- `grandfather-ingredients.json`: Parsed list of 1,251 ingredients
+- `parse-grandfather-list.js`: PDF text extraction from CRN Grandfather List
+- `analyze-new-odi-pdf.js`: PDF text extraction from UNPA Consolidated ODI List
+- `extract-ingredients.js`: Parse and clean ingredient names from CRN PDF
+- `add-unpa-ingredients.js`: Extract and add UNPA ingredients with source attribution
+- `setup-old-dietary-ingredients.js`: Database population script for CRN ingredients
+- `grandfather-ingredients.json`: Parsed CRN list (1,000 ingredients)
+- `unpa-new-ingredients.json`: Parsed UNPA additions (1,015 ingredients)
 
 **Important Notes:**
 - GRAS regulations (21 CFR 170.3) do NOT apply to dietary supplements
