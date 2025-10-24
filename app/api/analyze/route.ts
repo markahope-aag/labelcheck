@@ -454,6 +454,13 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
    - **Prohibited Claims**: Flag any disease treatment/cure claims (illegal for supplements)
 
 6. **Additional Regulatory Considerations for Supplements**:
+   - **DHEA Warning Requirements** (Anabolic Steroid Control Act of 2004):
+     • **CHECK INGREDIENTS**: Search for "DHEA", "dehydroepiandrosterone", "prasterone" in ALL ingredients (Supplement Facts panel AND other ingredients list)
+     • **IF DHEA IS PRESENT**, the label MUST include warning statement per 21 USC 353b:
+       - Required warning text (verbatim): "DHEA is a prohormone. Not for use by individuals under the age of 18 years old. Do not use if pregnant or nursing. Consult a physician before using this or any dietary supplement."
+       - Warning must be prominently displayed on label
+     • **IF DHEA IS PRESENT BUT WARNING IS MISSING OR INCOMPLETE** → Mark as NON-COMPLIANT, high priority
+     • **IF NO DHEA** → Status: COMPLIANT (not applicable)
    - **NDI (New Dietary Ingredient) Compliance**:
      • **IMPORTANT**: The database check will automatically validate ingredients against TWO databases:
        1. **Old Dietary Ingredients Database (2,193 ingredients)**: Pre-October 15, 1994 ingredients that are grandfathered and do NOT require NDI notifications

@@ -280,7 +280,7 @@ export default function AnalysisDetailPage() {
                 {/* General Labeling Requirements */}
                 {result.general_labeling && (
                   <div>
-                    <h3 className="text-lg font-semibold text-slate-900 mb-4 pb-2 border-b-2 border-slate-200">
+                    <h3 className="text-lg font-semibold text-slate-900 mb-4 pb-3 border-b-4 border-slate-400 mt-8">
                       1. General Labeling Requirements
                     </h3>
                     <div className="space-y-4">
@@ -339,7 +339,7 @@ export default function AnalysisDetailPage() {
                 {/* Ingredient Labeling */}
                 {result.ingredient_labeling && (
                   <div>
-                    <h3 className="text-lg font-semibold text-slate-900 mb-4 pb-2 border-b-2 border-slate-200">
+                    <h3 className="text-lg font-semibold text-slate-900 mb-4 pb-3 border-b-4 border-slate-400 mt-8">
                       2. Ingredient Labeling
                     </h3>
                     <div className="bg-slate-50 rounded-lg p-4">
@@ -398,7 +398,7 @@ export default function AnalysisDetailPage() {
                 {/* Allergen Labeling */}
                 {result.allergen_labeling && (
                   <div>
-                    <h3 className="text-lg font-semibold text-slate-900 mb-4 pb-2 border-b-2 border-slate-200">
+                    <h3 className="text-lg font-semibold text-slate-900 mb-4 pb-3 border-b-4 border-slate-400 mt-8">
                       3. Food Allergen Labeling (FALCPA/FASTER Act)
                     </h3>
                     <div className={`rounded-lg p-4 border-2 ${
@@ -446,7 +446,7 @@ export default function AnalysisDetailPage() {
                 {/* Nutrition Labeling */}
                 {result.nutrition_labeling && (
                   <div>
-                    <h3 className="text-lg font-semibold text-slate-900 mb-4 pb-2 border-b-2 border-slate-200">
+                    <h3 className="text-lg font-semibold text-slate-900 mb-4 pb-3 border-b-4 border-slate-400 mt-8">
                       4. Nutrition Labeling
                     </h3>
                     <div className="bg-slate-50 rounded-lg p-4">
@@ -485,7 +485,7 @@ export default function AnalysisDetailPage() {
                 {/* Supplement Facts Panel (for supplements) */}
                 {result.supplement_facts_panel && (
                   <div>
-                    <h3 className="text-lg font-semibold text-slate-900 mb-4 pb-2 border-b-2 border-slate-200">
+                    <h3 className="text-lg font-semibold text-slate-900 mb-4 pb-3 border-b-4 border-slate-400 mt-8">
                       4. Supplement Facts Panel
                     </h3>
                     <div className="bg-slate-50 rounded-lg p-4">
@@ -520,7 +520,7 @@ export default function AnalysisDetailPage() {
                 {/* Claims */}
                 {result.claims && (
                   <div>
-                    <h3 className="text-lg font-semibold text-slate-900 mb-4 pb-2 border-b-2 border-slate-200">
+                    <h3 className="text-lg font-semibold text-slate-900 mb-4 pb-3 border-b-4 border-slate-400 mt-8">
                       5. Claims
                     </h3>
                     <div className="bg-slate-50 rounded-lg p-4">
@@ -583,7 +583,7 @@ export default function AnalysisDetailPage() {
                 {/* Additional Requirements */}
                 {result.additional_requirements && (
                   <div>
-                    <h3 className="text-lg font-semibold text-slate-900 mb-4 pb-2 border-b-2 border-slate-200">
+                    <h3 className="text-lg font-semibold text-slate-900 mb-4 pb-3 border-b-4 border-slate-400 mt-8">
                       6. Additional Regulatory Requirements
                     </h3>
                     <div className="space-y-3">
@@ -626,7 +626,7 @@ export default function AnalysisDetailPage() {
                 {/* Compliance Summary Table */}
                 {result.compliance_table && result.compliance_table.length > 0 && (
                   <div>
-                    <h3 className="text-lg font-semibold text-slate-900 mb-4 pb-2 border-b-2 border-slate-200">
+                    <h3 className="text-lg font-semibold text-slate-900 mb-4 pb-3 border-b-4 border-slate-400 mt-8">
                       Summary of Compliance Evaluation
                     </h3>
                     <div className="overflow-x-auto">
@@ -664,7 +664,7 @@ export default function AnalysisDetailPage() {
                 {/* Recommendations */}
                 {result.recommendations && result.recommendations.length > 0 && (
                   <div>
-                    <h3 className="text-lg font-semibold text-slate-900 mb-4 pb-2 border-b-2 border-slate-200">
+                    <h3 className="text-lg font-semibold text-slate-900 mb-4 pb-3 border-b-4 border-slate-400 mt-8">
                       Recommendations
                     </h3>
                     <div className="space-y-3">

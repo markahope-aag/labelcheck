@@ -55,7 +55,11 @@
       "Bash(jobs)",
       "Bash(cmd /c \"del test-gras-matching.js test-actual-gras-matching.js add-missing-gras-synonyms.js add-missing-gras-ingredients.js\")",
       "Bash(cmd /c \"taskkill /F /PID 50568\")",
-      "Bash(cmd /c \"del debug-allergen-match.js\")"
+      "Bash(cmd /c \"del debug-allergen-match.js\")",
+      "Bash(git reset:*)",
+      "Bash(cmd /c \"if exist add-missing-old-ingredients.js del add-missing-old-ingredients.js\")",
+      "Bash(cmd /c \"if exist check-ndi-ingredients.js del check-ndi-ingredients.js\")",
+      "Bash(cmd /c \"if exist debug-allergen-match.js del debug-allergen-match.js\")"
     ],
     "deny": [],
     "ask": []
