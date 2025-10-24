@@ -133,14 +133,11 @@ export async function convertPdfToJpgViaCloudConvert(buffer: Buffer): Promise<Bu
       (task: any) => task.name === 'export-jpg'
     )[0];
     const file = exportTask.result.files[0];
-    const fileStream = cloudConvert.tasks.download(file);
 
-    // Convert stream to buffer
-    const chunks: Buffer[] = [];
-    for await (const chunk of fileStream) {
-      chunks.push(chunk as Buffer);
-    }
-    return Buffer.concat(chunks);
+    // CloudConvert v3 API: use axios to download the file URL
+    const axios = require('axios');
+    const response = await axios.get(file.url, { responseType: 'arraybuffer' });
+    return Buffer.from(response.data);
   } catch (error) {
     console.error('Error converting PDF via CloudConvert:', error);
     throw new Error('Failed to convert PDF to image using CloudConvert.');
