@@ -92,7 +92,8 @@ export function cleanExtractedText(text: string): string {
  */
 export async function convertPdfToJpgViaCloudConvert(buffer: Buffer): Promise<Buffer> {
   try {
-    const CloudConvert = require('cloudconvert');
+    // CloudConvert v3 uses default export
+    const CloudConvert = require('cloudconvert').default;
 
     const apiKey = process.env.CLOUDCONVERT_API_KEY;
     if (!apiKey) {
