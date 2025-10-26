@@ -1277,9 +1277,9 @@ Return your response as a JSON object with the following structure:
             .map(r => r.ingredient);
 
           analysisData.recommendations.push({
-            priority: 'medium',
-            recommendation: `INFORMATIONAL: The following ingredients are not in our pre-1994 dietary ingredients database (${ingredientsWithoutNDI.join(', ')}). Most dietary supplement ingredients were marketed before October 15, 1994 and are grandfathered under DSHEA (no NDI notification required). However, if any of these ingredients were first marketed AFTER October 15, 1994, they would require an NDI notification filed with FDA 75 days before marketing. Our database contains 2,193 old dietary ingredients and 1,253 ingredients with filed NDI notifications. These ingredients may simply not be in our database yet.`,
-            regulation: 'FD&C Act Section 413 (DSHEA), 21 CFR 190.6 (NDI Notification)',
+            priority: 'low',
+            recommendation: `INFORMATIONAL (Not a Compliance Issue): ${ndiCompliance.summary.requiresNotification} ingredient(s) are not in our dietary ingredients database: ${ingredientsWithoutNDI.join(', ')}. This is likely NOT a compliance issue - most supplement ingredients were marketed before October 15, 1994 and are grandfathered under DSHEA. Our database contains 2,193 pre-1994 ingredients and 1,253 NDI notifications, but cannot include every historical ingredient. Only ingredients first marketed AFTER October 15, 1994 require NDI notifications. Unless these are truly novel ingredients, no action is needed.`,
+            regulation: 'FD&C Act Section 413 (DSHEA) - Informational Only',
           });
 
           // Add to compliance table
@@ -1358,7 +1358,11 @@ Return your response as a JSON object with the following structure:
           }
 
           // Cross-reference database findings with AI analysis
-          if (aiAllergenStatus === 'potentially_non_compliant' || aiAllergenStatus === 'non_compliant' || !hasContainsStatement) {
+          // Only flag as critical if:
+          // 1. AI explicitly says non-compliant, OR
+          // 2. AI found allergen-containing ingredients but no Contains statement
+          // Do NOT flag if AI says compliant (which means either no allergens OR properly declared)
+          if (aiAllergenStatus === 'potentially_non_compliant' || aiAllergenStatus === 'non_compliant') {
             // AI detected missing allergen declarations - validate with database
             const detectedAllergenNames = allergenResults.allergensDetected.map(a => a.allergen_name);
 
@@ -1391,17 +1395,37 @@ Return your response as a JSON object with the following structure:
               rationale: `${allergenResults.allergensDetected.length} major allergen(s) detected in ingredients but proper declaration missing or unclear`,
             });
           } else if (aiAllergenStatus === 'compliant') {
-            // AI found proper declarations - confirm with database
-            console.log('Allergens properly declared (validated by both AI and database)');
+            // AI says compliant - but we need to verify if allergens actually exist
+            // Check if AI found any potential allergens
+            const aiFoundAllergens = analysisData.allergen_labeling?.potential_allergens &&
+                                    analysisData.allergen_labeling.potential_allergens.length > 0;
 
-            if (!analysisData.compliance_table) {
-              analysisData.compliance_table = [];
+            if (aiFoundAllergens) {
+              // AI found allergens AND says they're properly declared
+              console.log('Allergens properly declared (validated by both AI and database)');
+
+              if (!analysisData.compliance_table) {
+                analysisData.compliance_table = [];
+              }
+              analysisData.compliance_table.push({
+                element: 'Major Food Allergen Declaration',
+                status: 'Compliant',
+                rationale: `All ${allergenResults.allergensDetected.length} major allergen(s) properly declared per FALCPA/FASTER Act`,
+              });
+            } else {
+              // AI found NO allergens (database has false positive)
+              // Trust the AI over the database
+              console.log('Database detected allergens but AI found none - likely false positive, treating as no allergens');
+
+              if (!analysisData.compliance_table) {
+                analysisData.compliance_table = [];
+              }
+              analysisData.compliance_table.push({
+                element: 'Major Food Allergen Declaration',
+                status: 'Not Applicable',
+                rationale: 'No major food allergens detected in ingredients',
+              });
             }
-            analysisData.compliance_table.push({
-              element: 'Major Food Allergen Declaration',
-              status: 'Compliant',
-              rationale: `All ${allergenResults.allergensDetected.length} major allergen(s) properly declared per FALCPA/FASTER Act`,
-            });
           }
         } else {
           // No allergens detected by database

@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase, supabaseAdmin } from './supabase';
 
 export interface GRASIngredient {
   id: string;
@@ -90,7 +90,7 @@ async function checkSingleIngredient(ingredientName: string): Promise<GRASCheckR
   let hasMore = true;
 
   while (hasMore) {
-    const { data: pageData } = await supabase
+    const { data: pageData } = await supabaseAdmin
       .from('gras_ingredients')
       .select('*')
       .eq('is_active', true)
@@ -259,19 +259,36 @@ export async function searchGRASIngredients(
 export async function getGRASIngredientsByCategory(
   category: string
 ): Promise<GRASIngredient[]> {
-  const { data, error } = await supabase
-    .from('gras_ingredients')
-    .select('*')
-    .eq('is_active', true)
-    .eq('category', category)
-    .order('ingredient_name');
+  // Use pagination to handle categories with > 1000 ingredients
+  let allData: GRASIngredient[] = [];
+  let page = 0;
+  const pageSize = 1000;
+  let hasMore = true;
 
-  if (error) {
-    console.error('Error fetching GRAS ingredients by category:', error);
-    return [];
+  while (hasMore) {
+    const { data, error } = await supabaseAdmin
+      .from('gras_ingredients')
+      .select('*')
+      .eq('is_active', true)
+      .eq('category', category)
+      .order('ingredient_name')
+      .range(page * pageSize, (page + 1) * pageSize - 1);
+
+    if (error) {
+      console.error('Error fetching GRAS ingredients by category:', error);
+      return allData; // Return what we have so far
+    }
+
+    if (data && data.length > 0) {
+      allData = [...allData, ...data];
+      hasMore = data.length === pageSize;
+      page++;
+    } else {
+      hasMore = false;
+    }
   }
 
-  return data || [];
+  return allData;
 }
 
 /**

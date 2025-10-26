@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase, supabaseAdmin } from './supabase';
 
 /**
  * Cache for old dietary ingredients from database
@@ -21,22 +21,38 @@ async function getOldDietaryIngredients(): Promise<Set<string>> {
   }
 
   try {
-    // Fetch from database
-    const { data, error } = await supabase
-      .from('old_dietary_ingredients')
-      .select('ingredient_name, synonyms')
-      .eq('is_active', true);
+    // Fetch ALL rows from database (Supabase limits to 1000 by default, so we need pagination)
+    let allData: any[] = [];
+    let page = 0;
+    const pageSize = 1000;
+    let hasMore = true;
 
-    if (error) {
-      console.error('Error fetching old dietary ingredients:', error);
-      // Return fallback list on error
-      return getFallbackPre1994Ingredients();
+    while (hasMore) {
+      const { data, error } = await supabaseAdmin
+        .from('old_dietary_ingredients')
+        .select('ingredient_name, synonyms')
+        .eq('is_active', true)
+        .range(page * pageSize, (page + 1) * pageSize - 1);
+
+      if (error) {
+        console.error('Error fetching old dietary ingredients:', error);
+        // Return fallback list on error
+        return getFallbackPre1994Ingredients();
+      }
+
+      if (data && data.length > 0) {
+        allData = allData.concat(data);
+        hasMore = data.length === pageSize; // Continue if we got a full page
+        page++;
+      } else {
+        hasMore = false;
+      }
     }
 
     // Build set with ingredient names and synonyms
     const ingredientSet = new Set<string>();
 
-    data?.forEach((row) => {
+    allData.forEach((row) => {
       // Add main ingredient name
       ingredientSet.add(row.ingredient_name.toLowerCase());
 
@@ -47,6 +63,8 @@ async function getOldDietaryIngredients(): Promise<Set<string>> {
         });
       }
     });
+
+    console.log(`Loaded ${allData.length} old dietary ingredients into cache (${ingredientSet.size} total entries including synonyms)`);
 
     // Update cache
     oldDietaryIngredientsCache = ingredientSet;
@@ -142,18 +160,43 @@ function getFallbackPre1994Ingredients(): Set<string> {
 async function isLikelyPre1994Ingredient(ingredient: string): Promise<boolean> {
   const cleanIngredient = ingredient.trim().toLowerCase();
 
+  // Also create a normalized version without parentheses for better matching
+  // E.g., "Calcium (Carbonate)" → "calcium carbonate"
+  const normalizedIngredient = cleanIngredient
+    .replace(/\s*\([^)]*\)/g, ' ')  // Remove parentheses and content
+    .replace(/\s+/g, ' ')            // Normalize spaces
+    .trim();
+
   // Get ingredients list (from cache or database)
   const pre1994Ingredients = await getOldDietaryIngredients();
 
-  // Check for exact match
+  // Check for exact match with original form
   if (pre1994Ingredients.has(cleanIngredient)) {
+    return true;
+  }
+
+  // Check for exact match with normalized form
+  if (pre1994Ingredients.has(normalizedIngredient)) {
+    return true;
+  }
+
+  // Extract just the first word (often the key ingredient)
+  // E.g., "calcium carbonate" → "calcium", "green tea extract" → "green tea"
+  const firstTwoWords = normalizedIngredient.split(' ').slice(0, 2).join(' ');
+  const firstWord = normalizedIngredient.split(' ')[0];
+
+  if (pre1994Ingredients.has(firstWord)) {
+    return true;
+  }
+
+  if (firstTwoWords !== firstWord && pre1994Ingredients.has(firstTwoWords)) {
     return true;
   }
 
   // Check for partial matches (e.g., "calcium d-pantothenate 1%" matches "calcium d-pantothenate")
   const ingredientsArray = Array.from(pre1994Ingredients);
   for (const knownIngredient of ingredientsArray) {
-    if (cleanIngredient.includes(knownIngredient) || knownIngredient.includes(cleanIngredient)) {
+    if (normalizedIngredient.includes(knownIngredient) || knownIngredient.includes(normalizedIngredient)) {
       return true;
     }
   }
@@ -212,31 +255,49 @@ export async function checkNDICompliance(
     };
   }
 
-  // Fetch all NDI ingredients for matching
-  const { data: ndiIngredients, error } = await supabase
-    .from('ndi_ingredients')
-    .select('*')
-    .order('ingredient_name');
+  // Fetch ALL NDI ingredients for matching (with pagination since we have 1,253 rows)
+  let ndiIngredients: any[] = [];
+  let page = 0;
+  const pageSize = 1000;
+  let hasMore = true;
 
-  if (error) {
-    console.error('Error fetching NDI ingredients:', error);
-    return {
-      results: ingredients.map(ing => ({
-        ingredient: ing,
-        hasNDI: false,
-        ndiMatch: null,
-        matchType: null,
-        requiresNDI: false,
-        complianceNote: 'Unable to check NDI database',
-      })),
-      summary: {
-        totalChecked: ingredients.length,
-        withNDI: 0,
-        withoutNDI: 0,
-        requiresNotification: 0,
-      },
-    };
+  while (hasMore) {
+    const { data, error } = await supabaseAdmin
+      .from('ndi_ingredients')
+      .select('*')
+      .order('ingredient_name')
+      .range(page * pageSize, (page + 1) * pageSize - 1);
+
+    if (error) {
+      console.error('Error fetching NDI ingredients:', error);
+      return {
+        results: ingredients.map(ing => ({
+          ingredient: ing,
+          hasNDI: false,
+          ndiMatch: null,
+          matchType: null,
+          requiresNDI: false,
+          complianceNote: 'Unable to check NDI database',
+        })),
+        summary: {
+          totalChecked: ingredients.length,
+          withNDI: 0,
+          withoutNDI: 0,
+          requiresNotification: 0,
+        },
+      };
+    }
+
+    if (data && data.length > 0) {
+      ndiIngredients = ndiIngredients.concat(data);
+      hasMore = data.length === pageSize;
+      page++;
+    } else {
+      hasMore = false;
+    }
   }
+
+  console.log(`Loaded ${ndiIngredients.length} NDI ingredients for matching`);
 
   const results: NDICheckResult[] = [];
   let withNDI = 0;

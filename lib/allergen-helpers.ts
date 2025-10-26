@@ -58,6 +58,18 @@ export async function checkIngredientForAllergens(
   const normalized = normalizeIngredientName(ingredientName);
   const results: AllergenCheckResult[] = [];
 
+  // Known false positives - ingredients that are NOT allergens but might fuzzy-match
+  const FALSE_POSITIVES = [
+    'royal jelly',  // Bee product, not a tree nut despite containing "jelly"
+    'royal gel',
+    'bee jelly',
+  ];
+
+  if (FALSE_POSITIVES.includes(normalized)) {
+    // This ingredient is a known non-allergen, return empty results
+    return results;
+  }
+
   // Fetch all active allergens with pagination (handle 1000-row limit)
   let allAllergens: MajorAllergen[] = [];
   let page = 0;
@@ -124,9 +136,17 @@ export async function checkIngredientForAllergens(
     for (const allergen of allAllergens) {
       if (allergen.derivatives && allergen.derivatives.length > 0) {
         // Check if the ingredient contains any of the allergen's derivatives
-        const fuzzyMatch = allergen.derivatives.some((derivative) =>
-          normalized.includes(derivative.toLowerCase())
-        );
+        // Use word boundary matching to avoid false positives (e.g., "royal jelly" vs "jelly")
+        const fuzzyMatch = allergen.derivatives.some((derivative) => {
+          const derivativeLower = derivative.toLowerCase();
+          // Skip very short derivatives (< 4 chars) for fuzzy matching to avoid false positives
+          if (derivativeLower.length < 4) {
+            return false;
+          }
+          // Use word boundary regex for more accurate matching
+          const wordBoundaryRegex = new RegExp(`\\b${derivativeLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`);
+          return wordBoundaryRegex.test(normalized);
+        });
 
         if (fuzzyMatch) {
           results.push({
