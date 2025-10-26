@@ -64,7 +64,7 @@ async function checkSingleIngredient(ingredientName: string): Promise<GRASCheckR
   const normalized = normalizeIngredientName(ingredientName);
 
   // Strategy 1: Exact match (case-insensitive)
-  const { data: exactMatch } = await supabase
+  const { data: exactMatch } = await supabaseAdmin
     .from('gras_ingredients')
     .select('*')
     .eq('is_active', true)
@@ -125,13 +125,19 @@ async function checkSingleIngredient(ingredientName: string): Promise<GRASCheckR
   // Prioritize matching the LAST significant word (usually the core ingredient)
   // e.g., "CALCIUM D-PANTOTHENATE" → try "pantothenate" first, then "calcium"
   // e.g., "GROUND ROASTED COFFEE" → try "coffee" first, then "roasted", then "ground"
-  const searchTerms = normalized.split(' ').filter(word => word.length > 3);
-  if (searchTerms.length > 0) {
-    // Try terms in reverse order (last word is usually the core ingredient)
-    const reversedTerms = [...searchTerms].reverse();
+  // Skip generic terms that match too broadly
+  const GENERIC_TERMS = ['extract', 'powder', 'concentrate', 'isolate', 'blend', 'complex', 'root', 'seed', 'leaf', 'fruit', 'berry'];
+  const searchTerms = normalized
+    .split(' ')
+    .filter(word => word.length > 3 && !GENERIC_TERMS.includes(word));
 
-    for (const term of reversedTerms) {
-      const { data: fuzzyMatches } = await supabase
+  if (searchTerms.length > 0) {
+    // Sort by word length (longest first) to prioritize more specific terms
+    // e.g., "panax ginseng root" → try "ginseng" (7 chars) before "panax" (5 chars)
+    const sortedTerms = [...searchTerms].sort((a, b) => b.length - a.length);
+
+    for (const term of sortedTerms) {
+      const { data: fuzzyMatches } = await supabaseAdmin
         .from('gras_ingredients')
         .select('*')
         .eq('is_active', true)
