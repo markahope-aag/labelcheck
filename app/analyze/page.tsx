@@ -661,11 +661,35 @@ export default function AnalyzePage() {
               <Card className="border-slate-200">
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <div>
+                    <div className="flex-1">
                       <CardTitle className="text-xl font-semibold text-slate-900">
                         {result.product_name || 'Analysis Results'}
                       </CardTitle>
                       <CardDescription>{result.product_type || 'Regulatory Compliance Analysis'}</CardDescription>
+                      {/* Regulatory Framework Badge */}
+                      {result.product_type && (
+                        <div className="mt-2">
+                          {result.product_type === 'DIETARY_SUPPLEMENT' ? (
+                            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-50 border border-purple-200 rounded-md">
+                              <svg className="h-4 w-4 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                              <span className="text-sm font-medium text-purple-900">
+                                Analyzed as Dietary Supplement (DSHEA regulations apply)
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-md">
+                              <svg className="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                              <span className="text-sm font-medium text-green-900">
+                                Analyzed as Food/Beverage Product (FDA food labeling regulations apply)
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <div className="flex gap-2 flex-wrap">
                       {/* Show "Change Category" button if this result came from category selection */}
@@ -1006,17 +1030,13 @@ export default function AnalyzePage() {
                         <h3 className="text-lg font-semibold text-slate-900 mb-4 pb-3 border-b-4 border-slate-400 mt-8">
                           3. Food Allergen Labeling (FALCPA/FASTER Act)
                         </h3>
-                        <div className={`rounded-lg p-4 border-2 ${
-                          result.allergen_labeling.status === 'not_applicable' || result.allergen_labeling.status === 'compliant'
-                            ? 'bg-slate-50 border-slate-300' :
-                          result.allergen_labeling.risk_level === 'high' ? 'bg-red-50 border-red-300' :
-                          result.allergen_labeling.risk_level === 'medium' ? 'bg-yellow-50 border-yellow-300' :
-                          'bg-green-50 border-green-300'
-                        }`}>
+                        <div className="bg-slate-50 rounded-lg p-4">
                           <div className="flex items-center justify-between mb-3">
                             <h4 className="font-semibold text-slate-900">Allergen Declaration Compliance</h4>
                             <div className="flex gap-2 items-center">
-                              {result.allergen_labeling.risk_level && result.allergen_labeling.status !== 'not_applicable' && (
+                              {result.allergen_labeling.risk_level &&
+                               result.allergen_labeling.status !== 'not_applicable' &&
+                               result.allergen_labeling.status !== 'compliant' && (
                                 <span className={`px-2 py-1 rounded text-xs font-semibold ${
                                   result.allergen_labeling.risk_level === 'high' ? 'bg-red-200 text-red-900' :
                                   result.allergen_labeling.risk_level === 'medium' ? 'bg-yellow-200 text-yellow-900' :
@@ -1130,59 +1150,159 @@ export default function AnalyzePage() {
                         <h3 className="text-lg font-semibold text-slate-900 mb-4 pb-3 border-b-4 border-slate-400 mt-8">
                           5. Claims
                         </h3>
-                        <div className="bg-slate-50 rounded-lg p-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <h4 className="font-semibold text-slate-900">Claims Compliance</h4>
-                            <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                              result.claims.status === 'compliant' ? 'bg-green-100 text-green-800' :
-                              result.claims.status === 'non_compliant' ? 'bg-red-100 text-red-800' :
-                              'bg-gray-100 text-gray-800'
-                            }`}>
-                              {formatComplianceStatus(result.claims.status)}
-                            </span>
-                          </div>
-                          {result.claims.structure_function_claims && result.claims.structure_function_claims.length > 0 && (
-                            <div className="mb-3 p-3 bg-slate-100 border border-slate-300 rounded">
-                              <p className="text-xs font-semibold text-slate-700 mb-1">Structure/Function Claims:</p>
-                              <ul className="text-sm text-slate-800 space-y-1">
-                                {result.claims.structure_function_claims.map((claim: string, idx: number) => (
-                                  <li key={idx}>• {claim}</li>
+                        <div className="space-y-4">
+                          {/* Structure/Function Claims */}
+                          {result.claims.structure_function_claims &&
+                           ((typeof result.claims.structure_function_claims === 'object' && result.claims.structure_function_claims.claims_present) ||
+                            (Array.isArray(result.claims.structure_function_claims) && result.claims.structure_function_claims.length > 0)) && (
+                            <div className="bg-slate-50 rounded-lg p-4">
+                              <div className="flex items-center justify-between mb-3">
+                                <h4 className="font-semibold text-slate-900">Structure/Function Claims</h4>
+                                {typeof result.claims.structure_function_claims === 'object' && result.claims.structure_function_claims.status && (
+                                  <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                                    result.claims.structure_function_claims.status === 'compliant' ? 'bg-green-100 text-green-800' :
+                                    result.claims.structure_function_claims.status === 'non_compliant' ? 'bg-red-100 text-red-800' :
+                                    'bg-gray-100 text-gray-800'
+                                  }`}>
+                                    {formatComplianceStatus(result.claims.structure_function_claims.status)}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="space-y-2">
+                                {(Array.isArray(result.claims.structure_function_claims)
+                                  ? result.claims.structure_function_claims
+                                  : result.claims.structure_function_claims.claims_found || []
+                                ).map((claim: any, idx: number) => (
+                                  <div key={idx} className="p-3 bg-white border border-slate-200 rounded">
+                                    <div className="text-sm text-slate-900 mb-1">
+                                      {typeof claim === 'string' ? claim : claim.claim_text}
+                                    </div>
+                                    {typeof claim === 'object' && claim.compliance_issue && (
+                                      <div className="text-xs text-red-700 mt-1">⚠️ {claim.compliance_issue}</div>
+                                    )}
+                                    {typeof claim === 'object' && claim.disclaimer_required && !claim.disclaimer_present && (
+                                      <div className="text-xs text-yellow-700 mt-1">⚠️ Disclaimer required but not found</div>
+                                    )}
+                                  </div>
                                 ))}
-                              </ul>
+                              </div>
                             </div>
                           )}
-                          {result.claims.nutrient_content_claims && result.claims.nutrient_content_claims.length > 0 && (
-                            <div className="mb-3 p-3 bg-slate-100 border border-slate-300 rounded">
-                              <p className="text-xs font-semibold text-slate-700 mb-1">Nutrient Content Claims:</p>
-                              <ul className="text-sm text-slate-800 space-y-1">
-                                {result.claims.nutrient_content_claims.map((claim: string, idx: number) => (
-                                  <li key={idx}>• {claim}</li>
+
+                          {/* Nutrient Content Claims */}
+                          {result.claims.nutrient_content_claims &&
+                           ((typeof result.claims.nutrient_content_claims === 'object' && result.claims.nutrient_content_claims.claims_present) ||
+                            (Array.isArray(result.claims.nutrient_content_claims) && result.claims.nutrient_content_claims.length > 0)) && (
+                            <div className="bg-slate-50 rounded-lg p-4">
+                              <div className="flex items-center justify-between mb-3">
+                                <h4 className="font-semibold text-slate-900">Nutrient Content Claims</h4>
+                                {typeof result.claims.nutrient_content_claims === 'object' && result.claims.nutrient_content_claims.status && (
+                                  <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                                    result.claims.nutrient_content_claims.status === 'compliant' ? 'bg-green-100 text-green-800' :
+                                    result.claims.nutrient_content_claims.status === 'non_compliant' ? 'bg-red-100 text-red-800' :
+                                    'bg-gray-100 text-gray-800'
+                                  }`}>
+                                    {formatComplianceStatus(result.claims.nutrient_content_claims.status)}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="space-y-2">
+                                {(Array.isArray(result.claims.nutrient_content_claims)
+                                  ? result.claims.nutrient_content_claims
+                                  : result.claims.nutrient_content_claims.claims_found || []
+                                ).map((claim: any, idx: number) => (
+                                  <div key={idx} className="p-3 bg-white border border-slate-200 rounded">
+                                    <div className="flex items-start justify-between">
+                                      <div className="text-sm text-slate-900 mb-1">
+                                        {typeof claim === 'string' ? claim : claim.claim_text}
+                                      </div>
+                                      {typeof claim === 'object' && claim.meets_definition !== undefined && (
+                                        <span className={`ml-2 px-2 py-0.5 rounded text-xs font-semibold whitespace-nowrap ${
+                                          claim.meets_definition ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                        }`}>
+                                          {claim.meets_definition ? 'Meets Definition' : 'Does Not Meet Definition'}
+                                        </span>
+                                      )}
+                                    </div>
+                                    {typeof claim === 'object' && claim.issue && (
+                                      <div className="text-xs text-red-700 mt-1">⚠️ {claim.issue}</div>
+                                    )}
+                                  </div>
                                 ))}
-                              </ul>
+                              </div>
                             </div>
                           )}
-                          {result.claims.health_claims && result.claims.health_claims.length > 0 && (
-                            <div className="mb-3 p-3 bg-slate-100 border border-slate-300 rounded">
-                              <p className="text-xs font-semibold text-slate-700 mb-1">Health Claims:</p>
-                              <ul className="text-sm text-slate-800 space-y-1">
-                                {result.claims.health_claims.map((claim: string, idx: number) => (
-                                  <li key={idx}>• {claim}</li>
+
+                          {/* Health Claims */}
+                          {result.claims.health_claims &&
+                           ((typeof result.claims.health_claims === 'object' && result.claims.health_claims.claims_present) ||
+                            (Array.isArray(result.claims.health_claims) && result.claims.health_claims.length > 0)) && (
+                            <div className="bg-slate-50 rounded-lg p-4">
+                              <div className="flex items-center justify-between mb-3">
+                                <h4 className="font-semibold text-slate-900">Health Claims</h4>
+                                {typeof result.claims.health_claims === 'object' && result.claims.health_claims.status && (
+                                  <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                                    result.claims.health_claims.status === 'compliant' ? 'bg-green-100 text-green-800' :
+                                    result.claims.health_claims.status === 'non_compliant' ? 'bg-red-100 text-red-800' :
+                                    'bg-gray-100 text-gray-800'
+                                  }`}>
+                                    {formatComplianceStatus(result.claims.health_claims.status)}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="space-y-2">
+                                {(Array.isArray(result.claims.health_claims)
+                                  ? result.claims.health_claims
+                                  : result.claims.health_claims.claims_found || []
+                                ).map((claim: any, idx: number) => (
+                                  <div key={idx} className="p-3 bg-white border border-slate-200 rounded">
+                                    <div className="text-sm text-slate-900">
+                                      {typeof claim === 'string' ? claim : claim.claim_text || claim}
+                                    </div>
+                                  </div>
                                 ))}
-                              </ul>
+                              </div>
                             </div>
                           )}
-                          {result.claims.prohibited_claims && result.claims.prohibited_claims.length > 0 && (
-                            <div className="mb-3 p-3 bg-red-100 border border-red-300 rounded">
-                              <p className="text-xs font-semibold text-red-700 mb-1">⚠️ Prohibited Claims Detected:</p>
-                              <ul className="text-sm text-red-800 space-y-1">
-                                {result.claims.prohibited_claims.map((claim: string, idx: number) => (
-                                  <li key={idx}>• {claim}</li>
+
+                          {/* Prohibited Claims */}
+                          {result.claims.prohibited_claims &&
+                           ((typeof result.claims.prohibited_claims === 'object' && result.claims.prohibited_claims.claims_present) ||
+                            (Array.isArray(result.claims.prohibited_claims) && result.claims.prohibited_claims.length > 0)) && (
+                            <div className="bg-red-50 rounded-lg p-4 border-2 border-red-300">
+                              <div className="flex items-center justify-between mb-3">
+                                <h4 className="font-semibold text-red-900">⚠️ Prohibited Claims Detected</h4>
+                                {typeof result.claims.prohibited_claims === 'object' && result.claims.prohibited_claims.status && (
+                                  <span className="px-2 py-1 rounded text-xs font-semibold bg-red-200 text-red-900">
+                                    {formatComplianceStatus(result.claims.prohibited_claims.status)}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="space-y-2">
+                                {(Array.isArray(result.claims.prohibited_claims)
+                                  ? result.claims.prohibited_claims
+                                  : result.claims.prohibited_claims.claims_found || []
+                                ).map((claim: any, idx: number) => (
+                                  <div key={idx} className="p-3 bg-white border border-red-300 rounded">
+                                    <div className="text-sm text-red-900">
+                                      {typeof claim === 'string' ? claim : claim.claim_text || claim}
+                                    </div>
+                                  </div>
                                 ))}
-                              </ul>
+                              </div>
                             </div>
                           )}
-                          <p className="text-sm text-slate-700 mb-2">{result.claims.details}</p>
-                          <p className="text-xs text-slate-500">{result.claims.regulation_citation}</p>
+
+                          {/* Overall Claims Details */}
+                          {result.claims.details && (
+                            <div className="bg-slate-50 rounded-lg p-4">
+                              <h4 className="font-semibold text-slate-900 mb-2">Overall Claims Assessment</h4>
+                              <p className="text-sm text-slate-700 mb-2">{result.claims.details}</p>
+                              {result.claims.regulation_citation && (
+                                <p className="text-xs text-slate-500">{result.claims.regulation_citation}</p>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
@@ -1194,7 +1314,10 @@ export default function AnalyzePage() {
                           6. Additional Regulatory Requirements
                         </h3>
                         <div className="space-y-3">
-                          {result.additional_requirements.fortification && (
+                          {/* Only show fortification for conventional foods/beverages, NOT dietary supplements */}
+                          {result.additional_requirements.fortification &&
+                           result.additional_requirements.fortification.status !== 'not_applicable' &&
+                           result.product_category !== 'DIETARY_SUPPLEMENT' && (
                             <div className="bg-slate-50 rounded-lg p-4">
                               <div className="flex items-center justify-between mb-2">
                                 <h4 className="font-semibold text-slate-900">Fortification Policy</h4>

@@ -220,13 +220,37 @@ export default function AnalysisDetailPage() {
           <Card className="border-slate-200">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <div>
+                <div className="flex-1">
                   <CardTitle className="text-xl font-semibold text-slate-900">
                     {result.product_name || 'Analysis Results'}
                   </CardTitle>
                   <CardDescription>
                     {result.product_type || 'Regulatory Compliance Analysis'} • {new Date(analysis.created_at).toLocaleDateString()}
                   </CardDescription>
+                  {/* Regulatory Framework Badge */}
+                  {result.product_type && (
+                    <div className="mt-2">
+                      {result.product_type === 'DIETARY_SUPPLEMENT' ? (
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-50 border border-purple-200 rounded-md">
+                          <svg className="h-4 w-4 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          <span className="text-sm font-medium text-purple-900">
+                            Analyzed as Dietary Supplement (DSHEA regulations apply)
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-md">
+                          <svg className="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          <span className="text-sm font-medium text-green-900">
+                            Analyzed as Food/Beverage Product (FDA food labeling regulations apply)
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <div className="flex gap-2">
                   <Button onClick={handleShare} variant="outline" className="border-slate-300 hover:bg-slate-50 gap-2">
@@ -587,7 +611,10 @@ export default function AnalysisDetailPage() {
                       6. Additional Regulatory Requirements
                     </h3>
                     <div className="space-y-3">
-                      {result.additional_requirements.fortification && (
+                      {/* Only show fortification for conventional foods/beverages, NOT dietary supplements */}
+                      {result.additional_requirements.fortification &&
+                       result.additional_requirements.fortification.status !== 'not_applicable' &&
+                       result.product_category !== 'DIETARY_SUPPLEMENT' && (
                         <div className="bg-slate-50 rounded-lg p-4">
                           <div className="flex items-center justify-between mb-2">
                             <h4 className="font-semibold text-slate-900">Fortification Policy</h4>
