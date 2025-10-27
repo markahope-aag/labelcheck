@@ -16,12 +16,14 @@ interface Message {
 
 interface AnalysisChatProps {
   sessionId: string;
-  isOpen: boolean;
-  onClose: () => void;
+  isOpen?: boolean;
+  onClose?: () => void;
+  initialMessages?: Message[];
+  analysisData?: any;
 }
 
-export function AnalysisChat({ sessionId, isOpen, onClose }: AnalysisChatProps) {
-  const [messages, setMessages] = useState<Message[]>([]);
+export function AnalysisChat({ sessionId, isOpen, onClose, initialMessages = [], analysisData }: AnalysisChatProps) {
+  const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -34,6 +36,13 @@ export function AnalysisChat({ sessionId, isOpen, onClose }: AnalysisChatProps) 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Update messages when initialMessages prop changes
+  useEffect(() => {
+    if (initialMessages && initialMessages.length > 0) {
+      setMessages(initialMessages);
+    }
+  }, [initialMessages]);
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return;
@@ -94,27 +103,38 @@ export function AnalysisChat({ sessionId, isOpen, onClose }: AnalysisChatProps) 
     }
   };
 
-  if (!isOpen) return null;
+  // If isOpen is defined (modal mode) and it's false, don't render
+  if (isOpen !== undefined && !isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-3xl h-[600px] flex flex-col">
-        <CardHeader className="border-b">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <MessageCircle className="h-5 w-5 text-blue-600" />
-              <div>
-                <CardTitle>Ask AI About Your Analysis</CardTitle>
-                <CardDescription>Get help understanding compliance requirements</CardDescription>
-              </div>
+  // Determine if we're in modal or embedded mode
+  const isModal = isOpen !== undefined;
+
+  const renderChatCard = () => (
+    <Card className={`w-full flex flex-col ${isModal ? 'max-w-3xl h-[600px]' : 'h-[500px]'}`}>
+      <CardHeader className="border-b">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <MessageCircle className="h-5 w-5 text-blue-600" />
+            <div>
+              <CardTitle>
+                {messages.length > 0 ? 'Continue Conversation' : 'Ask AI About Your Analysis'}
+              </CardTitle>
+              <CardDescription>
+                {messages.length > 0
+                  ? 'Your previous chat history is shown below'
+                  : 'Get help understanding compliance requirements'}
+              </CardDescription>
             </div>
+          </div>
+          {isModal && onClose && (
             <Button variant="ghost" size="sm" onClick={onClose}>
               <X className="h-4 w-4" />
             </Button>
-          </div>
-        </CardHeader>
+          )}
+        </div>
+      </CardHeader>
 
-        <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
+      <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
               <div className="p-4 bg-blue-100 rounded-full mb-4">
@@ -181,9 +201,9 @@ export function AnalysisChat({ sessionId, isOpen, onClose }: AnalysisChatProps) 
               <div ref={messagesEndRef} />
             </>
           )}
-        </CardContent>
+      </CardContent>
 
-        <div className="border-t p-4">
+      <div className="border-t p-4">
           <div className="flex gap-2">
             <Input
               value={inputMessage}
@@ -208,11 +228,21 @@ export function AnalysisChat({ sessionId, isOpen, onClose }: AnalysisChatProps) 
               )}
             </Button>
           </div>
-          <p className="text-xs text-slate-500 mt-2">
-            Press Enter to send • The AI has context of your analysis results
-          </p>
-        </div>
-      </Card>
-    </div>
+        <p className="text-xs text-slate-500 mt-2">
+          Press Enter to send • The AI has context of your analysis results
+        </p>
+      </div>
+    </Card>
   );
+
+  // Return with or without modal wrapper based on mode
+  if (isModal) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        {renderChatCard()}
+      </div>
+    );
+  }
+
+  return renderChatCard();
 }

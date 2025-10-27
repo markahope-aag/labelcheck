@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { supabase } from '@/lib/supabase';
 import { exportSingleAnalysisAsPDF } from '@/lib/export-helpers';
 import { useToast } from '@/hooks/use-toast';
+import AnalysisChat from '@/components/AnalysisChat';
 
 // Helper function to format compliance status for display
 const formatComplianceStatus = (status: string): string => {
@@ -44,6 +45,8 @@ export default function AnalysisDetailPage() {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
   const [copied, setCopied] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [chatHistory, setChatHistory] = useState<any[]>([]);
 
   useEffect(() => {
     if (userId) {
@@ -87,6 +90,36 @@ export default function AnalysisDetailPage() {
       }
 
       setAnalysis(data);
+
+      // Load session and chat history if exists
+      if (data.session_id) {
+        setSessionId(data.session_id);
+
+        // Fetch chat iterations for this session
+        const { data: iterations, error: iterError } = await supabase
+          .from('analysis_iterations')
+          .select('*')
+          .eq('session_id', data.session_id)
+          .eq('iteration_type', 'chat_question')
+          .order('created_at', { ascending: true });
+
+        if (!iterError && iterations) {
+          // Convert iterations to chat message format
+          const messages = iterations.flatMap((iter: any) => [
+            {
+              role: 'user' as const,
+              content: iter.input_data?.message || '',
+              timestamp: iter.created_at,
+            },
+            {
+              role: 'assistant' as const,
+              content: iter.result_data?.response || '',
+              timestamp: iter.result_data?.timestamp || iter.created_at,
+            }
+          ]);
+          setChatHistory(messages);
+        }
+      }
     } catch (err: any) {
       console.error('Error loading analysis:', err);
       setError('Failed to load analysis');
@@ -724,6 +757,17 @@ export default function AnalysisDetailPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Chat History / Continue Conversation */}
+          {sessionId && (
+            <div className="mt-8">
+              <AnalysisChat
+                sessionId={sessionId}
+                initialMessages={chatHistory}
+                analysisData={result}
+              />
+            </div>
+          )}
         </div>
       </div>
 

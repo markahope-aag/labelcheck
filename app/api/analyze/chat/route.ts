@@ -104,6 +104,55 @@ export async function POST(request: NextRequest) {
         }
         cachedContext += '\n';
       }
+
+      // Include ingredient list so AI can answer questions about specific ingredients
+      if (latestAnalysis.result_data?.ingredient_labeling?.ingredients_list?.length > 0) {
+        cachedContext += '**Complete Ingredient List (as analyzed from the label):**\n';
+        cachedContext += latestAnalysis.result_data.ingredient_labeling.ingredients_list.join(', ') + '\n\n';
+        cachedContext += `IMPORTANT: This is the complete list of ALL ingredients found on the label. If an ingredient is not in this list, it is NOT present in the product.\n\n`;
+      }
+
+      // Include GRAS compliance data if available
+      if (latestAnalysis.result_data?.gras_compliance) {
+        cachedContext += 'GRAS Compliance Check:\n';
+        cachedContext += `- Total ingredients checked: ${latestAnalysis.result_data.gras_compliance.total || 0}\n`;
+        cachedContext += `- GRAS-compliant: ${latestAnalysis.result_data.gras_compliance.compliant || 0}\n`;
+        if (latestAnalysis.result_data.gras_compliance.nonGRASIngredients?.length > 0) {
+          cachedContext += `- Non-GRAS ingredients: ${latestAnalysis.result_data.gras_compliance.nonGRASIngredients.join(', ')}\n`;
+        }
+        cachedContext += '\n';
+      }
+
+      // Include claims analysis if available
+      if (latestAnalysis.result_data?.claims) {
+        cachedContext += 'Label Claims Analysis:\n';
+        cachedContext += `- Status: ${latestAnalysis.result_data.claims.status || 'unknown'}\n`;
+
+        if (latestAnalysis.result_data.claims.structure_function_claims?.length > 0) {
+          cachedContext += `- Structure/Function Claims Found: ${latestAnalysis.result_data.claims.structure_function_claims.join('; ')}\n`;
+        }
+
+        if (latestAnalysis.result_data.claims.nutrient_content_claims?.length > 0) {
+          cachedContext += `- Nutrient Content Claims Found: ${latestAnalysis.result_data.claims.nutrient_content_claims.join('; ')}\n`;
+        }
+
+        if (latestAnalysis.result_data.claims.health_claims?.length > 0) {
+          cachedContext += `- Health Claims Found: ${latestAnalysis.result_data.claims.health_claims.join('; ')}\n`;
+        }
+
+        if (latestAnalysis.result_data.claims.prohibited_claims?.length > 0) {
+          cachedContext += `- PROHIBITED Claims Detected: ${latestAnalysis.result_data.claims.prohibited_claims.join('; ')}\n`;
+        }
+
+        if (!latestAnalysis.result_data.claims.structure_function_claims?.length &&
+            !latestAnalysis.result_data.claims.nutrient_content_claims?.length &&
+            !latestAnalysis.result_data.claims.health_claims?.length &&
+            !latestAnalysis.result_data.claims.prohibited_claims?.length) {
+          cachedContext += '- No claims detected on the label\n';
+        }
+
+        cachedContext += '\n';
+      }
     }
 
     // Build dynamic context (chat history + current question - these change frequently)
@@ -125,9 +174,15 @@ export async function POST(request: NextRequest) {
 
     dynamicContext += '## Current Question\n\n';
     dynamicContext += `The user is now asking: "${message}"\n\n`;
-    dynamicContext += 'Please provide a clear, helpful answer based on the analysis context above. ';
-    dynamicContext += 'If the question is about a specific regulation, cite the relevant CFR section. ';
-    dynamicContext += 'If the question is about how to fix an issue, provide specific, actionable guidance.';
+    dynamicContext += 'CRITICAL INSTRUCTIONS:\n';
+    dynamicContext += '1. Answer ONLY based on the analysis data provided above. Do not speculate, add caveats, or suggest checking things manually.\n';
+    dynamicContext += '2. If the analysis data says "no allergens detected" - simply confirm NO allergens are present. Do not mention cross-contamination or trace amounts.\n';
+    dynamicContext += '3. If an ingredient is in the "Complete Ingredient List" - confirm it IS present. If it is NOT in the list - confirm it is NOT present.\n';
+    dynamicContext += '4. If the "Label Claims Analysis" shows claims - list them. If it shows no claims - state no claims were detected.\n';
+    dynamicContext += '5. Be direct and confident. The analysis has already been completed thoroughly.\n';
+    dynamicContext += '6. For regulatory questions, cite the relevant CFR section.\n';
+    dynamicContext += '7. For compliance issues, provide specific, actionable guidance.\n';
+    dynamicContext += '8. FORMATTING: Use plain text only - no markdown formatting (no asterisks, no headers).';
 
     // Call OpenAI API
     const completion = await openai.chat.completions.create({

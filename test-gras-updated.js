@@ -37,7 +37,11 @@ async function checkSingleIngredient(ingredientName) {
     };
   }
 
-  const searchTerms = normalized.split(' ').filter(word => word.length > 3);
+  const GENERIC_TERMS = ['extract', 'powder', 'concentrate', 'isolate', 'blend', 'complex'];
+  const searchTerms = normalized
+    .split(' ')
+    .filter(word => word.length > 3 && !GENERIC_TERMS.includes(word));
+
   if (searchTerms.length > 0) {
     const reversedTerms = [...searchTerms].reverse();
 
@@ -85,16 +89,25 @@ async function test() {
     'Guarana Seed Extract'
   ];
 
-  console.log('Testing GRAS matching...\n');
+  console.log('Testing GRAS matching with updated logic...\n');
+
+  let grasCount = 0;
+  let nonGrasCount = 0;
 
   for (const ing of energyDrinkIngredients) {
     const result = await checkSingleIngredient(ing);
     if (result.isGRAS) {
       console.log(`✓ ${ing} - GRAS (${result.matchType}: ${result.matchedEntry.ingredient_name})`);
+      grasCount++;
     } else {
       console.log(`✗ ${ing} - NOT GRAS`);
+      nonGrasCount++;
     }
   }
+
+  console.log(`\n========================================`);
+  console.log(`GRAS: ${grasCount} | Non-GRAS: ${nonGrasCount}`);
+  console.log(`========================================`);
 }
 
 test();

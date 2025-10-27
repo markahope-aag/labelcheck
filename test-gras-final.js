@@ -37,11 +37,15 @@ async function checkSingleIngredient(ingredientName) {
     };
   }
 
-  const searchTerms = normalized.split(' ').filter(word => word.length > 3);
-  if (searchTerms.length > 0) {
-    const reversedTerms = [...searchTerms].reverse();
+  const GENERIC_TERMS = ['extract', 'powder', 'concentrate', 'isolate', 'blend', 'complex', 'root', 'seed', 'leaf', 'fruit', 'berry'];
+  const searchTerms = normalized
+    .split(' ')
+    .filter(word => word.length > 3 && !GENERIC_TERMS.includes(word));
 
-    for (const term of reversedTerms) {
+  if (searchTerms.length > 0) {
+    const sortedTerms = [...searchTerms].sort((a, b) => b.length - a.length);
+
+    for (const term of sortedTerms) {
       const { data: fuzzyMatches } = await supabaseAdmin
         .from('gras_ingredients')
         .select('*')
@@ -85,16 +89,26 @@ async function test() {
     'Guarana Seed Extract'
   ];
 
-  console.log('Testing GRAS matching...\n');
+  console.log('Testing GRAS matching with FINAL logic...\n');
+
+  let grasCount = 0;
+  let nonGrasCount = 0;
 
   for (const ing of energyDrinkIngredients) {
     const result = await checkSingleIngredient(ing);
     if (result.isGRAS) {
-      console.log(`✓ ${ing} - GRAS (${result.matchType}: ${result.matchedEntry.ingredient_name})`);
+      console.log(`✓ ${ing}`);
+      console.log(`  Match: ${result.matchedEntry.ingredient_name} (${result.matchType})`);
+      grasCount++;
     } else {
       console.log(`✗ ${ing} - NOT GRAS`);
+      nonGrasCount++;
     }
   }
+
+  console.log(`\n========================================`);
+  console.log(`GRAS: ${grasCount} | Non-GRAS: ${nonGrasCount}`);
+  console.log(`========================================`);
 }
 
 test();

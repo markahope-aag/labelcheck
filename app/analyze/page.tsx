@@ -660,62 +660,64 @@ export default function AnalyzePage() {
             <div className="space-y-6">
               <Card className="border-slate-200">
                 <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-xl font-semibold text-slate-900">
-                        {result.product_name || 'Analysis Results'}
-                      </CardTitle>
-                      <CardDescription>{result.product_type || 'Regulatory Compliance Analysis'}</CardDescription>
-                      {/* Regulatory Framework Badge */}
-                      {result.product_type && (
-                        <div className="mt-2">
-                          {result.product_type === 'DIETARY_SUPPLEMENT' ? (
-                            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-50 border border-purple-200 rounded-md">
-                              <svg className="h-4 w-4 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                              </svg>
-                              <span className="text-sm font-medium text-purple-900">
-                                Analyzed as Dietary Supplement (DSHEA regulations apply)
-                              </span>
-                            </div>
-                          ) : (
-                            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-md">
-                              <svg className="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                              </svg>
-                              <span className="text-sm font-medium text-green-900">
-                                Analyzed as Food/Beverage Product (FDA food labeling regulations apply)
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex gap-2 flex-wrap">
-                      {/* Show "Change Category" button if this result came from category selection */}
-                      {analysisData && analysisData.category_ambiguity?.alternative_categories?.length > 0 && (
-                        <Button
-                          onClick={handleChangeCategoryClick}
-                          variant="outline"
-                          className="border-orange-400 text-orange-700 hover:bg-orange-50 gap-2"
-                        >
-                          <AlertCircle className="h-4 w-4" />
-                          Change Category
+                  <div className="space-y-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <CardTitle className="text-xl font-semibold text-slate-900">
+                          {result.product_name || 'Analysis Results'}
+                        </CardTitle>
+                        <CardDescription className="mt-1">{result.product_type || 'Regulatory Compliance Analysis'}</CardDescription>
+                      </div>
+                      <div className="flex gap-2 flex-wrap justify-end">
+                        {/* Show "Change Category" button if this result came from category selection */}
+                        {analysisData && analysisData.category_ambiguity?.alternative_categories?.length > 0 && (
+                          <Button
+                            onClick={handleChangeCategoryClick}
+                            variant="outline"
+                            className="border-orange-400 text-orange-700 hover:bg-orange-50 gap-2"
+                          >
+                            <AlertCircle className="h-4 w-4" />
+                            Change Category
+                          </Button>
+                        )}
+                        <Button onClick={handleShare} variant="outline" className="border-slate-300 hover:bg-slate-50 gap-2">
+                          <Share2 className="h-4 w-4" />
+                          Share
                         </Button>
-                      )}
-                      <Button onClick={handleShare} variant="outline" className="border-slate-300 hover:bg-slate-50 gap-2">
-                        <Share2 className="h-4 w-4" />
-                        Share
-                      </Button>
-                      <Button onClick={handleDownloadPDF} variant="outline" className="border-slate-300 hover:bg-slate-50 gap-2">
-                        <Download className="h-4 w-4" />
-                        Download PDF
-                      </Button>
-                      <Button onClick={handleReset} className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
-                        <RotateCcw className="h-4 w-4" />
-                        New Analysis
-                      </Button>
+                        <Button onClick={handleDownloadPDF} variant="outline" className="border-slate-300 hover:bg-slate-50 gap-2">
+                          <Download className="h-4 w-4" />
+                          Download PDF
+                        </Button>
+                        <Button onClick={handleReset} className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
+                          <RotateCcw className="h-4 w-4" />
+                          New Analysis
+                        </Button>
+                      </div>
                     </div>
+                    {/* Regulatory Framework Badge - moved to separate row */}
+                    {result.product_type && (
+                      <div>
+                        {result.product_type === 'DIETARY_SUPPLEMENT' ? (
+                          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-50 border border-purple-200 rounded-md">
+                            <svg className="h-4 w-4 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span className="text-sm font-medium text-purple-900">
+                              Analyzed as Dietary Supplement (DSHEA regulations apply)
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-md">
+                            <svg className="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span className="text-sm font-medium text-green-900">
+                              Analyzed as Food/Beverage Product (FDA food labeling regulations apply)
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent>

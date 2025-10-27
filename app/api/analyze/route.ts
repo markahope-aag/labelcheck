@@ -1178,25 +1178,39 @@ Return your response as a JSON object with the following structure:
             analysisData.recommendations = [];
           }
 
-          // Add critical recommendations for each non-GRAS ingredient
+          // Determine severity based on number of non-GRAS ingredients
+          const nonGRASCount = grasCompliance.nonGRASIngredients.length;
+          const isSingleIngredient = nonGRASCount === 1;
+          const priority = isSingleIngredient ? 'high' : 'critical';
+          const complianceStatus = isSingleIngredient ? 'potentially_non_compliant' : 'non_compliant';
+          const statusLabel = isSingleIngredient ? 'Potentially Non-Compliant' : 'Non-Compliant';
+
+          // Add recommendations for each non-GRAS ingredient
           grasCompliance.nonGRASIngredients.forEach((ingredient) => {
             analysisData.recommendations.unshift({
-              priority: 'critical',
-              recommendation: `CRITICAL: Ingredient "${ingredient}" is NOT found in the FDA GRAS (Generally Recognized as Safe) database. This ingredient may require FDA pre-market approval (food additive petition), could be a prohibited substance, or may need special GRAS determination. Remove this ingredient or obtain proper FDA approval before marketing this product.`,
-              regulation: '21 CFR 170.3 (Definitions), 21 CFR 170.30 (GRAS determination)',
+              priority,
+              recommendation: `${priority === 'critical' ? 'CRITICAL' : 'IMPORTANT'}: Ingredient "${ingredient}" is NOT found in the FDA GRAS (Generally Recognized as Safe) database. If this ingredient is being used, it must be the subject of a GRAS determination in accordance with 21 CFR 170.30(b), or it may require FDA pre-market approval through a food additive petition. Provide documentation of GRAS self-determination or obtain proper FDA approval before marketing this product.`,
+              regulation: '21 CFR 170.30(b) (GRAS self-determination)',
             });
           });
 
           // Update overall compliance status to reflect GRAS violations
           if (analysisData.overall_assessment) {
-            analysisData.overall_assessment.primary_compliance_status = 'non_compliant';
+            analysisData.overall_assessment.primary_compliance_status = complianceStatus;
+
+            // Update summary to reflect GRAS non-compliance
+            if (isSingleIngredient) {
+              analysisData.overall_assessment.summary = `The ${analysisData.product_name || 'product'} label is POTENTIALLY NON-COMPLIANT with FDA regulations due to the use of an ingredient not found in the FDA GRAS (Generally Recognized as Safe) database. This ingredient may be subject to industry self-affirmation of GRAS status. If this ingredient is being used, it must be the subject of a GRAS determination in accordance with 21 CFR 170.30(b), or may require FDA pre-market approval through a food additive petition.`;
+            } else {
+              analysisData.overall_assessment.summary = `The ${analysisData.product_name || 'product'} label is NON-COMPLIANT with FDA regulations due to the use of multiple ingredients not found in the FDA GRAS (Generally Recognized as Safe) database. If these ingredients are being used, they must be the subject of a GRAS determination in accordance with 21 CFR 170.30(b), or may require FDA pre-market approval through a food additive petition.`;
+            }
 
             // Add GRAS violation to key findings
             if (!analysisData.overall_assessment.key_findings) {
               analysisData.overall_assessment.key_findings = [];
             }
             analysisData.overall_assessment.key_findings.unshift(
-              `CRITICAL: ${grasCompliance.nonGRASIngredients.length} ingredient(s) not in FDA GRAS database: ${grasCompliance.nonGRASIngredients.join(', ')}`
+              `${priority === 'critical' ? 'CRITICAL' : 'IMPORTANT'}: ${nonGRASCount} ingredient(s) not in FDA GRAS database: ${grasCompliance.nonGRASIngredients.join(', ')}`
             );
           }
 
@@ -1206,8 +1220,8 @@ Return your response as a JSON object with the following structure:
           }
           analysisData.compliance_table.unshift({
             element: 'GRAS Ingredient Compliance',
-            status: 'Non-compliant',
-            rationale: `${grasCompliance.nonGRASIngredients.length} ingredient(s) not in FDA GRAS database: ${grasCompliance.nonGRASIngredients.join(', ')}. Requires FDA approval.`,
+            status: statusLabel,
+            rationale: `${nonGRASCount} ingredient(s) not in FDA GRAS database: ${grasCompliance.nonGRASIngredients.join(', ')}. ${isSingleIngredient ? 'May be subject to industry self-affirmation.' : 'Requires FDA approval or GRAS determination.'}`,
           });
         } else {
           // All ingredients are GRAS-compliant
@@ -1449,6 +1463,16 @@ Return your response as a JSON object with the following structure:
       console.log('No ingredients found in analysis - skipping allergen database check');
     }
 
+    // Add general compliance monitoring recommendation
+    if (!analysisData.recommendations) {
+      analysisData.recommendations = [];
+    }
+    analysisData.recommendations.push({
+      priority: 'low',
+      recommendation: 'Continue monitoring for compliance with any new regulations or labeling requirements. FDA regulations and guidance documents are updated periodically, and maintaining ongoing awareness of regulatory changes is essential for continued compliance.',
+      regulation: 'General FDA guidelines for product labeling',
+    });
+
     // Determine compliance status from the new analysis structure
     const complianceStatus = analysisData.overall_assessment?.primary_compliance_status || 'unknown';
     const dbComplianceStatus =
@@ -1571,3 +1595,4 @@ Return your response as a JSON object with the following structure:
     );
   }
 }
+
