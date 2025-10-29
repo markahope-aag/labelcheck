@@ -435,12 +435,48 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
 
 1. **General Labeling Requirements**: Evaluate the label against basic FDA/USDA requirements
    - Statement of Identity (Name of Food): Is the product name clear, prominent, and on the principal display panel?
-     **🚨 MISLEADING MARKETING TERMS CHECK**: The product name or prominent label text contains ANY of these FDA-discouraged marketing terms, flag as potential violation:
-     • "Superfood" - Not a defined term by FDA; generally considered misleading
-     • "Detox" or "Cleanse" - Implies disease treatment without approval
-     • "Miracle" - Exaggerated, unsubstantiated claim
-     • "Cure" or "Treat" - Drug claims prohibited on foods/supplements
-     If found, add recommendation: "Remove misleading marketing term '[term]' from product name/labeling. This term is not defined by FDA and may constitute a misleading claim that could violate FD&C Act Section 403(a)."
+
+     **🚨🚨 MANDATORY MISLEADING MARKETING TERMS SCAN 🚨🚨**
+     **YOU MUST CAREFULLY SCAN THE ENTIRE LABEL** - including product name, front panel text, taglines, and any promotional text - for these FDA-discouraged marketing terms. These are RED FLAGS that constitute potential violations:
+
+     **CATEGORY 1: Undefined/Meaningless Marketing Buzzwords**
+     • "Superfood" - Not defined by FDA; implies superiority without substantiation
+     • "Ancient" / "Sacred" - Implies mystical benefits without evidence
+     • "Powerful" / "Potent" - Exaggerated strength claims
+     • "Revolutionary" / "Breakthrough" - Unsubstantiated superiority
+     • "Ultimate" / "Supreme" / "Maximum" - Superlative claims requiring proof
+
+     **CATEGORY 2: Disease Treatment/Medical Condition Terms (DRUG CLAIMS - PROHIBITED)**
+     • "Detox" / "Cleanse" / "Purify" - Implies removal of toxins (disease treatment)
+     • "Cure" / "Treat" / "Heal" / "Remedy" - Drug claims
+     • "Prevent" [disease name] - Disease prevention claim (unless authorized health claim)
+     • "Fights" / "Battles" / "Combats" [disease] - Implies treatment
+     • "Reverses" / "Eliminates" / "Eradicates" [condition] - Cure claims
+     • "Boosts immunity" / "Immune booster" - Implies disease prevention without substantiation
+
+     **CATEGORY 3: Exaggerated/Unsubstantiated Efficacy Claims**
+     • "Miracle" / "Magic" - Exaggerated, unproven claims
+     • "Guaranteed results" / "100% effective" - Unqualified efficacy claims
+     • "Scientifically proven" (without actual proof) - Misleading substantiation
+     • "Clinically tested" (without proper clinical trials) - False credentialing
+     • "Doctor recommended" (without evidence) - False endorsement
+
+     **CATEGORY 4: Natural Healing/Alternative Medicine Terms (May Imply Disease Treatment)**
+     • "Natural healing" / "Holistic cure" - Implies medical treatment
+     • "Alternative to [drug name]" - Drug comparison/replacement claim
+     • "Works like [drug name]" - Drug comparison claim
+     • "Pharmaceutical grade" (on supplements) - Misleading drug association
+
+     **HOW TO FLAG THESE TERMS:**
+     - **IF FOUND IN PRODUCT NAME**: Add to General Labeling section recommendations with MEDIUM priority
+     - **IF FOUND IN CLAIMS/PROMOTIONAL TEXT**: Add to Claims section as prohibited or problematic claim
+     - **IF DISEASE CLAIM ("cure", "treat", "prevent [disease]")**: Flag as CRITICAL priority - these are illegal drug claims
+     - **IF VAGUE MARKETING ("superfood", "ancient", "powerful")**: Flag as MEDIUM priority - potentially misleading under FD&C Act 403(a)
+
+     **RECOMMENDATION LANGUAGE TO USE:**
+     "Remove misleading marketing term '[exact term]' from [product name/front panel/claims]. This term [is not defined by FDA/implies disease treatment/is an exaggerated claim] and may constitute a misleading claim that could violate FD&C Act Section 403(a) (misbranding)."
+
+     **IMPORTANT**: Even if you don't see obvious compliance issues elsewhere, you MUST still scan for and flag these marketing terms. They are violations regardless of how compliant the rest of the label is.
    - Net Quantity of Contents: Is it properly declared in both US Customary and metric units? Is it in the bottom 30% of the display panel? **IMPORTANT:** Either US customary OR metric may appear first - both orders are FDA compliant (e.g., "15 oz (425 g)" OR "425 g (15 oz)" are both acceptable). The secondary measurement should appear in parentheses.
    - Name and Address of Manufacturer/Distributor: Is the manufacturer or distributor clearly listed with complete address? Are qualifying phrases like "distributed by" used correctly?
 
@@ -481,6 +517,35 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
 
 5. **Claims**: Evaluate all claims made on the supplement label
    - **🚨 CRITICAL**: Scan the ENTIRE label for claims - including front panel, side panels, and any promotional text. Look for subtle marketing language.
+
+   - **🚨🚨 FIRST STEP: SCAN FOR MISLEADING MARKETING TERMS 🚨🚨**
+     **BEFORE analyzing claim types, you MUST scan the entire label for these problematic marketing terms:**
+
+     **RED FLAG TERMS - AUTOMATICALLY FLAG IF FOUND:**
+     • "Superfood" → Flag as MEDIUM priority misleading claim
+     • "Detox" / "Cleanse" / "Purify" → Flag as CRITICAL priority (implies disease treatment)
+     • "Immunity booster" / "Boosts immunity" → Flag as CRITICAL priority (unsubstantiated disease prevention)
+     • "Cure" / "Treat" / "Heal" → Flag as CRITICAL priority (drug claim)
+     • "Miracle" / "Magic" → Flag as MEDIUM priority (exaggerated claim)
+     • "Ancient" / "Sacred" / "Powerful" / "Revolutionary" → Flag as MEDIUM priority (unsubstantiated marketing)
+     • "Natural healing" / "Holistic cure" → Flag as CRITICAL priority (implies medical treatment)
+     • "Alternative to [drug]" / "Works like [drug]" → Flag as CRITICAL priority (drug replacement claim)
+     • "Guaranteed results" / "100% effective" → Flag as MEDIUM priority (unqualified efficacy)
+     • "Clinically proven" (without trials) / "Doctor recommended" (without evidence) → Flag as MEDIUM priority (false substantiation)
+
+     **EXAMPLE - HOW TO FLAG "SUPERFOOD":**
+     If you see "Organic Superfood Greens" on the label:
+     - In Claims section, add to prohibited_or_problematic_claims array with these fields:
+       • claim_text: "Superfood"
+       • claim_type: "Misleading marketing term"
+       • status: "needs_review"
+       • explanation: "The term 'superfood' is not defined by FDA and may constitute a misleading claim under FD&C Act Section 403(a). This undefined marketing buzzword implies superiority or exceptional nutritional benefits without substantiation."
+       • recommendation: "Remove the term 'superfood' from product name and labeling. Use specific, substantiated nutritional claims instead (e.g., 'High in vitamins A and C' if supported by nutrient content)."
+       • priority: "medium"
+       • regulation_citation: "FD&C Act Section 403(a) - Misbranding"
+
+     **IMPORTANT**: Even if the rest of the label is compliant, you MUST scan for and flag these terms. Many supplements use these terms thinking they're harmless marketing, but they are potential violations.
+
    - **IMPORTANT DISTINCTION**: Not all claims are problematic. Distinguish between ACCEPTABLE and PROHIBITED claims.
 
    - **ACCEPTABLE CLAIMS** (These are COMPLIANT - do NOT flag as violations):
@@ -733,6 +798,22 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
      • Flag violations as NON-COMPLIANT
 
 5. **Claims**: Evaluate all claims made on the food/beverage label
+
+   - **🚨🚨 FIRST STEP: SCAN FOR MISLEADING MARKETING TERMS 🚨🚨**
+     **BEFORE analyzing claim types, you MUST scan the entire label for these problematic marketing terms:**
+
+     **RED FLAG TERMS - AUTOMATICALLY FLAG IF FOUND:**
+     • "Superfood" → Flag as MEDIUM priority misleading claim
+     • "Detox" / "Cleanse" / "Purify" → Flag as CRITICAL priority (implies disease treatment)
+     • "Immunity booster" / "Boosts immunity" → Flag as CRITICAL priority (unsubstantiated disease prevention)
+     • "Cure" / "Treat" / "Heal" → Flag as CRITICAL priority (drug claim)
+     • "Miracle" / "Magic" → Flag as MEDIUM priority (exaggerated claim)
+     • "Ancient" / "Sacred" / "Powerful" / "Revolutionary" → Flag as MEDIUM priority (unsubstantiated marketing)
+     • "Natural healing" / "Holistic cure" → Flag as CRITICAL priority (implies medical treatment)
+     • "Guaranteed results" / "100% effective" → Flag as MEDIUM priority (unqualified efficacy)
+
+     **NOTE FOR FOODS**: Conventional foods CANNOT make structure/function claims like supplements can. Any marketing term suggesting health benefits beyond basic nutrition should be flagged.
+
    - **Nutrient Content Claims** (e.g., "low fat", "high fiber", "fortified"):
      • List ALL claims found
      • Validate against definitions (21 CFR 101.13, 101.54, 101.62)
