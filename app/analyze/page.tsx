@@ -16,7 +16,9 @@ import { TextChecker } from '@/components/TextChecker';
 import { PrintReadyCertification } from '@/components/PrintReadyCertification';
 import CategorySelector from '@/components/CategorySelector';
 import CategoryComparison from '@/components/CategoryComparison';
+import { ImageQualityWarning } from '@/components/ImageQualityWarning';
 import { ProductCategory } from '@/lib/supabase';
+import type { ImageQualityMetrics } from '@/lib/image-quality';
 
 // Helper function to format compliance status for display
 const formatComplianceStatus = (status: string): string => {
@@ -61,8 +63,10 @@ export default function AnalyzePage() {
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [analysisStep, setAnalysisStep] = useState('');
   const [labelName, setLabelName] = useState<string>('');
+  const [imageQuality, setImageQuality] = useState<ImageQualityMetrics | null>(null);
+  const [showQualityWarning, setShowQualityWarning] = useState(false);
 
-  const processFile = (file: File) => {
+  const processFile = async (file: File) => {
     console.log('Processing file:', file.name, 'Type:', file.type, 'Size:', file.size);
 
     // Accept both images and PDFs
@@ -83,17 +87,52 @@ export default function AnalyzePage() {
       setError('File size must be less than 10MB');
       return;
     }
+
     setSelectedFile(file);
+    setError('');
+    setResult(null);
 
     // Create preview - for PDFs, show a placeholder
     if (isPdf) {
       setPreviewUrl(''); // Will show PDF indicator instead
+      setImageQuality(null); // PDFs don't need quality check
+      setShowQualityWarning(false);
     } else {
       setPreviewUrl(URL.createObjectURL(file));
-    }
 
-    setError('');
-    setResult(null);
+      // Check image quality for image files (not PDFs)
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+
+        // Call quality analysis API
+        const qualityResponse = await fetch('/api/analyze/check-quality', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/octet-stream' },
+          body: buffer,
+        });
+
+        if (qualityResponse.ok) {
+          const metrics = await qualityResponse.json();
+          setImageQuality(metrics);
+
+          // Show warning if quality is poor or unusable
+          if (metrics.recommendation === 'poor' || metrics.recommendation === 'unusable') {
+            setShowQualityWarning(true);
+          } else if (metrics.recommendation === 'acceptable' && metrics.issues.length >= 2) {
+            // Also warn if acceptable but multiple issues
+            setShowQualityWarning(true);
+          } else {
+            setShowQualityWarning(false);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking image quality:', error);
+        // Don't block upload if quality check fails
+        setImageQuality(null);
+        setShowQualityWarning(false);
+      }
+    }
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -649,6 +688,20 @@ export default function AnalyzePage() {
                           <img src={previewUrl} alt="Preview" className="w-full h-auto max-h-96 object-contain bg-slate-50" />
                         )}
                       </div>
+
+                      {/* Image Quality Warning */}
+                      {showQualityWarning && imageQuality && (
+                        <ImageQualityWarning
+                          metrics={imageQuality}
+                          onProceed={() => setShowQualityWarning(false)}
+                          onReupload={() => {
+                            setSelectedFile(null);
+                            setPreviewUrl('');
+                            setImageQuality(null);
+                            setShowQualityWarning(false);
+                          }}
+                        />
+                      )}
 
                       {/* Label Name Input */}
                       <div className="space-y-2">
