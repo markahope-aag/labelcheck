@@ -55,7 +55,7 @@ export class PerformanceMonitor {
     const steps: PerformanceStep[] = [];
 
     // Convert durations to array of steps
-    for (const [transition, duration] of this.durations.entries()) {
+    for (const [transition, duration] of Array.from(this.durations.entries())) {
       const [from, to] = transition.split(' → ');
       steps.push({
         from,

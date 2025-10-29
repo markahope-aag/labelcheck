@@ -42,7 +42,8 @@
       "Bash(taskkill:*)",
       "Bash(powershell -Command \"(Get-Content ''app/api/analyze/route.ts'' | Measure-Object -Line).Lines\")",
       "Bash(powershell -Command \"(Get-Content ''app/analysis/[id]/page.tsx'' | Measure-Object -Line).Lines\")",
-      "Bash(powershell -Command \"(Get-Content ''app\\analysis\\[id]\\page.tsx'' | Measure-Object -Line).Lines\")"
+      "Bash(powershell -Command \"(Get-Content ''app\\analysis\\[id]\\page.tsx'' | Measure-Object -Line).Lines\")",
+      "Bash(npm run typecheck:*)"
     ],
     "deny": [],
     "ask": []

@@ -20,7 +20,7 @@ export default async function BillingPage() {
     .eq('clerk_user_id', userId)
     .maybeSingle();
 
-  const currentPlan = user?.subscription_tier || 'basic';
+  const currentPlan = user?.subscription_tier || 'starter';
   const planLimits = PLAN_LIMITS[currentPlan as keyof typeof PLAN_LIMITS];
   const planPrices = PLAN_PRICES[currentPlan as keyof typeof PLAN_PRICES];
 
@@ -47,9 +47,9 @@ export default async function BillingPage() {
                         <div className="flex items-center gap-3 mb-2">
                           <h3 className="text-2xl font-bold text-slate-900 capitalize">{currentPlan} Plan</h3>
                           <Badge className={
-                            currentPlan === 'enterprise'
+                            currentPlan === 'business'
                               ? 'bg-purple-100 text-purple-700 border-purple-200'
-                              : currentPlan === 'pro'
+                              : currentPlan === 'professional'
                               ? 'bg-blue-100 text-blue-700 border-blue-200'
                               : 'bg-slate-100 text-slate-700 border-slate-200'
                           }>
@@ -106,24 +106,22 @@ export default async function BillingPage() {
                         <div>
                           <p className="text-sm text-slate-600">Analyses Used</p>
                           <p className="text-xl font-bold text-slate-900">
-                            {user?.analyses_count || 0} <span className="text-sm font-normal text-slate-600">/ {planLimits.analyses === 999999 ? '∞' : planLimits.analyses}</span>
+                            {user?.analyses_count || 0} <span className="text-sm font-normal text-slate-600">/ {planLimits.analyses}</span>
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
                         <p className="text-2xl font-bold text-slate-900">
-                          {planLimits.analyses === 999999
-                            ? '0%'
-                            : Math.min(100, Math.round(((user?.analyses_count || 0) / planLimits.analyses) * 100))}
+                          {Math.min(100, Math.round(((user?.analyses_count || 0) / planLimits.analyses) * 100))}
                           <span className="text-sm text-slate-600">%</span>
                         </p>
                       </div>
                     </div>
 
-                    {currentPlan === 'basic' && (
+                    {currentPlan === 'starter' && (
                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <p className="text-sm text-blue-900 font-medium mb-2">Upgrade for unlimited analyses</p>
-                        <p className="text-sm text-blue-800">Get more scans and priority support with Pro or Enterprise plans</p>
+                        <p className="text-sm text-blue-900 font-medium mb-2">Upgrade for more analyses</p>
+                        <p className="text-sm text-blue-800">Get more analyses and priority support with Professional or Business plans</p>
                       </div>
                     )}
                   </div>

@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { supabase } from '@/lib/supabase';
 import { exportSingleAnalysisAsPDF } from '@/lib/export-helpers';
 import { useToast } from '@/hooks/use-toast';
-import AnalysisChat from '@/components/AnalysisChat';
+import { AnalysisChat } from '@/components/AnalysisChat';
 import { PrintReadyCertification } from '@/components/PrintReadyCertification';
 
 // Helper function to format compliance status for display
