@@ -13,6 +13,7 @@ import { exportSingleAnalysisAsPDF } from '@/lib/export-helpers';
 import { useToast } from '@/hooks/use-toast';
 import { AnalysisChat } from '@/components/AnalysisChat';
 import { TextChecker } from '@/components/TextChecker';
+import { PrintReadyCertification } from '@/components/PrintReadyCertification';
 import CategorySelector from '@/components/CategorySelector';
 import CategoryComparison from '@/components/CategoryComparison';
 import { ProductCategory } from '@/lib/supabase';
@@ -59,6 +60,7 @@ export default function AnalyzePage() {
   const [analysisData, setAnalysisData] = useState<any>(null);
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [analysisStep, setAnalysisStep] = useState('');
+  const [labelName, setLabelName] = useState<string>('');
 
   const processFile = (file: File) => {
     console.log('Processing file:', file.name, 'Type:', file.type, 'Size:', file.size);
@@ -196,6 +198,11 @@ export default function AnalyzePage() {
       const formData = new FormData();
       formData.append('image', selectedFile);
 
+      // Add label name if provided
+      if (labelName.trim()) {
+        formData.append('labelName', labelName.trim());
+      }
+
       // If in revised mode, pass the sessionId
       if (isRevisedMode && sessionId) {
         formData.append('sessionId', sessionId);
@@ -253,6 +260,7 @@ export default function AnalyzePage() {
     setShowCategorySelector(false);
     setShowComparison(false);
     setAnalysisData(null); // Clear when starting completely new analysis
+    setLabelName(''); // Clear label name when resetting
   };
 
   const handleCategorySelect = async (category: ProductCategory, reason?: string) => {
@@ -590,6 +598,26 @@ export default function AnalyzePage() {
                           <img src={previewUrl} alt="Preview" className="w-full h-auto max-h-96 object-contain bg-slate-50" />
                         )}
                       </div>
+
+                      {/* Label Name Input */}
+                      <div className="space-y-2">
+                        <label htmlFor="label-name" className="text-sm font-medium text-slate-700">
+                          Label Name (Optional)
+                        </label>
+                        <Input
+                          id="label-name"
+                          type="text"
+                          placeholder="e.g., Cold Brew Coffee - Original"
+                          value={labelName}
+                          onChange={(e) => setLabelName(e.target.value)}
+                          className="w-full"
+                          disabled={isAnalyzing}
+                        />
+                        <p className="text-xs text-slate-500">
+                          Give this label a name to help you organize and find it later in your history
+                        </p>
+                      </div>
+
                       <div className="flex gap-4">
                         <Button
                           onClick={handleAnalyze}
@@ -871,6 +899,19 @@ export default function AnalyzePage() {
                           </div>
                         )}
                       </div>
+                    )}
+
+                    {/* Print-Ready Certification */}
+                    {result.recommendations && (
+                      <PrintReadyCertification
+                        criticalCount={result.recommendations.filter((r: any) => r.priority === 'critical').length}
+                        highCount={result.recommendations.filter((r: any) => r.priority === 'high').length}
+                        mediumCount={result.recommendations.filter((r: any) => r.priority === 'medium').length}
+                        lowCount={result.recommendations.filter((r: any) => r.priority === 'low').length}
+                        analysisDate={result.created_at || new Date().toISOString()}
+                        criticalIssues={result.recommendations.filter((r: any) => r.priority === 'critical')}
+                        highIssues={result.recommendations.filter((r: any) => r.priority === 'high')}
+                      />
                     )}
 
                     {/* Overall Assessment */}

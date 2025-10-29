@@ -66,7 +66,7 @@ export async function POST(req: Request) {
           user_id: newUser.id,
           month: currentMonth,
           analyses_used: 0,
-          analyses_limit: 5,
+          analyses_limit: 10, // Free trial: 10 analyses (enough for 3-5 products + revisions)
         });
       }
 

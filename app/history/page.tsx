@@ -166,11 +166,13 @@ function HistoryContent() {
         const query = searchQuery.toLowerCase();
         results = results.filter((analysis) => {
           const result = analysis.analysis_result;
+          const labelName = (analysis.label_name || '').toLowerCase();
           const productName = (result.product_name || '').toLowerCase();
           const productType = (result.product_type || '').toLowerCase();
           const summary = (result.overall_assessment?.summary || result.summary || '').toLowerCase();
 
-          return productName.includes(query) ||
+          return labelName.includes(query) ||
+                 productName.includes(query) ||
                  productType.includes(query) ||
                  summary.includes(query);
         });
@@ -179,8 +181,8 @@ function HistoryContent() {
       // Client-side name sorting
       if (sortBy === 'name') {
         results.sort((a, b) => {
-          const nameA = (a.analysis_result.product_name || '').toLowerCase();
-          const nameB = (b.analysis_result.product_name || '').toLowerCase();
+          const nameA = (a.label_name || a.analysis_result.product_name || '').toLowerCase();
+          const nameB = (b.label_name || b.analysis_result.product_name || '').toLowerCase();
           return nameA.localeCompare(nameB);
         });
       }
@@ -341,7 +343,7 @@ function HistoryContent() {
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                         <Input
                           type="text"
-                          placeholder="Search by product name, type, or summary..."
+                          placeholder="Search by label name, product name, type, or summary..."
                           value={searchQuery}
                           onChange={(e) => {
                             setSearchQuery(e.target.value);
@@ -439,8 +441,13 @@ function HistoryContent() {
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <CardTitle className="text-xl font-semibold text-slate-900 mb-2">
-                              {result.product_name || 'Unnamed Product'}
+                              {analysis.label_name || result.product_name || 'Unnamed Product'}
                             </CardTitle>
+                            {analysis.label_name && result.product_name && analysis.label_name !== result.product_name && (
+                              <p className="text-sm text-slate-500 mb-2">
+                                Product: {result.product_name}
+                              </p>
+                            )}
                             <div className="flex items-center gap-3 text-sm text-slate-500">
                               <div className="flex items-center gap-1">
                                 <Calendar className="h-4 w-4" />

@@ -1,8 +1,392 @@
 # Session Notes - Analysis Sessions Development
 
-**Last Updated:** 2025-10-26 (Session 9)
+**Last Updated:** 2025-10-29 (Session 10 - Implementation)
 **Branch:** main
-**Status:** Chat History Persistence Complete ✅
+**Status:** Priority Classification System + Print-Ready Certification IMPLEMENTED ✅
+
+---
+
+## Session 10 Implementation (2025-10-29) - Priority System Live
+
+### ✅ Completed Implementation
+
+**Priority Classification System - FULLY IMPLEMENTED**
+
+The refined 4-tier priority system with print-ready certification is now live in the codebase:
+
+#### 1. AI Prompt Updated (`app/api/analyze/route.ts`)
+- ✅ **Added comprehensive priority definitions** (lines 1033-1079)
+  - CRITICAL: Clear FDA/TTB violation with serious enforcement risk
+  - HIGH: Regulatory requirement, lower enforcement priority
+  - MEDIUM: Judgment/verification needed OR insufficient information
+  - LOW: Best practices and optional improvements
+
+- ✅ **Added decision tree logic** (lines 1081-1098)
+  - Step 1: Can I see a clear violation?
+  - Step 2: What's the enforcement risk? (CRITICAL vs HIGH)
+  - Step 3: Why can't I determine? (MEDIUM vs LOW)
+
+- ✅ **Added section status mapping rules** (lines 1100-1116)
+  - "potentially_non_compliant" + insufficient info → MEDIUM (not CRITICAL/HIGH)
+  - Examples: natural flavors, cordyceps not in database, font size uncertainty
+  - ONLY assign CRITICAL/HIGH when violation is visible on label
+
+#### 2. PrintReadyCertification Component Created
+- ✅ **New component** (`components/PrintReadyCertification.tsx`)
+  - Calculates print-ready status: 0 CRITICAL + 0 HIGH = ✅ Print-Ready
+  - Two states: Print-Ready banner (green) vs Blocking Issues banner (orange/red)
+
+**Print-Ready State Features:**
+- Large green checkmark with "Label is Print-Ready" headline
+- Clear messaging: No blocking issues detected
+- Full legal disclaimer (collapsible)
+- Optional improvements section (collapsible, shows MEDIUM + LOW counts)
+
+**Blocking Issues State Features:**
+- Orange/red alert triangle with count: "2 Blocking Issues Remain"
+- Separate sections for CRITICAL and HIGH priorities
+- Shows first 3 critical issues inline with regulations
+- Shows first 2 high issues inline
+- Link to full recommendations below
+
+**Legal Disclaimer Included:**
+- Short version in banner with "Read full disclaimer" expand
+- Full version covers:
+  - Tool limitations (visible elements only)
+  - What it does NOT do (verify formula, provide legal advice, guarantee FDA approval)
+  - Manufacturer responsibilities (accuracy, claims substantiation, GRAS)
+  - Not attorney-client relationship
+
+#### 3. UI Integration
+- ✅ **Analyze page** (`app/analyze/page.tsx`)
+  - Imported PrintReadyCertification component (line 16)
+  - Added certification banner after comparison card, before Overall Assessment (lines 904-915)
+  - Calculates priority counts from recommendations array
+  - Passes critical/high issues for inline display
+
+- ✅ **Analysis detail page** (`app/analysis/[id]/page.tsx`)
+  - Imported PrintReadyCertification component (line 15)
+  - Added certification banner at top of results (lines 308-319)
+  - Same priority calculation and issue display
+
+---
+
+### 🎯 Key Implementation Details
+
+**Priority Assignment Logic:**
+```
+IF visible violation:
+  IF high enforcement risk → CRITICAL
+  ELSE → HIGH
+ELSE IF insufficient information OR ambiguous:
+  → MEDIUM
+ELSE:
+  → LOW
+```
+
+**Print-Ready Calculation:**
+```typescript
+const isPrintReady = criticalCount === 0 && highCount === 0;
+```
+
+**User Impact:**
+- CRITICAL/HIGH = Blocks print-ready status
+- MEDIUM/LOW = Does NOT block (user verifies and can proceed)
+
+---
+
+### 📋 What's Ready to Test
+
+1. **Upload any label** and check:
+   - Are priorities assigned correctly per new definitions?
+   - Does "natural flavors" allergen uncertainty get MEDIUM (not CRITICAL)?
+   - Does missing allergen declaration (visible) get CRITICAL?
+   - Does ingredient order violation get HIGH (not MEDIUM)?
+
+2. **Print-Ready Certification:**
+   - Label with 0 CRITICAL + 0 HIGH → Green "Print-Ready" banner?
+   - Label with 1+ CRITICAL or HIGH → Orange "Blocking Issues" banner?
+   - Optional improvements section shows MEDIUM + LOW counts?
+   - Disclaimer expands/collapses correctly?
+
+3. **Visual Display:**
+   - Critical issues shown inline with regulations?
+   - High issues shown inline?
+   - Counts accurate?
+
+---
+
+### 🔄 Next Steps
+
+**Immediate Testing:**
+1. Upload sample labels with known issues
+2. Verify priority assignments match spec
+3. Verify print-ready logic works correctly
+4. Test disclaimer expansion
+5. Test on mobile (responsive design)
+
+**Future Enhancements (if needed):**
+1. Recommendation grouping (separate CRITICAL/HIGH from MEDIUM/LOW sections)
+2. Print-ready badge in history page list view
+3. Export print-ready certification to PDF
+4. Analytics: Track % of analyses that are print-ready
+
+---
+
+### 💾 Files Modified/Created in Implementation
+
+**Modified:**
+- `app/api/analyze/route.ts` - Added 80+ lines of priority system definitions
+- `app/analyze/page.tsx` - Added PrintReadyCertification import and component
+- `app/analysis/[id]/page.tsx` - Added PrintReadyCertification import and component
+
+**Created:**
+- `components/PrintReadyCertification.tsx` (280 lines) - Complete print-ready UI component
+- `FREE_TRIAL_STRATEGY.md` - Comprehensive trial strategy documentation
+
+---
+
+### ⚡ Quick Win: Increased Free Trial (10 Analyses)
+
+**Change:** Increased free trial from 5 → 10 analyses
+
+**Rationale:**
+- 5 analyses too restrictive for B2B users
+- Sarah needs 3-5 products + 2-3 revisions = ~7.5 analyses minimum
+- 10 analyses enables full value experience:
+  - Analyze complete product line (3-5 SKUs)
+  - Iterate to print-ready status (2-3 revisions)
+  - Experience success before conversion
+
+**Why Account-First (Not Anonymous):**
+- B2B buyers are serious (not casual browsers)
+- Need context for quality results (product type matters)
+- Prevent abuse and competitive reverse-engineering
+- Sarah has compliance anxiety and 35 SKUs - if uploading, she's committed
+
+**Implementation:**
+- Updated Clerk webhook (line 69): `analyses_limit: 10`
+- Documented in `FREE_TRIAL_STRATEGY.md`
+
+---
+
+### 💰 Pricing Update: Value-Based Positioning
+
+**Change:** Updated pricing to reflect comprehensive value proposition
+
+**New Pricing Structure:**
+- **Free Trial:** 10 analyses (unchanged)
+- **Starter:** $49/mo, 10 analyses (was $29 Basic)
+- **Professional:** $149/mo, 50 analyses (was $79 Pro) ⭐ Target tier
+- **Business:** $399/mo, 200 analyses (was $199 Enterprise)
+- **Annual:** 2 months free (17% discount)
+
+**Strategic Rationale:**
+- **Value-based pricing** - anchored to $240+ consultant fees, not $20-50 generators
+- **Category repositioning** - "comprehensive compliance" not "nutrition calculator"
+- **Premium signals quality** - filters for serious buyers with budgets
+- **ROI justified** - one violation avoided = $10K+ recall cost
+
+**Still Competitive:**
+- 60-80% cheaper than consultants ($240+ per review)
+- 55-80% cheaper than enterprise software ($500+/month)
+- Premium enough to signal professional tool
+
+**Implementation:**
+- Updated `lib/constants.ts` with new tiers (starter, professional, business)
+- Updated `lib/supabase.ts` PlanTier type
+- Created migration `20251029100000_update_plan_tiers.sql`
+- Updated `VALUE_PROPOSITION.md` with new pricing throughout
+- Created `PRICING_STRATEGY.md` (comprehensive pricing documentation)
+
+**Next Steps:**
+- Update Stripe dashboard with new products/prices
+- Update environment variables (STRIPE_PRICE_ID_STARTER, etc.)
+- Update pricing page UI
+- Update homepage headline
+
+---
+
+## Session 10 Summary (2025-10-29) - UX Clarity & Product Organization
+
+### ✅ Completed in This Session
+
+**Major Feature 1: Label Name Field (Phase I Product Organization)**
+
+Added user-editable label names to enable product organization and searchability:
+
+#### 1. Database & Backend
+- ✅ **Created migration** (`supabase/migrations/20251029000000_add_label_name.sql`)
+  - Added `label_name` TEXT column to `analyses` table
+  - Created standard index + GIN full-text search index
+  - Updated TypeScript interface in `lib/supabase.ts`
+
+- ✅ **API route updated** (`app/api/analyze/route.ts`)
+  - Accepts `labelName` from FormData (line 147)
+  - Saves to database: `label_name: labelName || null` (line 1492)
+
+#### 2. Frontend Implementation
+- ✅ **Analyze page** (`app/analyze/page.tsx`)
+  - Added label name input field after file upload (lines 600-617)
+  - Optional field with placeholder "e.g., Cold Brew Coffee - Original"
+  - Sent to API via FormData (lines 201-203)
+  - Cleared on reset (line 262)
+
+- ✅ **History page** (`app/history/page.tsx`)
+  - Search includes label_name (line 174)
+  - Display priority: Shows label_name if provided, falls back to AI product_name (line 444)
+  - If both differ, shows both (lines 446-450)
+  - Name sorting uses label_name first (line 184)
+  - Updated search placeholder (line 346)
+
+- ✅ **Analysis detail page** (`app/analysis/[id]/page.tsx`)
+  - Same display logic as history page (lines 258-264)
+
+#### 3. User Experience Impact
+**Before:** Chronological analysis list with AI-extracted names only
+**After:** Searchable/sortable by user-provided names
+- Sarah names each analysis: "Cold Brew Coffee - Original", "Cold Brew Coffee - Vanilla"
+- Search "Cold Brew" finds all related analyses
+- De facto product library using analysis history
+
+---
+
+**Major Feature 2: Priority Classification System & Print-Ready Certification**
+
+Refined the priority system to give users clear "print-ready" guidance while protecting legally:
+
+#### 1. Sharper Priority Definitions
+- **CRITICAL**: Clear FDA violation with serious enforcement risk (recalls, warning letters)
+- **HIGH**: Regulatory requirement that must be fixed, lower enforcement priority
+- **MEDIUM**: Ambiguous situations requiring judgment OR insufficient information to determine
+- **LOW**: Best practices and optional improvements
+
+**Key Change:** MEDIUM no longer contains "minor regulatory requirements" - if it's required, it's HIGH or CRITICAL.
+
+#### 2. Print-Ready Certification Logic
+```
+Zero CRITICAL + Zero HIGH = ✅ PRINT-READY (with disclaimer)
+```
+
+Users can print if they have only MEDIUM/LOW items, but they understand they need to verify those items (e.g., check with flavor supplier about allergens in "natural flavors").
+
+#### 3. Section Status → Priority Mapping
+**Critical Rule:** When section status is `"potentially_non_compliant"` due to INSUFFICIENT INFORMATION (not visible violation), recommendation priority is **MEDIUM**, not CRITICAL/HIGH.
+
+Examples:
+- "natural flavors" may contain allergens → **MEDIUM** (verify with supplier)
+- "whey" contains milk, no declaration → **CRITICAL** (visible violation)
+- Ingredient order wrong → **HIGH** (clear requirement, lower enforcement risk)
+- Font size uncertain → **MEDIUM** (can't measure from image)
+- NDI not in database → **MEDIUM** (requires verification)
+
+#### 4. Legal Disclaimer
+Added appropriate disclaimer language:
+- **Full version** on print-ready certification screen
+- **Short version** in result headers
+- Clear that tool doesn't verify formula, provide legal advice, or guarantee FDA approval
+- Manufacturer remains responsible for accuracy, claims substantiation, formula compliance
+
+#### 5. Documentation Created
+- ✅ **PRIORITY_CLASSIFICATION_SYSTEM.md** (complete specification)
+  - 4-tier priority definitions with examples
+  - Print-ready certification UI mockups
+  - Section status → priority mapping with 6 detailed examples
+  - Decision tree for AI prompt
+  - Implementation plan (Phases 1-5)
+  - Legal disclaimer language
+
+- ✅ **PHASE_II_PRODUCT_LIBRARY.md** (future roadmap)
+  - Product library with version history
+  - Workflow management (tasks, comments, approvals)
+  - Batch operations
+  - Enhanced sharing with instructions
+  - Database schemas and UI mockups
+  - Implementation timeline (12-17 weeks total)
+
+---
+
+### 🎯 Key Design Decisions
+
+1. **Label Name (Phase I) vs. Product Library (Phase II)**
+   - Phase I: Simple label_name field → immediate value, low complexity
+   - Phase II: Full product library → professional product management, longer dev time
+   - Decision: Ship Phase I now, plan Phase II for future
+
+2. **Print-Ready Threshold**
+   - Considered: Binary (0 CRITICAL + 0 HIGH), Risk Score (0-100), Certification language
+   - Decision: Binary approach with legal disclaimer
+   - Rationale: Users want clear signal, not ambiguity
+
+3. **MEDIUM Priority Refinement**
+   - Problem: Mixed minor requirements + best practices + edge cases
+   - Solution: MEDIUM = judgment/verification only, requirements moved to HIGH
+   - Impact: Clear distinction between blocking (CRITICAL/HIGH) and optional (MEDIUM/LOW)
+
+4. **"potentially_non_compliant" → MEDIUM Mapping**
+   - Problem: How to handle uncertainty (e.g., "natural flavors" allergen status)?
+   - Solution: Insufficient information → MEDIUM (doesn't block print-ready)
+   - Rationale: Sarah can verify with suppliers; if verified clean, she can print
+
+---
+
+### 📋 Next Steps
+
+**Immediate:**
+1. Test label name feature end-to-end
+2. Apply database migration to production
+
+**Phase 1 Implementation (Priority System Refinement):**
+1. Update AI prompt with new priority definitions (1 week)
+2. Add print-ready certification UI (1 week)
+3. Update recommendation grouping (2 days)
+4. Testing and validation (3-5 days)
+
+**Phase 2 Planning (Product Library):**
+1. User testing of label name feature
+2. Collect feedback on print-ready certification
+3. Prioritize Phase II features based on user demand
+
+---
+
+### 🔍 Technical Notes
+
+**Label Name Implementation:**
+- Uses standard B-tree index + GIN full-text index for fast search
+- Nullable field maintains backward compatibility
+- Fallback logic: label_name → product_name → "Unnamed Product"
+
+**Priority System:**
+- Requires AI prompt update (not just UI changes)
+- Classification logic must be explicit in prompt
+- Need decision tree to ensure consistency
+
+**Legal Protection:**
+- Disclaimer prevents implied FDA approval
+- Clear about tool limitations (visible elements only)
+- Shifts responsibility appropriately to manufacturer
+
+---
+
+### 🐛 Issues & Resolutions
+
+None in this session - purely design and implementation work.
+
+---
+
+### 💾 Files Modified/Created
+
+**Modified:**
+- `lib/supabase.ts` - Added label_name to Analysis interface
+- `app/analyze/page.tsx` - Added label name input field
+- `app/api/analyze/route.ts` - Accept and save label_name
+- `app/history/page.tsx` - Search, display, sort by label_name
+- `app/analysis/[id]/page.tsx` - Display label_name
+
+**Created:**
+- `supabase/migrations/20251029000000_add_label_name.sql`
+- `PRIORITY_CLASSIFICATION_SYSTEM.md`
+- `PHASE_II_PRODUCT_LIBRARY.md`
 
 ---
 

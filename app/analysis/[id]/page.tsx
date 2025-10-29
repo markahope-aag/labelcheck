@@ -12,6 +12,7 @@ import { supabase } from '@/lib/supabase';
 import { exportSingleAnalysisAsPDF } from '@/lib/export-helpers';
 import { useToast } from '@/hooks/use-toast';
 import AnalysisChat from '@/components/AnalysisChat';
+import { PrintReadyCertification } from '@/components/PrintReadyCertification';
 
 // Helper function to format compliance status for display
 const formatComplianceStatus = (status: string): string => {
@@ -255,8 +256,13 @@ export default function AnalysisDetailPage() {
               <div className="flex items-center justify-between">
                 <div className="flex-1">
                   <CardTitle className="text-xl font-semibold text-slate-900">
-                    {result.product_name || 'Analysis Results'}
+                    {analysis.label_name || result.product_name || 'Analysis Results'}
                   </CardTitle>
+                  {analysis.label_name && result.product_name && analysis.label_name !== result.product_name && (
+                    <p className="text-sm text-slate-500 mt-1">
+                      Product: {result.product_name}
+                    </p>
+                  )}
                   <CardDescription>
                     {result.product_type || 'Regulatory Compliance Analysis'} • {new Date(analysis.created_at).toLocaleDateString()}
                   </CardDescription>
@@ -299,6 +305,19 @@ export default function AnalysisDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-8">
+                {/* Print-Ready Certification */}
+                {result.recommendations && (
+                  <PrintReadyCertification
+                    criticalCount={result.recommendations.filter((r: any) => r.priority === 'critical').length}
+                    highCount={result.recommendations.filter((r: any) => r.priority === 'high').length}
+                    mediumCount={result.recommendations.filter((r: any) => r.priority === 'medium').length}
+                    lowCount={result.recommendations.filter((r: any) => r.priority === 'low').length}
+                    analysisDate={analysis.created_at}
+                    criticalIssues={result.recommendations.filter((r: any) => r.priority === 'critical')}
+                    highIssues={result.recommendations.filter((r: any) => r.priority === 'high')}
+                  />
+                )}
+
                 {/* Overall Assessment */}
                 {result.overall_assessment && (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">

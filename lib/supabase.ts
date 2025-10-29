@@ -17,7 +17,7 @@ export const supabaseAdmin = supabaseServiceKey
     })
   : supabase; // Fallback to regular client if service key not available
 
-export type PlanTier = 'basic' | 'pro' | 'enterprise';
+export type PlanTier = 'starter' | 'professional' | 'business';
 export type SubscriptionStatus = 'active' | 'canceled' | 'past_due' | 'trialing';
 export type ProductCategory = 'CONVENTIONAL_FOOD' | 'DIETARY_SUPPLEMENT' | 'ALCOHOLIC_BEVERAGE' | 'NON_ALCOHOLIC_BEVERAGE';
 
@@ -78,6 +78,7 @@ export interface Analysis {
   user_id: string;
   image_url: string;
   image_name: string;
+  label_name: string | null;
   analysis_result: any;
   compliance_status: string;
   issues_found: number;

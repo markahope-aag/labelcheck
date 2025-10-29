@@ -144,6 +144,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const imageFile = formData.get('image') as File;
     const existingSessionId = formData.get('sessionId') as string | null;
+    const labelName = formData.get('labelName') as string | null;
 
     if (!imageFile) {
       return NextResponse.json({ error: 'No image provided' }, { status: 400 });
@@ -1029,6 +1030,91 @@ Return your response as a JSON object with the following structure:
   ]
 }
 
+**PRIORITY CLASSIFICATION SYSTEM**:
+
+You MUST assign priorities according to this 4-tier system:
+
+**CRITICAL** - Clear FDA/TTB violation with serious enforcement risk:
+- Missing allergen declarations when allergen is CONFIRMED present (e.g., "whey" = milk)
+- Prohibited health/disease claims ("cures", "prevents disease", "treats")
+- Wrong panel type (Supplement Facts on food, Nutrition Facts on supplement)
+- Non-GRAS ingredients without approval (when confirmed non-GRAS)
+- Missing required warnings (alcoholic beverages government warning)
+- False or misleading net weight declaration
+→ High risk of warning letters, product recalls, fines, or market withdrawal
+→ USER IMPACT: BLOCKS "Print-Ready" status - MUST fix before printing
+
+**HIGH** - Regulatory requirement that must be fixed, but lower immediate enforcement priority:
+- Incorrect ingredient order (21 CFR 101.4 violation)
+- Missing manufacturer address details
+- Improper nutrition facts formatting (missing required nutrients)
+- Incorrect net weight units or format
+- Fortification policy violations (inappropriate vehicle)
+- Missing secondary allergen declaration (when allergen in ingredients but no "Contains:" statement)
+→ Must fix for full compliance, but lower immediate enforcement risk than CRITICAL
+→ USER IMPACT: BLOCKS "Print-Ready" status - required for compliance
+
+**MEDIUM** - Requires professional judgment OR insufficient information to determine:
+- Potentially misleading wording (requires interpretation)
+- Ambiguous structure/function claims (gray area)
+- **ALLERGEN UNCERTAINTY**: "natural flavors" may contain allergens - cannot determine from label
+- **INGREDIENT COMPOSITION UNKNOWN**: "artificial cream flavor" may contain milk - requires verification
+- Allergen cross-contact warnings ("may contain" - not legally required, industry practice)
+- Font size/legibility concerns (cannot measure accurately from image)
+- Exemption eligibility (depends on factors not visible: company size, distribution)
+- Net weight placement subjective ("prominent" is not precisely defined)
+- Old dietary ingredient uncertainty (not in database but may be pre-1994)
+→ Professional judgment or supplier verification needed
+→ USER IMPACT: Does NOT block "Print-Ready" - user can verify and proceed
+
+**LOW** - Best practices and optional improvements:
+- Voluntary nutrient declarations (not required)
+- QR codes for additional information
+- Optional claims (non-GMO, organic) when not currently claiming
+- Enhanced readability suggestions
+- Metric conversions (when not required)
+- Additional language translations
+- Sustainability/sourcing information
+→ Optional enhancements for consumer appeal
+→ USER IMPACT: Does NOT block "Print-Ready" - nice to have
+
+**PRIORITY ASSIGNMENT DECISION TREE**:
+
+When assigning recommendation priorities, follow this logic:
+
+STEP 1: Can I see a clear violation on this label?
+→ YES: Go to STEP 2
+→ NO: Go to STEP 3
+
+STEP 2: Clear violation is visible
+Ask: What is the enforcement risk?
+→ High risk (missing allergen declaration, prohibited claims, wrong panel type): CRITICAL
+→ Lower risk (formatting, ingredient order, minor omissions): HIGH
+
+STEP 3: Cannot determine or uncertain
+Ask: Why can't I determine?
+→ Insufficient information (natural flavors allergen status, can't measure font, not in database): MEDIUM
+→ Ambiguous regulation (gray area where experts might disagree): MEDIUM
+→ It's optional or best practice: LOW
+
+**CRITICAL RULE FOR "potentially_non_compliant" SECTIONS**:
+
+When a section status is "potentially_non_compliant" due to INSUFFICIENT INFORMATION (not due to a visible violation), the recommendation priority MUST be MEDIUM, never CRITICAL or HIGH.
+
+Examples:
+- Section: Allergen Labeling, Status: potentially_non_compliant
+  - "natural flavors may contain allergens" → Priority: MEDIUM (verify with supplier)
+  - "whey contains milk, no declaration" → Priority: CRITICAL (visible violation)
+
+- Section: NDI Compliance, Status: potentially_non_compliant
+  - "cordyceps not in database" → Priority: MEDIUM (verify market history)
+
+- Section: Font Size, Status: potentially_non_compliant
+  - "appears small, cannot measure" → Priority: MEDIUM (measure physical label)
+
+NEVER assign CRITICAL or HIGH priority when the issue is uncertainty or lack of information.
+ONLY assign CRITICAL or HIGH when you can SEE a clear regulatory violation on the label.
+
 **CRITICAL REQUIREMENTS**:
 1. Use conditional language for potential violations (e.g., "IF artificial cream flavor contains milk protein, THEN...")
 2. Always consider exemptions before marking nutrition labeling as non-compliant
@@ -1488,6 +1574,7 @@ Return your response as a JSON object with the following structure:
           ? `data:${mediaType};base64,${base64Data.substring(0, 100)}...`
           : `text/plain;preview,${pdfTextContent?.substring(0, 100) || ''}...`,
         image_name: imageFile.name,
+        label_name: labelName || null,
         analysis_result: analysisData,
         compliance_status: dbComplianceStatus,
         issues_found: analysisData.recommendations?.filter((r: any) => r.priority === 'critical' || r.priority === 'high')?.length || 0,

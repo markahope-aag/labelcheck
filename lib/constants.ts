@@ -1,56 +1,66 @@
 export const PLAN_LIMITS = {
-  basic: {
+  starter: {
     analyses: 10,
-    historyMonths: 0,
+    historyMonths: 3,
     features: [
       '10 label analyses per month',
-      'Basic compliance report',
-      'Email support'
+      'Full FDA compliance checking',
+      'Allergen, GRAS, NDI verification',
+      'Analysis history (3 months)',
+      'Email support',
+      'Export PDF reports'
     ]
   },
-  pro: {
+  professional: {
     analyses: 50,
-    historyMonths: 6,
+    historyMonths: 12,
     features: [
       '50 label analyses per month',
-      'Detailed compliance reports',
-      'Analysis history (6 months)',
+      'Full FDA compliance checking',
+      'Allergen, GRAS, NDI verification',
+      'Print-ready certification',
+      'Analysis history (12 months)',
       'Priority email support',
-      'Export reports as PDF'
+      'Export PDF/CSV/JSON',
+      'Team collaboration (coming soon)'
     ]
   },
-  enterprise: {
-    analyses: 999999,
+  business: {
+    analyses: 200,
     historyMonths: 999999,
     features: [
-      'Unlimited analyses',
-      'Advanced compliance reports',
+      '200 label analyses per month',
+      'Full FDA compliance checking',
+      'Allergen, GRAS, NDI verification',
+      'Print-ready certification',
       'Unlimited analysis history',
-      'Custom regulatory document uploads',
       'Priority support with phone access',
-      'API access'
+      'Advanced export options',
+      'Team collaboration',
+      'Custom regulatory uploads (coming soon)',
+      'API access (coming soon)'
     ]
   }
 } as const;
 
 export const PLAN_PRICES = {
-  basic: {
-    monthly: 29,
-    annual: 290,
-    priceId: process.env.STRIPE_PRICE_ID_BASIC,
-    stripePriceId: process.env.STRIPE_PRICE_ID_BASIC
+  starter: {
+    monthly: 49,
+    annual: 490, // 10 months pricing (2 months free)
+    priceId: process.env.STRIPE_PRICE_ID_STARTER,
+    stripePriceId: process.env.STRIPE_PRICE_ID_STARTER
   },
-  pro: {
-    monthly: 79,
-    annual: 790,
-    priceId: process.env.STRIPE_PRICE_ID_PRO,
-    stripePriceId: process.env.STRIPE_PRICE_ID_PRO
+  professional: {
+    monthly: 149,
+    annual: 1490, // 10 months pricing (2 months free)
+    priceId: process.env.STRIPE_PRICE_ID_PROFESSIONAL,
+    stripePriceId: process.env.STRIPE_PRICE_ID_PROFESSIONAL
   },
-  enterprise: {
-    monthly: 199,
-    annual: 1990,
-    priceId: process.env.STRIPE_PRICE_ID_ENTERPRISE,
-    stripePriceId: process.env.STRIPE_PRICE_ID_ENTERPRISE
+  business: {
+    monthly: 399,
+    annual: 3990, // 10 months pricing (2 months free)
+    priceId: process.env.STRIPE_PRICE_ID_BUSINESS,
+    stripePriceId: process.env.STRIPE_PRICE_ID_BUSINESS
   }
 } as const;
 
