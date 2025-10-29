@@ -19,17 +19,17 @@ export default async function Home() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-3xl mx-auto">
               <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-                AI-Powered Label
-                <span className="text-blue-600"> Compliance Checking</span>
+                Launch FDA-Compliant Products
+                <span className="text-blue-600"> Confidently</span>
               </h1>
               <p className="text-xl text-gray-600 mb-8">
-                Analyze packaging labels for FDA and USDA regulatory compliance in seconds.
-                Ensure your products meet all requirements before hitting the market.
+                Check allergens, GRAS, and claims—not just nutrition facts—in minutes.
+                From $49/month. No $240+ consultant fees.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button size="lg" className="text-lg px-8" asChild>
                   <Link href="/sign-up">
-                    Start Free Analysis
+                    Start Free Trial - 10 Analyses
                   </Link>
                 </Button>
                 <Button size="lg" variant="outline" className="text-lg px-8" asChild>
@@ -39,7 +39,7 @@ export default async function Home() {
                 </Button>
               </div>
               <p className="text-sm text-gray-500 mt-4">
-                No credit card required • Get started in 2 minutes
+                No credit card required • Start analyzing in 2 minutes
               </p>
             </div>
           </div>
@@ -106,7 +106,7 @@ export default async function Home() {
                 Why Choose LabelCheck?
               </h2>
               <p className="text-lg text-gray-600">
-                The most comprehensive label compliance solution
+                Comprehensive compliance checking beyond nutrition facts
               </p>
             </div>
 
@@ -114,9 +114,9 @@ export default async function Home() {
               <div className="flex gap-4">
                 <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-1" />
                 <div>
-                  <h3 className="font-semibold mb-2">FDA & USDA Compliance</h3>
+                  <h3 className="font-semibold mb-2">Beyond Nutrition Facts</h3>
                   <p className="text-gray-600 text-sm">
-                    Comprehensive checks against all FDA and USDA labeling requirements
+                    Unlike nutrition generators that only check nutrition panels, we verify allergens, GRAS, claims, and all FDA/USDA requirements
                   </p>
                 </div>
               </div>
@@ -124,9 +124,9 @@ export default async function Home() {
               <div className="flex gap-4">
                 <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-1" />
                 <div>
-                  <h3 className="font-semibold mb-2">Instant Results</h3>
+                  <h3 className="font-semibold mb-2">Minutes, Not Weeks</h3>
                   <p className="text-gray-600 text-sm">
-                    Get detailed compliance reports in seconds, not days or weeks
+                    Get comprehensive compliance reports in 60 seconds vs. 1-2 weeks with regulatory consultants
                   </p>
                 </div>
               </div>
@@ -134,9 +134,9 @@ export default async function Home() {
               <div className="flex gap-4">
                 <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-1" />
                 <div>
-                  <h3 className="font-semibold mb-2">Actionable Recommendations</h3>
+                  <h3 className="font-semibold mb-2">Affordable Compliance</h3>
                   <p className="text-gray-600 text-sm">
-                    Clear guidance on how to fix any compliance issues found
+                    $49-399/month vs. $240+ per consultant review. Unlimited revisions included. Break even after just 1 review
                   </p>
                 </div>
               </div>
@@ -144,9 +144,9 @@ export default async function Home() {
               <div className="flex gap-4">
                 <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-1" />
                 <div>
-                  <h3 className="font-semibold mb-2">Allergen Detection</h3>
+                  <h3 className="font-semibold mb-2">9 Major Allergens</h3>
                   <p className="text-gray-600 text-sm">
-                    Automatic checking of major allergen declarations and formatting
+                    Automatic detection of FALCPA/FASTER allergens with 400+ derivatives. Catches hidden sources like "whey" (milk) and "albumin" (eggs)
                   </p>
                 </div>
               </div>
@@ -154,9 +154,9 @@ export default async function Home() {
               <div className="flex gap-4">
                 <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-1" />
                 <div>
-                  <h3 className="font-semibold mb-2">Nutrition Facts Validation</h3>
+                  <h3 className="font-semibold mb-2">GRAS & NDI Verification</h3>
                   <p className="text-gray-600 text-sm">
-                    Verify proper formatting and completeness of nutrition information
+                    1,465 FDA-approved GRAS ingredients for foods and 1,253 NDI notifications + 2,193 grandfathered ingredients for supplements
                   </p>
                 </div>
               </div>
@@ -164,9 +164,9 @@ export default async function Home() {
               <div className="flex gap-4">
                 <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0 mt-1" />
                 <div>
-                  <h3 className="font-semibold mb-2">Analysis History</h3>
+                  <h3 className="font-semibold mb-2">Claims Analysis</h3>
                   <p className="text-gray-600 text-sm">
-                    Keep track of all your analyses and compliance improvements over time
+                    Flags prohibited health claims, misleading marketing terms, and unsubstantiated structure/function claims
                   </p>
                 </div>
               </div>
@@ -174,7 +174,143 @@ export default async function Home() {
           </div>
         </section>
 
-        <section className="py-20">
+        <section className="py-20 border-t">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                Simple, Transparent Pricing
+              </h2>
+              <p className="text-lg text-gray-600">
+                Start with 10 free analyses. No credit card required.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+              <Card className="border-2 hover:border-blue-200 transition-colors">
+                <CardContent className="pt-6">
+                  <h3 className="text-xl font-bold mb-2">Starter</h3>
+                  <div className="mb-4">
+                    <span className="text-4xl font-bold">$49</span>
+                    <span className="text-gray-600">/month</span>
+                  </div>
+                  <p className="text-gray-600 text-sm mb-6">
+                    Perfect for small brands with 3-5 SKUs
+                  </p>
+                  <ul className="space-y-3 text-sm">
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
+                      <span>10 analyses/month</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
+                      <span>Full FDA compliance checking</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
+                      <span>PDF export</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
+                      <span>Email support</span>
+                    </li>
+                  </ul>
+                </CardContent>
+              </Card>
+
+              <Card className="border-2 border-blue-600 relative">
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                  <span className="bg-blue-600 text-white px-4 py-1 rounded-full text-sm font-semibold">
+                    Most Popular
+                  </span>
+                </div>
+                <CardContent className="pt-6">
+                  <h3 className="text-xl font-bold mb-2">Professional</h3>
+                  <div className="mb-4">
+                    <span className="text-4xl font-bold">$149</span>
+                    <span className="text-gray-600">/month</span>
+                  </div>
+                  <p className="text-gray-600 text-sm mb-6">
+                    For growing brands with 10-20 SKUs
+                  </p>
+                  <ul className="space-y-3 text-sm">
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
+                      <span>50 analyses/month</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
+                      <span>Full FDA compliance checking</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
+                      <span>PDF/CSV export</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
+                      <span>Priority support</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
+                      <span>Analysis history (1 year)</span>
+                    </li>
+                  </ul>
+                </CardContent>
+              </Card>
+
+              <Card className="border-2 hover:border-blue-200 transition-colors">
+                <CardContent className="pt-6">
+                  <h3 className="text-xl font-bold mb-2">Business</h3>
+                  <div className="mb-4">
+                    <span className="text-4xl font-bold">$399</span>
+                    <span className="text-gray-600">/month</span>
+                  </div>
+                  <p className="text-gray-600 text-sm mb-6">
+                    For large brands with 50+ SKUs
+                  </p>
+                  <ul className="space-y-3 text-sm">
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
+                      <span>200 analyses/month</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
+                      <span>Full FDA compliance checking</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
+                      <span>All export formats</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
+                      <span>Phone support</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
+                      <span>Unlimited history</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
+                      <span>Team collaboration</span>
+                    </li>
+                  </ul>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="text-center mt-12">
+              <p className="text-gray-600 mb-4">
+                Save 17% with annual billing (2 months free)
+              </p>
+              <Button size="lg" asChild>
+                <Link href="/pricing">
+                  View Full Pricing Details
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        <section className="py-20 bg-gray-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">

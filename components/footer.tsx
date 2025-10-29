@@ -37,14 +37,44 @@ export function Footer() {
             <h3 className="font-semibold mb-4">Legal</h3>
             <ul className="space-y-2 text-sm text-gray-600">
               <li>
-                <Link href="/privacy" className="hover:text-gray-900">
+                <a
+                  href="https://app.termly.io/policy-viewer/policy.html?policyUUID=71960714-79e6-4422-ba9a-f9d1595701af"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-gray-900"
+                >
                   Privacy Policy
-                </Link>
+                </a>
               </li>
               <li>
-                <Link href="/terms" className="hover:text-gray-900">
-                  Terms of Service
-                </Link>
+                <a
+                  href="https://app.termly.io/policy-viewer/policy.html?policyUUID=2140caf6-2005-46c5-9e3b-36e121fefad4"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-gray-900"
+                >
+                  Terms & Conditions
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://app.termly.io/policy-viewer/policy.html?policyUUID=e688e102-2eb9-409e-84f8-32dc88cf50b7"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-gray-900"
+                >
+                  Disclaimer
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://app.termly.io/policy-viewer/policy.html?policyUUID=54f3aa13-f8c4-4bb4-af81-6923ee167baa"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-gray-900"
+                >
+                  Acceptable Use Policy
+                </a>
               </li>
             </ul>
           </div>
