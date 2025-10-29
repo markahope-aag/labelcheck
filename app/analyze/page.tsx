@@ -264,31 +264,82 @@ export default function AnalyzePage() {
   };
 
   const handleCategorySelect = async (category: ProductCategory, reason?: string) => {
-    if (!analysisData) return;
+    if (!analysisData || !selectedFile) return;
 
-    // Update the database with user's category selection
-    if (analysisData.id && category !== analysisData.product_category) {
-      try {
-        await fetch('/api/analyze/select-category', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            analysisId: analysisData.id,
-            selectedCategory: category,
-            selectionReason: reason || null,
-          }),
-        });
-      } catch (error) {
-        console.error('Error saving category selection:', error);
-        // Continue anyway - don't block user from seeing results
-      }
+    // If user selects the same category that was already detected, just show results
+    if (category === analysisData.product_category) {
+      setResult(analysisData);
+      setShowCategorySelector(false);
+      setShowComparison(false);
+      return;
     }
 
-    // Show the results with the selected category
-    setResult(analysisData);
-    setShowCategorySelector(false);
-    setShowComparison(false);
-    // DON'T clear analysisData - keep it so user can go back and try other categories
+    // User selected a different category - need to re-analyze with forced category
+    try {
+      setIsAnalyzing(true);
+      setError('');
+
+      const formData = new FormData();
+      formData.append('image', selectedFile);
+      formData.append('forcedCategory', category);
+
+      if (sessionId) {
+        formData.append('sessionId', sessionId);
+      }
+      if (labelName) {
+        formData.append('labelName', labelName);
+      }
+
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Analysis failed');
+      }
+
+      const data = await response.json();
+
+      // Save the user's category selection and reason to the database
+      if (data.id) {
+        try {
+          await fetch('/api/analyze/select-category', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              analysisId: data.id,
+              selectedCategory: category,
+              selectionReason: reason || null,
+            }),
+          });
+        } catch (error) {
+          console.error('Error saving category selection:', error);
+          // Continue anyway - don't block user from seeing results
+        }
+      }
+
+      // Show the new analysis results
+      setResult(data);
+      setShowCategorySelector(false);
+      setShowComparison(false);
+      setAnalysisData(data); // Update analysisData with new results
+
+      toast({
+        title: 'Re-analysis Complete',
+        description: `Label analyzed using ${category.replace(/_/g, ' ')} category rules`,
+      });
+    } catch (err: any) {
+      setError(err.message || 'Failed to re-analyze with selected category');
+      toast({
+        title: 'Re-analysis Failed',
+        description: err.message || 'An error occurred',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const handleChangeCategoryClick = () => {

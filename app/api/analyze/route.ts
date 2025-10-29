@@ -145,6 +145,7 @@ export async function POST(request: NextRequest) {
     const imageFile = formData.get('image') as File;
     const existingSessionId = formData.get('sessionId') as string | null;
     const labelName = formData.get('labelName') as string | null;
+    const forcedCategory = formData.get('forcedCategory') as string | null;
 
     if (!imageFile) {
       return NextResponse.json({ error: 'No image provided' }, { status: 400 });
@@ -275,6 +276,20 @@ export async function POST(request: NextRequest) {
 
 **STEP 1: PRODUCT CATEGORY CLASSIFICATION**
 
+${forcedCategory ? `
+**USER-SELECTED CATEGORY (FORCED CLASSIFICATION):**
+
+The user has manually selected the product category as: **${forcedCategory}**
+
+You MUST use this category for your analysis. Do NOT attempt to re-classify or question this selection.
+
+Set the following in your response:
+- product_category: "${forcedCategory}"
+- category_rationale: "User manually selected this category during review"
+- category_confidence: "high"
+
+Proceed directly to the detailed compliance analysis using the **${forcedCategory}** category rules.
+` : `
 Before performing the detailed compliance analysis, you MUST first determine which regulatory category this product falls into. This is CRITICAL because different product categories have entirely different regulatory requirements.
 
 **🔍 PRIMARY CLASSIFICATION RULE - CHECK PANEL TYPE FIRST:**
@@ -282,7 +297,7 @@ Before performing the detailed compliance analysis, you MUST first determine whi
 - If label has **"Nutrition Facts" panel** → NOT a supplement (classify as FOOD, BEVERAGE, or ALCOHOLIC_BEVERAGE)
 - **Panel type is the definitive regulatory indicator** - it overrides ingredients, claims, and marketing
 
-Classify the product into ONE of these four categories based on the following criteria:
+Classify the product into ONE of these four categories based on the following criteria:`}
 
 1. **DIETARY_SUPPLEMENT** - Select this ONLY if:
    - **REQUIRED:** Has a "Supplement Facts" panel (NOT "Nutrition Facts")
