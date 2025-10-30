@@ -456,6 +456,13 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
 1. **General Labeling Requirements**: Evaluate the label against basic FDA/USDA requirements
    - Statement of Identity (Name of Food): Is the product name clear, prominent, and on the principal display panel?
 
+     **IMPORTANT: Distinguishing Product Name from Marketing Taglines**
+     • The Statement of Identity is the ACTUAL NAME of the food product (e.g., "Vitamin Coffee", "Protein Bar", "Green Tea")
+     • DO NOT confuse marketing taglines, slogans, or promotional phrases with the product name
+     • Marketing taglines are often catchy phrases like "Longevity in a Cup", "Energy for Life", "Nature's Best"
+     • Look for the brand name + descriptive product type (e.g., "La Natura Vitamin Coffee", "Clif Protein Bar")
+     • If you see both a product name AND a tagline, report the actual product name, not the tagline
+
      **🚨🚨 MANDATORY MISLEADING MARKETING TERMS SCAN 🚨🚨**
      **YOU MUST CAREFULLY SCAN THE ENTIRE LABEL** - including product name, front panel text, taglines, and any promotional text - for these FDA-discouraged marketing terms. These are RED FLAGS that constitute potential violations:
 
@@ -924,7 +931,7 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
 
 Return your response as a JSON object with the following structure:
 {
-  "product_name": "Name of the product from the label",
+  "product_name": "Statement of Identity - the ACTUAL product name (e.g., 'La Natura Vitamin Coffee'), NOT marketing taglines or slogans",
   "product_type": "Type of product (e.g., 'Coffee', 'Snack Food', 'Beverage', 'Packaged Meal')",
   "product_category": "MUST be one of: DIETARY_SUPPLEMENT | ALCOHOLIC_BEVERAGE | NON_ALCOHOLIC_BEVERAGE | CONVENTIONAL_FOOD (determined from STEP 1)",
   "category_rationale": "Brief explanation of why this category was selected (2-3 sentences citing specific label elements)",
