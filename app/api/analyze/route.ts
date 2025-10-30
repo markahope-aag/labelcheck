@@ -454,6 +454,33 @@ ANALYSIS STRUCTURE REQUIREMENTS:
 Your analysis must follow this exact structure and evaluate each regulatory category:
 
 1. **General Labeling Requirements**: Evaluate the label against basic FDA/USDA requirements
+
+   **CRITICAL: Identifying the Principal Display Panel (PDP)**
+
+   Before analyzing individual requirements, you MUST identify the Principal Display Panel:
+
+   • **What is the PDP?** The part of the label/package most likely to be displayed/examined by consumers at retail (21 CFR 101.1)
+   • **For boxes/cartons:** The front panel that faces forward on the shelf
+   • **For cylindrical containers:** 40% of the circumference, as chosen by the manufacturer
+   • **For package templates (like this label):** Look for the panel with the LARGEST, most prominent product name and branding
+
+   **How to identify the PDP on this label:**
+   • Look for the panel with the product name in the LARGEST font size
+   • The PDP will have the most prominent branding and product imagery
+   • Net quantity declaration should be on or near the PDP
+   • Other panels (sides, back, top, bottom) contain supplemental information (ingredients, nutrition facts, instructions)
+
+   **Note on package templates:** If you see multiple panels (front, back, sides) in the image:
+   • The front/primary panel is where the product name appears in the largest font
+   • Side panels often contain nutrition facts and ingredient lists
+   • Back panels often contain manufacturer info and instructions
+   • Do NOT confuse side/back panel text with the primary product name
+
+   **REQUIRED on the PDP (21 CFR 101.3, 101.105):**
+   1. Statement of Identity (product name) - must be in prominent, easily legible type
+   2. Net quantity declaration - must be on the same panel as the product name (or on the information panel for small packages)
+   3. Product name must be in lines generally parallel to the base
+
    - Statement of Identity (Name of Food): Is the product name clear, prominent, and on the principal display panel?
 
      **IMPORTANT: Distinguishing Product Name from Marketing Taglines**
@@ -933,6 +960,12 @@ Return your response as a JSON object with the following structure:
 {
   "product_name": "Statement of Identity - the ACTUAL product name (e.g., 'La Natura Vitamin Coffee'), NOT marketing taglines or slogans",
   "product_type": "Type of product (e.g., 'Coffee', 'Snack Food', 'Beverage', 'Packaged Meal')",
+  "principal_display_panel": {
+    "identified": "Description of which panel you identified as the PDP (e.g., 'Front panel with large La Natura branding', 'Primary panel with product name in largest font')",
+    "product_name_location": "Where the product name appears on the PDP",
+    "product_name_font_size": "Relative size (e.g., 'Large and prominent', 'Medium', 'Small - may not meet prominence requirements')",
+    "net_quantity_location": "Where net quantity appears relative to the PDP (e.g., 'On the PDP below product name', 'On information panel adjacent to PDP')"
+  },
   "product_category": "MUST be one of: DIETARY_SUPPLEMENT | ALCOHOLIC_BEVERAGE | NON_ALCOHOLIC_BEVERAGE | CONVENTIONAL_FOOD (determined from STEP 1)",
   "category_rationale": "Brief explanation of why this category was selected (2-3 sentences citing specific label elements)",
   "category_confidence": "high|medium|low (from STEP 2)",
