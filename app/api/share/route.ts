@@ -1,6 +1,6 @@
 import { auth } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 import { randomBytes } from 'crypto';
 
 export async function POST(request: NextRequest) {
@@ -18,8 +18,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Analysis ID required' }, { status: 400 });
     }
 
-    // Get user's internal ID
-    const { data: user } = await supabase
+    // Get user's internal ID (use admin client to bypass RLS)
+    const { data: user } = await supabaseAdmin
       .from('users')
       .select('id')
       .eq('clerk_user_id', userId)
@@ -29,8 +29,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Verify the analysis belongs to the user
-    const { data: analysis } = await supabase
+    // Verify the analysis belongs to the user (use admin client to bypass RLS)
+    const { data: analysis } = await supabaseAdmin
       .from('analyses')
       .select('id, share_token')
       .eq('id', analysisId)
@@ -50,8 +50,8 @@ export async function POST(request: NextRequest) {
     // Generate a new share token
     const shareToken = randomBytes(16).toString('hex');
 
-    // Update the analysis with the share token
-    const { error: updateError } = await supabase
+    // Update the analysis with the share token (use admin client to bypass RLS)
+    const { error: updateError } = await supabaseAdmin
       .from('analyses')
       .update({ share_token: shareToken })
       .eq('id', analysisId);

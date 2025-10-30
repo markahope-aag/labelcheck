@@ -1,6 +1,6 @@
 import { auth, clerkClient } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,7 +19,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 });
     }
 
-    const { data: documents, error } = await supabase
+    // Admin routes should use supabaseAdmin to bypass RLS
+    const { data: documents, error } = await supabaseAdmin
       .from('regulatory_documents')
       .select('*')
       .order('created_at', { ascending: false });
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
-    const { data: document, error} = await supabase
+    const { data: document, error} = await supabaseAdmin
       .from('regulatory_documents')
       .insert(body)
       .select()

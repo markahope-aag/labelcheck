@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-02-24.acacia',
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
           session.subscription as string
         );
 
-        await supabase.from('subscriptions').insert({
+        await supabaseAdmin.from('subscriptions').insert({
           user_id: supabaseUserId,
           stripe_subscription_id: subscription.id,
           stripe_price_id: subscription.items.data[0].price.id,
@@ -53,13 +53,13 @@ export async function POST(request: NextRequest) {
         });
 
         const limits: Record<string, number> = {
-          basic: 10,
-          pro: 100,
-          enterprise: -1,
+          starter: 10,
+          professional: 50,
+          business: 200,
         };
 
         const currentMonth = new Date().toISOString().slice(0, 7);
-        await supabase
+        await supabaseAdmin
           .from('usage_tracking')
           .upsert(
             {
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
         const subscription = event.data.object as Stripe.Subscription;
         const customerId = subscription.customer as string;
 
-        const { data: user } = await supabase
+        const { data: user } = await supabaseAdmin
           .from('users')
           .select('id')
           .eq('stripe_customer_id', customerId)
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
           break;
         }
 
-        await supabase
+        await supabaseAdmin
           .from('subscriptions')
           .update({
             status: subscription.status,
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
         const subscription = event.data.object as Stripe.Subscription;
         const customerId = subscription.customer as string;
 
-        const { data: user } = await supabase
+        const { data: user } = await supabaseAdmin
           .from('users')
           .select('id')
           .eq('stripe_customer_id', customerId)
@@ -120,14 +120,14 @@ export async function POST(request: NextRequest) {
           break;
         }
 
-        await supabase
+        await supabaseAdmin
           .from('subscriptions')
           .update({ status: 'canceled' })
           .eq('user_id', user.id)
           .eq('stripe_subscription_id', subscription.id);
 
         const currentMonth = new Date().toISOString().slice(0, 7);
-        await supabase
+        await supabaseAdmin
           .from('usage_tracking')
           .upsert(
             {

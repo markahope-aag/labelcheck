@@ -1,7 +1,7 @@
 import { auth } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 import { PLAN_PRICES } from '@/lib/constants';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -23,7 +23,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid plan' }, { status: 400 });
     }
 
-    const { data: user } = await supabase
+    // Use admin client to bypass RLS
+    const { data: user } = await supabaseAdmin
       .from('users')
       .select('id, stripe_customer_id, email')
       .eq('clerk_user_id', userId)
@@ -46,7 +47,8 @@ export async function POST(request: NextRequest) {
 
       customerId = customer.id;
 
-      await supabase
+      // Use admin client to update user
+      await supabaseAdmin
         .from('users')
         .update({ stripe_customer_id: customerId })
         .eq('id', user.id);

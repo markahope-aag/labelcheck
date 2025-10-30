@@ -1,7 +1,7 @@
 import { auth } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 import { getSessionWithIterations, addIteration } from '@/lib/session-helpers';
 import { getActiveRegulatoryDocuments, buildRegulatoryContext } from '@/lib/regulatory-documents';
 
@@ -26,8 +26,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get user from database
-    const { data: user } = await supabase
+    // Get user from database (use admin client to bypass RLS)
+    const { data: user } = await supabaseAdmin
       .from('users')
       .select('id, email')
       .eq('clerk_user_id', userId)
