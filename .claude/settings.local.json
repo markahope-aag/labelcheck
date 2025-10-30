@@ -44,7 +44,16 @@
       "Bash(powershell -Command \"(Get-Content ''app/analysis/[id]/page.tsx'' | Measure-Object -Line).Lines\")",
       "Bash(powershell -Command \"(Get-Content ''app\\analysis\\[id]\\page.tsx'' | Measure-Object -Line).Lines\")",
       "Bash(npm run typecheck:*)",
-      "WebFetch(domain:generativeai.pub)"
+      "WebFetch(domain:generativeai.pub)",
+      "Bash(powershell -Command \"(Get-Content ''PRODUCTION_MIGRATION_CONSOLIDATED.sql'' | Measure-Object -Line).Lines\")",
+      "WebFetch(domain:www.labelcheck.io)",
+      "Read(//g/My Drive/Downloads/**)",
+      "Bash(git pull:*)",
+      "Bash(cat:*)",
+      "WebFetch(domain:labelcheck.io)",
+      "Bash(awk:*)",
+      "Bash(powershell -Command \"Get-Item lib/analysis-prompts.ts | Select-Object FullName\")",
+      "Bash(powershell:*)"
     ],
     "deny": [],
     "ask": []
