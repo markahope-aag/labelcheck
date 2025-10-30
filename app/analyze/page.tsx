@@ -1088,6 +1088,12 @@ export default function AnalyzePage() {
                                   {formatComplianceStatus(result.general_labeling.net_quantity.status)}
                                 </span>
                               </div>
+                              {result.general_labeling.net_quantity.value_found && (
+                                <div className="bg-white border border-slate-200 rounded px-3 py-2 mb-3">
+                                  <span className="text-xs font-semibold text-slate-600 uppercase">Found on Label:</span>
+                                  <p className="text-sm font-medium text-slate-900 mt-1">{result.general_labeling.net_quantity.value_found}</p>
+                                </div>
+                              )}
                               <p className="text-sm text-slate-700 mb-2">{result.general_labeling.net_quantity.details}</p>
                               <p className="text-xs text-slate-500">{result.general_labeling.net_quantity.regulation_citation}</p>
                             </div>
@@ -1104,6 +1110,12 @@ export default function AnalyzePage() {
                                   {formatComplianceStatus(result.general_labeling.manufacturer_address.status)}
                                 </span>
                               </div>
+                              {result.general_labeling.manufacturer_address.address_found && (
+                                <div className="bg-white border border-slate-200 rounded px-3 py-2 mb-3">
+                                  <span className="text-xs font-semibold text-slate-600 uppercase">Found on Label:</span>
+                                  <p className="text-sm font-medium text-slate-900 mt-1">{result.general_labeling.manufacturer_address.address_found}</p>
+                                </div>
+                              )}
                               <p className="text-sm text-slate-700 mb-2">{result.general_labeling.manufacturer_address.details}</p>
                               <p className="text-xs text-slate-500">{result.general_labeling.manufacturer_address.regulation_citation}</p>
                             </div>
@@ -1132,7 +1144,7 @@ export default function AnalyzePage() {
                           {result.ingredient_labeling.ingredients_list && result.ingredient_labeling.ingredients_list.length > 0 && (
                             <div className="mb-3">
                               <p className="text-xs font-semibold text-slate-600 mb-2">Ingredients:</p>
-                              <div className="flex flex-wrap gap-1.5">
+                              <div className="flex flex-wrap gap-2">
                                 {result.ingredient_labeling.ingredients_list.map((ingredient: string, idx: number) => {
                                   // Find GRAS status for this ingredient
                                   const grasStatus = result.gras_compliance?.detailed_results?.find(
@@ -1143,18 +1155,18 @@ export default function AnalyzePage() {
                                   return (
                                     <span
                                       key={idx}
-                                      className={`px-2 py-1 rounded text-sm ${
+                                      className={`px-3 py-1.5 rounded-full text-sm font-medium border-2 cursor-help transition-transform hover:scale-105 ${
                                         isGRAS === true
-                                          ? 'bg-green-100 text-green-800'
+                                          ? 'bg-green-50 text-green-800 border-green-300'
                                           : isGRAS === false
-                                          ? 'bg-red-100 text-red-800'
-                                          : 'bg-slate-100 text-slate-700'
+                                          ? 'bg-red-50 text-red-800 border-red-300'
+                                          : 'bg-slate-50 text-slate-700 border-slate-300'
                                       }`}
                                       title={
                                         isGRAS === true
-                                          ? `✓ GRAS Compliant${grasStatus.matchType ? ` (${grasStatus.matchType} match)` : ''}`
+                                          ? `✓ GRAS Compliant${grasStatus?.matchType ? ` (${grasStatus.matchType} match)` : ' (match type unknown)'}`
                                           : isGRAS === false
-                                          ? '✗ Not in GRAS database'
+                                          ? `✗ Not in GRAS database`
                                           : 'GRAS status unknown'
                                       }
                                     >

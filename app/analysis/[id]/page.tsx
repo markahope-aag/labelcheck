@@ -432,7 +432,7 @@ export default function AnalysisDetailPage() {
                       {result.ingredient_labeling.ingredients_list && result.ingredient_labeling.ingredients_list.length > 0 && (
                         <div className="mb-3">
                           <p className="text-xs font-semibold text-slate-600 mb-2">Ingredients:</p>
-                          <div className="flex flex-wrap gap-1.5">
+                          <div className="flex flex-wrap gap-2">
                             {result.ingredient_labeling.ingredients_list.map((ingredient: string, idx: number) => {
                               // Find GRAS status for this ingredient
                               const grasStatus = result.gras_compliance?.detailed_results?.find(
@@ -443,18 +443,18 @@ export default function AnalysisDetailPage() {
                               return (
                                 <span
                                   key={idx}
-                                  className={`px-2 py-1 rounded text-sm ${
+                                  className={`px-3 py-1.5 rounded-full text-sm font-medium border-2 cursor-help transition-transform hover:scale-105 ${
                                     isGRAS === true
-                                      ? 'bg-green-100 text-green-800'
+                                      ? 'bg-green-50 text-green-800 border-green-300'
                                       : isGRAS === false
-                                      ? 'bg-red-100 text-red-800'
-                                      : 'bg-slate-100 text-slate-700'
+                                      ? 'bg-red-50 text-red-800 border-red-300'
+                                      : 'bg-slate-50 text-slate-700 border-slate-300'
                                   }`}
                                   title={
                                     isGRAS === true
-                                      ? `✓ GRAS Compliant${grasStatus.matchType ? ` (${grasStatus.matchType} match)` : ''}`
+                                      ? `✓ GRAS Compliant${grasStatus?.matchType ? ` (${grasStatus.matchType} match)` : ' (match type unknown)'}`
                                       : isGRAS === false
-                                      ? '✗ Not in GRAS database'
+                                      ? `✗ Not in GRAS database`
                                       : 'GRAS status unknown'
                                   }
                                 >

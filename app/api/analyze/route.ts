@@ -422,7 +422,13 @@ Check if the product could reasonably be classified differently:
 For EACH viable category (detected + alternatives), provide:
 
 1. **Current Label Compliance:** Is the current label configuration compliant for this category?
+
 2. **Required Changes:** What MUST change to be compliant in this category?
+   - **CRITICAL for fortified non-nutrient-dense products (coffee, tea, candy, soda):**
+     • If staying as CONVENTIONAL_FOOD/BEVERAGE: MUST remove all added vitamins/minerals (violates FDA fortification policy 21 CFR 104)
+     • If switching to DIETARY_SUPPLEMENT: MUST change to Supplement Facts panel, add "dietary supplement" statement, add required disclaimers
+     • These are the ONLY two compliance paths - fortifying inappropriate vehicles is non-compliant
+
 3. **Allowed Claims:** What can the manufacturer say/claim in this category?
 4. **Prohibited Claims:** What is NOT allowed in this category?
 5. **Pros & Cons:** Trade-offs of choosing this category
@@ -554,6 +560,16 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
 
      **RECOMMENDATION LANGUAGE TO USE:**
      "Remove misleading marketing term '[exact term]' from [product name/front panel/claims]. This term [is not defined by FDA/implies disease treatment/is an exaggerated claim] and may constitute a misleading claim that could violate FD&C Act Section 403(a) (misbranding)."
+
+     **CRITICAL: ALWAYS CITE THE SPECIFIC REGULATION** when making recommendations about claims violations:
+     • Structure/Function Claims → "21 CFR 101.93, FD&C Act Section 403(r)(6)"
+     • Nutrient Content Claims (general) → "21 CFR 101.13"
+     • "High" claims → "21 CFR 101.54(b)"
+     • "Good source" claims → "21 CFR 101.54(c)"
+     • "Fortified"/"Enriched" claims → "21 CFR 101.54(e)"
+     • Health Claims → "21 CFR 101.14, 21 CFR 101.70-101.83"
+     • Disease/Drug Claims → "FD&C Act Section 403(a), Section 201(g)(1)"
+     • Misleading Marketing Terms → "FD&C Act Section 403(a)"
 
      **IMPORTANT**: Even if you don't see obvious compliance issues elsewhere, you MUST still scan for and flag these marketing terms. They are violations regardless of how compliant the rest of the label is.
    - Net Quantity of Contents: Is it properly declared in both US Customary and metric units? Is it in the bottom 30% of the display panel? **IMPORTANT:** Either US customary OR metric may appear first - both orders are FDA compliant (e.g., "15 oz (425 g)" OR "425 g (15 oz)" are both acceptable). The secondary measurement should appear in parentheses.
@@ -863,6 +879,16 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
    - **CHECK FOR WRONG PANEL TYPE**:
      • Does label show "Supplement Facts" panel? If YES → Status = NON-COMPLIANT, explanation = "This panel type is only for dietary supplements. Food/beverage products must use Nutrition Facts panel."
      • Does label show "Nutrition Facts" panel? If NO → Check if exemption applies (see below)
+
+   - **🚨 CRITICAL CHECK: INAPPROPRIATE FORTIFICATION OF NON-NUTRIENT-DENSE PRODUCTS** (before declaring compliant):
+     • **IF** the product has Nutrition Facts panel **AND** contains added vitamins/minerals **AND** is an inappropriate vehicle (coffee, tea, candy, soda):
+       → Status = **NON-COMPLIANT** (not "compliant")
+       → Reason: "While the Nutrition Facts panel format may be correct, using this panel type on a fortified [product type] violates FDA fortification policy (21 CFR 104)"
+       → Explanation: "This product faces a fundamental compliance issue: fortifying [product type] with vitamins/minerals is discouraged by FDA as it provides no meaningful nutritional benefit in a non-nutrient-dense product"
+       → **REQUIRED IN DETAILS**: "Two compliance options: (1) Remove added vitamins/minerals and keep Nutrition Facts panel as conventional food, OR (2) Switch to Supplement Facts panel and reclassify as dietary supplement"
+       → **TRIGGER CATEGORY VIOLATION RECOMMENDATION**: This finding means you MUST add the category violation HIGH priority recommendation to the recommendations array (see instructions in recommendations section)
+     • **This check overrides any "panel format looks correct" finding** - the panel type itself is the wrong choice for a fortified inappropriate vehicle
+
    - **EXEMPTIONS CHECK** (if Nutrition Facts panel is missing):
      • Coffee, tea, spices with no added nutrients
      • Foods with no significant nutritional value
@@ -933,10 +959,35 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
    - Fortifying products with no significant nutritional value
    - Adding nutrients solely to make misleading nutrient content claims
 
-   C. **What to Report:**
-   - If inappropriate vehicle: Mark as NON-COMPLIANT, cite FDA fortification policy
-   - Explain: "Fortifying [product type] with [nutrients] may violate FDA fortification policy which discourages fortifying non-nutrient-dense foods"
-   - Reference: 21 CFR 104 (Nutritional Quality Guidelines), FDA Fortification Policy
+   C. **What to Report for Inappropriate Fortification:**
+   - If inappropriate vehicle (coffee, tea, candy, soda): Mark as NON-COMPLIANT
+   - **CRITICAL: ALWAYS CITE "21 CFR 104, FDA Fortification Policy"** in recommendations
+   - **REQUIRED RECOMMENDATION - Provide TWO compliance options:**
+
+   **Option 1: Remove Added Vitamins/Minerals**
+   - "[Product type] is not an appropriate vehicle for fortification per FDA fortification policy (21 CFR 104)"
+   - "These added vitamins/minerals provide no meaningful nutritional benefit in a product with minimal nutritional value"
+   - "Recommendation: Remove the added vitamins and minerals to achieve compliance as a conventional food"
+   - "Regulation: 21 CFR 104, FDA Fortification Policy"
+
+   **Option 2: Reclassify as Dietary Supplement**
+   - "Alternatively, this product could be reclassified as a dietary supplement"
+   - "This would require:"
+     • Changing from Nutrition Facts to Supplement Facts panel (21 CFR 101.36)
+     • Adding the statement "dietary supplement" on the principal display panel
+     • Including the required disclaimer for any structure/function claims (21 CFR 101.93)
+     • Following DSHEA regulations for dietary supplements
+   - "This option allows the vitamins/minerals to remain but requires different labeling"
+   - "Regulation: 21 CFR 101.36, DSHEA"
+
+   **Make it clear these are the ONLY two paths to compliance** - fortifying non-nutrient-dense foods violates FDA policy
+
+   **IMPORTANT: ADD CATEGORY VIOLATION RECOMMENDATION**
+   When this violation is present, you MUST add the category violation HIGH priority recommendation (see recommendations section instructions below) that:
+   - States label is NOT compliant as presented in this category
+   - Notes user chose to review as [CATEGORY]
+   - Offers option to re-review as DIETARY_SUPPLEMENT
+   - Mentions side-by-side comparison feature
 
    **📢 CLAIMS DETECTION & VALIDATION:**
 
@@ -1035,13 +1086,15 @@ Return your response as a JSON object with the following structure:
     },
     "net_quantity": {
       "status": "compliant|non_compliant|not_applicable",
-      "details": "Detailed explanation",
-      "regulation_citation": "Specific regulation"
+      "value_found": "The exact net quantity declaration as it appears on the label (e.g., '2 oz (56g)', '12 fl oz (355 mL)', '1 lb 8 oz (680g)')",
+      "details": "Explanation of whether the net quantity is correctly displayed per 21 CFR 101.105 (placement, font size, dual declaration if required)",
+      "regulation_citation": "21 CFR 101.105"
     },
     "manufacturer_address": {
       "status": "compliant|non_compliant|not_applicable",
-      "details": "Detailed explanation",
-      "regulation_citation": "Specific regulation"
+      "address_found": "The complete manufacturer/distributor address as it appears on the label, including street, city, state, ZIP code",
+      "details": "Explanation of whether the address is correctly provided per 21 CFR 101.5 (must include street address unless listed in directory, city, state, ZIP)",
+      "regulation_citation": "21 CFR 101.5"
     }
   },
   "ingredient_labeling": {
@@ -1080,6 +1133,7 @@ Return your response as a JSON object with the following structure:
     "panel_present": true|false,
     "panel_type_correct": true|false,
     "wrong_panel_issue": "Description if Supplement Facts panel is present instead of Nutrition Facts",
+    "inappropriate_fortification_issue": "If product has Nutrition Facts panel but is fortified coffee/tea/candy/soda, explain: 'Panel type is incorrect for fortified [product]. Two options: remove vitamins/minerals OR switch to Supplement Facts panel'",
     "exemption_applicable": true|false,
     "exemption_reason": "Explanation if exemption applies (e.g., 'Coffee with no added nutrients qualifies for exemption')",
     "rounding_validation": {
@@ -1105,10 +1159,12 @@ Return your response as a JSON object with the following structure:
           "claim_text": "Exact text of claim from label",
           "compliance_issue": "Any compliance issue with this claim",
           "disclaimer_required": true|false,
-          "disclaimer_present": true|false
+          "disclaimer_present": true|false,
+          "regulation_citation": "21 CFR 101.93 (Structure/Function Claims)"
         }
       ],
-      "status": "compliant|non_compliant|not_applicable"
+      "status": "compliant|non_compliant|not_applicable",
+      "regulation_citation": "21 CFR 101.93, FD&C Act Section 403(r)(6)"
     },
     "nutrient_content_claims": {
       "claims_present": true|false,
@@ -1120,22 +1176,42 @@ Return your response as a JSON object with the following structure:
           "nutrient_level": "% DV or amount per serving",
           "required_level": "Regulatory threshold",
           "meets_definition": true|false,
-          "issue": "Any compliance issue"
+          "issue": "Any compliance issue",
+          "regulation_citation": "Cite specific CFR section for this claim type (e.g., '21 CFR 101.54(b)' for 'high' claims, '21 CFR 101.54(c)' for 'good source', '21 CFR 101.13' for general nutrient content claims)"
         }
       ],
-      "status": "compliant|non_compliant|not_applicable"
+      "status": "compliant|non_compliant|not_applicable",
+      "regulation_citation": "21 CFR 101.13, 21 CFR 101.54, 21 CFR 101.62"
     },
     "health_claims": {
       "claims_present": true|false,
-      "claims_found": ["List of health claims if any"],
-      "status": "compliant|non_compliant|not_applicable"
+      "claims_found": [
+        {
+          "claim_text": "Exact text of health claim from label",
+          "claim_type": "Type (e.g., 'authorized health claim', 'qualified health claim')",
+          "authorized": true|false,
+          "issue": "Compliance issue if any",
+          "regulation_citation": "Cite specific authorized claim regulation (e.g., '21 CFR 101.72' for calcium and osteoporosis)"
+        }
+      ],
+      "status": "compliant|non_compliant|not_applicable",
+      "regulation_citation": "21 CFR 101.14, 21 CFR 101.70-101.83 (Authorized Health Claims)"
     },
     "prohibited_claims": {
       "claims_present": true|false,
-      "claims_found": ["List of disease/cure claims that are prohibited"],
-      "status": "compliant|non_compliant|not_applicable"
+      "claims_found": [
+        {
+          "claim_text": "Exact text of prohibited claim",
+          "violation_type": "Type of violation (e.g., 'disease treatment claim', 'drug claim', 'misleading marketing term')",
+          "issue": "Why this is prohibited",
+          "regulation_citation": "FD&C Act Section 403(a) (Misbranding), FD&C Act Section 201(g)(1) (Drug Definition)"
+        }
+      ],
+      "status": "compliant|non_compliant|not_applicable",
+      "regulation_citation": "FD&C Act Section 403(a), Section 201(g)(1)"
     },
-    "details": "Overall claims compliance analysis"
+    "details": "Overall claims compliance analysis",
+    "regulation_citation": "21 CFR 101.13 (Nutrient Content Claims), 21 CFR 101.14 (Health Claims), 21 CFR 101.93 (Structure/Function Claims), FD&C Act Section 403"
   },
   "disclaimer_requirements": {
     "note": "CRITICAL for dietary supplements with structure/function claims. Include for ALL product types to assess disclaimer compliance.",
@@ -1146,7 +1222,8 @@ Return your response as a JSON object with the following structure:
     "disclaimer_prominent": true|false,
     "status": "compliant|non_compliant|potentially_non_compliant",
     "details": "Full explanation of disclaimer requirements and compliance (e.g., 'Disclaimer required for structure/function claims. Correct FDA disclaimer found prominently displayed on back panel.')",
-    "recommendations": ["Specific actions if non-compliant, e.g., 'Add FDA-required disclaimer text'"]
+    "recommendations": ["Specific actions if non-compliant, e.g., 'Add FDA-required disclaimer text'"],
+    "regulation_citation": "21 CFR 101.93(b)-(c), FD&C Act Section 403(r)(6)"
   },
   "additional_requirements": {
     "note": "Include fortification ONLY for conventional foods/beverages, NOT supplements",
@@ -1170,15 +1247,18 @@ Return your response as a JSON object with the following structure:
       {
         "requirement": "Name of requirement (e.g., 'Caffeine Disclosure', 'cGMP for supplements')",
         "status": "compliant|non_compliant|not_applicable",
-        "details": "Explanation"
+        "details": "Explanation",
+        "regulation_citation": "Cite specific regulation (e.g., '21 CFR 101.17' for caffeine disclosure, '21 CFR 111' for cGMP)"
       }
     ]
   },
   "overall_assessment": {
     "primary_compliance_status": "compliant|likely_compliant|potentially_non_compliant|non_compliant",
     "confidence_level": "high|medium|low",
-    "summary": "2-3 sentence overall summary of compliance status",
-    "key_findings": ["Finding 1", "Finding 2", "Finding 3"]
+    "summary": "2-3 sentence overall summary of compliance status. **CRITICAL: If product has fundamental category violations (e.g., fortified coffee analyzed as food), start with: 'This label is NOT compliant as presented for the [CATEGORY] category. The label has [X] violations including [list key issues].'**",
+    "key_findings": ["Finding 1", "Finding 2", "Finding 3"],
+    "category_violation_present": true|false,
+    "category_violation_explanation": "If category_violation_present=true, explain: 'User chose to review this as [CATEGORY], but product contains [added vitamins/minerals/supplements ingredients]. This creates fundamental compliance violations with [list regulations violated]'"
   },
   "compliance_table": [
     {
@@ -1195,6 +1275,22 @@ Return your response as a JSON object with the following structure:
     }
   ]
 }
+
+**CRITICAL INSTRUCTION FOR CATEGORY VIOLATIONS:**
+
+When a product has fundamental category violations (e.g., fortified coffee with Nutrition Facts panel being reviewed as conventional food), you MUST add a HIGH priority recommendation at the START of the recommendations array:
+
+{
+  "priority": "high",
+  "recommendation": "CATEGORY COMPLIANCE ISSUE: This label was reviewed as [CATEGORY] but is NOT compliant in this category due to [specific violations: inappropriate fortification / wrong panel type / prohibited ingredients]. Two options to achieve compliance: (1) Remove [vitamins/minerals/supplement ingredients] to remain as [CATEGORY], OR (2) Re-review this label as DIETARY_SUPPLEMENT category to see if it's compliant in that category. You can use the side-by-side category comparison feature to evaluate both options and choose the best path forward.",
+  "regulation": "21 CFR 104 (Fortification Policy), 21 CFR 101.36 (Supplement Facts Panel)"
+}
+
+**This recommendation makes it clear:**
+- The label is NOT compliant as currently categorized
+- User made a category choice (not AI's fault)
+- Two clear paths forward
+- How to access tools to help (re-review, side-by-side comparison)
 
 **PRIORITY CLASSIFICATION SYSTEM**:
 
