@@ -633,7 +633,7 @@ export default function AnalyzePage() {
                   <CardDescription>
                     {isRevisedMode
                       ? 'Upload your updated label to see the improvements'
-                      : 'Take a clear photo of the nutrition facts label'}
+                      : 'Upload a clear photo or PDF of your complete product label (all panels)'}
                   </CardDescription>
                 </CardHeader>
               <CardContent>
