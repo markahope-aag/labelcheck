@@ -93,13 +93,13 @@ export async function POST(request: NextRequest) {
         .maybeSingle();
 
       const limits: Record<string, number> = {
-        basic: 10,
-        pro: 100,
-        enterprise: -1,
+        starter: 10,
+        professional: 50,
+        business: 200,
       };
 
-      const planTier = subscription?.plan_tier || 'basic';
-      const limit = limits[planTier] || 5;
+      const planTier = subscription?.plan_tier || 'starter';
+      const limit = limits[planTier] || 10;
 
       const { error: usageError } = await supabase.from('usage_tracking').insert({
         user_id: user.id,
