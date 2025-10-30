@@ -1489,6 +1489,11 @@ export default function AnalyzePage() {
                                 </span>
                               </div>
                               <p className="text-sm text-slate-700">{result.additional_requirements.fortification.details}</p>
+                              {result.additional_requirements.fortification.regulation_citation && (
+                                <p className="text-xs text-slate-500 mt-2">
+                                  <span className="font-medium">Regulation:</span> {result.additional_requirements.fortification.regulation_citation}
+                                </p>
+                              )}
                             </div>
                           )}
                           {result.additional_requirements.other_requirements && result.additional_requirements.other_requirements.length > 0 && (

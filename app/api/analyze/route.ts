@@ -279,7 +279,14 @@ export async function POST(request: NextRequest) {
     // Comprehensive analysis prompt with all regulatory categories
     const analysisInstructions = `You are a labeling regulatory compliance expert. Analyze this label ${isPdf ? 'PDF document' : 'image'} and provide a comprehensive evaluation of its compliance with FDA and USDA labeling requirements based on the regulatory documents provided above.
 
-**STEP 1: PRODUCT CATEGORY CLASSIFICATION**
+**🚨 IMPORTANT: THREE-PATH ANALYSIS LOGIC 🚨**
+
+This analysis follows one of three paths:
+1. **CLEAR FOOD/BEVERAGE** → Analyze deeply as food/beverage, report compliance
+2. **CLEAR SUPPLEMENT** → Analyze deeply as supplement, report compliance
+3. **AMBIGUOUS/MESS** → Quick check of BOTH categories, show both are broken, ask user to choose
+
+**STEP 1: PRODUCT CATEGORY CLASSIFICATION & AMBIGUITY DETECTION**
 
 ${forcedCategory ? `
 **USER-SELECTED CATEGORY (FORCED CLASSIFICATION):**
@@ -292,10 +299,15 @@ Set the following in your response:
 - product_category: "${forcedCategory}"
 - category_rationale: "User manually selected this category during review"
 - category_confidence: "high"
+- is_ambiguous: false (user has made the choice)
 
-Proceed directly to the detailed compliance analysis using the **${forcedCategory}** category rules.
+Proceed directly to **PATH A: DEEP SINGLE-CATEGORY ANALYSIS** using the **${forcedCategory}** category rules.
 ` : `
-Before performing the detailed compliance analysis, you MUST first determine which regulatory category this product falls into. This is CRITICAL because different product categories have entirely different regulatory requirements.
+Before performing analysis, you MUST first determine if this is a CLEAR category or AMBIGUOUS.
+
+**🔍 QUICK CATEGORY CHECK:**
+
+First, identify the basic category indicators:
 
 **🔍 PRIMARY CLASSIFICATION RULE - CHECK PANEL TYPE FIRST:**
 - If label has **"Supplement Facts" panel** → DIETARY_SUPPLEMENT (regardless of product type)
@@ -398,41 +410,112 @@ Check if the product could reasonably be classified differently:
 - Panel type (Nutrition Facts vs Supplement Facts) **conflicts** with ingredients or marketing
 - **EXAMPLE:** Has Supplement Facts but sold as "protein bar" = **MUST BE AMBIGUOUS**
 
-**REAL-WORLD AMBIGUOUS PRODUCT EXAMPLES:**
-1. **Coffee pods with collagen + Nutrition Facts** ← THIS EXACT SCENARIO
-   - Panel says: CONVENTIONAL_FOOD or NON_ALCOHOLIC_BEVERAGE
-   - Ingredients say: DIETARY_SUPPLEMENT (has collagen, biotin, vitamins)
-   - **YOU MUST FLAG THIS AS AMBIGUOUS** with both categories as options
+**🚨 MANDATORY AMBIGUITY DETECTION 🚨**
+**YOU MUST FLAG AS AMBIGUOUS if the product has:**
+- Fortified coffee/tea with added vitamins/minerals + Nutrition Facts panel
+- Energy drinks with supplements + Nutrition Facts panel
+- Protein shakes/bars with Nutrition Facts panel (could be food OR supplement)
+- Any product with Nutrition Facts panel + supplement-like ingredients (collagen, biotin, herbs, etc.)
+- Any product with structure/function claims + Nutrition Facts panel
+
+**REAL-WORLD AMBIGUOUS PRODUCT EXAMPLES (MUST FLAG THESE):**
+1. **🚨 FORTIFIED COFFEE/TEA** ← EXTREMELY COMMON SCENARIO
+   - Has Nutrition Facts panel (indicates CONVENTIONAL_FOOD/BEVERAGE intent)
+   - Has added vitamins/minerals (collagen, biotin, B vitamins, etc.)
+   - **THIS IS ALWAYS AMBIGUOUS** - Could be food (with fortification violations) OR supplement (with panel violations)
+   - **YOU MUST FLAG THIS AS AMBIGUOUS** with both CONVENTIONAL_FOOD and DIETARY_SUPPLEMENT as options
+   - Set is_ambiguous: true, category_confidence: "medium" or "low"
 
 2. **Energy drink with vitamins + Nutrition Facts**
    - Could be NON_ALCOHOLIC_BEVERAGE or DIETARY_SUPPLEMENT
+   - **MUST FLAG AS AMBIGUOUS**
 
 3. **Protein shake with Nutrition Facts**
    - Could be CONVENTIONAL_FOOD (meal replacement) or DIETARY_SUPPLEMENT
+   - **MUST FLAG AS AMBIGUOUS**
 
-**If you flag as ambiguous (which you MUST for above scenarios), you MUST:**
-1. Set "is_ambiguous: true"
-2. Set "category_confidence" to "medium" or "low" (NEVER "high" if ambiguous)
-3. List "alternative_categories" with clear rationale for EACH option
-4. Fill out "category_options" with guidance for ALL viable categories
-5. Explain the conflict in "ambiguity_reason"
+**🚦 DECISION POINT: WHICH ANALYSIS PATH TO TAKE? 🚦**
 
-**STEP 3: CATEGORY OPTIONS & GUIDANCE** (Required if ambiguous OR confidence < HIGH)
+**IF AMBIGUOUS (any of the above triggers match):**
+→ Set is_ambiguous: true, category_confidence: "medium" or "low"
+→ **SKIP TO PATH B: QUICK DUAL-CATEGORY ANALYSIS** (instructions below)
+→ **DO NOT do deep single-category analysis**
 
-For EACH viable category (detected + alternatives), provide:
+**IF CLEAR CATEGORY (no ambiguity triggers, high confidence):**
+→ Set is_ambiguous: false, category_confidence: "high"
+→ **PROCEED TO PATH A: DEEP SINGLE-CATEGORY ANALYSIS** (standard analysis)
 
-1. **Current Label Compliance:** Is the current label configuration compliant for this category?
+═══════════════════════════════════════════════════════════════════════════════
 
-2. **Required Changes:** What MUST change to be compliant in this category?
-   - **CRITICAL for fortified non-nutrient-dense products (coffee, tea, candy, soda):**
-     • If staying as CONVENTIONAL_FOOD/BEVERAGE: MUST remove all added vitamins/minerals (violates FDA fortification policy 21 CFR 104)
-     • If switching to DIETARY_SUPPLEMENT: MUST change to Supplement Facts panel, add "dietary supplement" statement, add required disclaimers
-     • These are the ONLY two compliance paths - fortifying inappropriate vehicles is non-compliant
+**PATH B: QUICK DUAL-CATEGORY ANALYSIS (FOR AMBIGUOUS PRODUCTS ONLY)**
 
-3. **Allowed Claims:** What can the manufacturer say/claim in this category?
-4. **Prohibited Claims:** What is NOT allowed in this category?
-5. **Pros & Cons:** Trade-offs of choosing this category
-6. **Recommendation:** Which category makes most sense given current label and likely manufacturer intent?
+If you've flagged this product as ambiguous, follow these instructions instead of the deep analysis:
+
+**YOUR GOAL:** Quickly identify the key violations in BOTH potential categories, then ask the user to choose.
+
+**1. Product Information (same as normal):**
+- product_name: Extract the actual product name (not flavor)
+- product_type: Generic product type
+- product_category: Pick the PRIMARY category based on panel type (Nutrition Facts = food/beverage, Supplement Facts = supplement)
+- category_confidence: "medium" or "low"
+
+**2. Category Ambiguity Section (REQUIRED for PATH B):**
+- is_ambiguous: true
+- alternative_categories: List the viable categories (e.g., ["CONVENTIONAL_FOOD", "DIETARY_SUPPLEMENT"])
+- ambiguity_reason: "This product has [Nutrition Facts panel indicating food/beverage] but [contains supplement ingredients/makes health claims], creating regulatory conflicts in both categories."
+- label_conflicts: Array of specific conflicts:
+  [
+    {
+      "severity": "critical",
+      "conflict": "As a food/beverage: Inappropriate fortification violates FDA fortification policy",
+      "current_category": "CONVENTIONAL_FOOD",
+      "violation": "21 CFR 104 - fortifying non-nutrient-dense products (coffee/tea/candy/soda) is discouraged"
+    },
+    {
+      "severity": "critical",
+      "conflict": "As a supplement: Wrong panel type and missing required statements",
+      "current_category": "DIETARY_SUPPLEMENT",
+      "violation": "21 CFR 101.36 - requires Supplement Facts panel, 'dietary supplement' statement, and disclaimer"
+    }
+  ]
+
+**3. Category Options (REQUIRED for PATH B):**
+For EACH category listed in alternative_categories, provide:
+- current_label_compliant: false (ambiguous products are broken in both categories)
+- required_changes: Array of 3-5 KEY changes needed (not exhaustive, just main ones)
+- pros: Why this category might be advantageous
+- cons: Downsides or challenges of this category
+- allowed_claims: High-level summary of what's permitted
+- prohibited_claims: Key restrictions
+- regulatory_requirements: Main regulations that apply
+
+**4. Minimal Compliance Analysis (PATH B ONLY):**
+Since the user hasn't chosen a category yet, provide MINIMAL analysis:
+- general_labeling: Just check if product name and net quantity are visible
+- overall_assessment:
+  - primary_compliance_status: "non_compliant"
+  - summary: "This label is not compliant as either a [CATEGORY 1] or a [CATEGORY 2]. As a [CATEGORY 1], it violates [KEY VIOLATION]. As a [CATEGORY 2], it violates [KEY VIOLATION]. Please select which category you want to market this product as, then we can provide detailed compliance guidance for that category."
+  - key_findings: ["Label configuration doesn't match either category cleanly", "Requires category selection before detailed analysis"]
+
+**5. Recommendations (PATH B ONLY):**
+Add ONE critical recommendation:
+{
+  "priority": "critical",
+  "recommendation": "SELECT PRODUCT CATEGORY: This label cannot be analyzed for detailed compliance until you choose whether to market this as a [CATEGORY 1] or [CATEGORY 2]. Both categories have violations that must be fixed. Use the category comparison button below to see detailed requirements for each option, then select your preferred category to receive a full compliance analysis.",
+  "regulation": "FDA/USDA category-specific regulations"
+}
+
+**6. Skip all other sections** for PATH B (no ingredient analysis, no claims analysis, no nutrition panel analysis)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+**PATH A: DEEP SINGLE-CATEGORY ANALYSIS (FOR CLEAR PRODUCTS ONLY)**
+
+If the category is CLEAR (not ambiguous, high confidence), proceed with full detailed analysis:
+
+**STEP 2: DETAILED COMPLIANCE ANALYSIS FOR CLEAR CATEGORY**
+
+You are now analyzing a CLEAR, UNAMBIGUOUS product. Perform comprehensive regulatory analysis.
 
 ${isPdf ? `IMPORTANT INSTRUCTIONS FOR READING THE PDF:
 This is a PDF of a label design mockup. READ THE TEXT from this PDF carefully and analyze it for compliance. The PDF may have complex design elements:
@@ -514,12 +597,22 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
 
    - Statement of Identity (Name of Food): Is the product name clear, prominent, and on the principal display panel?
 
-     **IMPORTANT: Distinguishing Product Name from Marketing Taglines**
+     **IMPORTANT: Distinguishing Product Name from Marketing Taglines and Flavor Descriptors**
      • The Statement of Identity is the ACTUAL NAME of the food product (e.g., "Vitamin Coffee", "Protein Bar", "Green Tea")
      • DO NOT confuse marketing taglines, slogans, or promotional phrases with the product name
      • Marketing taglines are often catchy phrases like "Longevity in a Cup", "Energy for Life", "Nature's Best"
      • Look for the brand name + descriptive product type (e.g., "La Natura Vitamin Coffee", "Clif Protein Bar")
      • If you see both a product name AND a tagline, report the actual product name, not the tagline
+
+     **🚨 CRITICAL: FLAVOR DESCRIPTORS ARE NOT THE PRODUCT NAME 🚨**
+     • Many labels show: [PRODUCT NAME] - [FLAVOR/VARIETY]
+     • Examples:
+       - "Vitamin Coffee - Espresso Crema" → Product name is "Vitamin Coffee", NOT "Espresso Crema"
+       - "Protein Bar - Chocolate Chip" → Product name is "Protein Bar", NOT "Chocolate Chip"
+       - "Energy Drink - Berry Blast" → Product name is "Energy Drink", NOT "Berry Blast"
+     • Flavor descriptors (Espresso Crema, Chocolate Chip, Berry Blast, etc.) are SUBTITLES, not the product name
+     • The product name is the GENERIC product type, the flavor is just a variety within that product line
+     • ALWAYS report the main product name, NOT the flavor/variety subtitle
 
      **🚨🚨 MANDATORY MISLEADING MARKETING TERMS SCAN 🚨🚨**
      **YOU MUST CAREFULLY SCAN THE ENTIRE LABEL** - including product name, front panel text, taglines, and any promotional text - for these FDA-discouraged marketing terms. These are RED FLAGS that constitute potential violations:
@@ -883,10 +976,11 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
    - **🚨 CRITICAL CHECK: INAPPROPRIATE FORTIFICATION OF NON-NUTRIENT-DENSE PRODUCTS** (before declaring compliant):
      • **IF** the product has Nutrition Facts panel **AND** contains added vitamins/minerals **AND** is an inappropriate vehicle (coffee, tea, candy, soda):
        → Status = **NON-COMPLIANT** (not "compliant")
-       → Reason: "While the Nutrition Facts panel format may be correct, using this panel type on a fortified [product type] violates FDA fortification policy (21 CFR 104)"
+       → Reason: "This label is NOT COMPLIANT as a [food/beverage] due to inappropriate fortification per FDA fortification policy (21 CFR 104)"
        → Explanation: "This product faces a fundamental compliance issue: fortifying [product type] with vitamins/minerals is discouraged by FDA as it provides no meaningful nutritional benefit in a non-nutrient-dense product"
-       → **REQUIRED IN DETAILS**: "Two compliance options: (1) Remove added vitamins/minerals and keep Nutrition Facts panel as conventional food, OR (2) Switch to Supplement Facts panel and reclassify as dietary supplement"
-       → **TRIGGER CATEGORY VIOLATION RECOMMENDATION**: This finding means you MUST add the category violation HIGH priority recommendation to the recommendations array (see instructions in recommendations section)
+       → **REQUIRED IN DETAILS**: "You have two compliance options: OPTION 1: Remove all added vitamins/minerals and keep Nutrition Facts panel as conventional food. OPTION 2: Replace Nutrition Facts with Supplement Facts panel and reclassify as dietary supplement (requires 'dietary supplement' statement and disclaimer per 21 CFR 101.93). See side-by-side comparison feature to evaluate both options."
+       → **TRIGGER CATEGORY VIOLATION RECOMMENDATION**: This finding means you MUST add a HIGH priority recommendation with the full template from the fortification policy section that presents BOTH options clearly and mentions the comparison feature
+       → **DO NOT only suggest reclassification - present BOTH options equally**
      • **This check overrides any "panel format looks correct" finding** - the panel type itself is the wrong choice for a fortified inappropriate vehicle
 
    - **EXEMPTIONS CHECK** (if Nutrition Facts panel is missing):
@@ -962,32 +1056,40 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
    C. **What to Report for Inappropriate Fortification:**
    - If inappropriate vehicle (coffee, tea, candy, soda): Mark as NON-COMPLIANT
    - **CRITICAL: ALWAYS CITE "21 CFR 104, FDA Fortification Policy"** in recommendations
-   - **REQUIRED RECOMMENDATION - Provide TWO compliance options:**
 
-   **Option 1: Remove Added Vitamins/Minerals**
-   - "[Product type] is not an appropriate vehicle for fortification per FDA fortification policy (21 CFR 104)"
-   - "These added vitamins/minerals provide no meaningful nutritional benefit in a product with minimal nutritional value"
-   - "Recommendation: Remove the added vitamins and minerals to achieve compliance as a conventional food"
-   - "Regulation: 21 CFR 104, FDA Fortification Policy"
+   **🚨 MANDATORY: PRESENT BOTH COMPLIANCE OPTIONS 🚨**
+   When fortification policy is violated, you MUST present BOTH options equally. DO NOT only suggest reclassification.
 
-   **Option 2: Reclassify as Dietary Supplement**
-   - "Alternatively, this product could be reclassified as a dietary supplement"
-   - "This would require:"
-     • Changing from Nutrition Facts to Supplement Facts panel (21 CFR 101.36)
-     • Adding the statement "dietary supplement" on the principal display panel
-     • Including the required disclaimer for any structure/function claims (21 CFR 101.93)
-     • Following DSHEA regulations for dietary supplements
-   - "This option allows the vitamins/minerals to remain but requires different labeling"
-   - "Regulation: 21 CFR 101.36, DSHEA"
+   **RECOMMENDATION WORDING TEMPLATE (USE THIS EXACT STRUCTURE):**
 
-   **Make it clear these are the ONLY two paths to compliance** - fortifying non-nutrient-dense foods violates FDA policy
+   "This label is NOT COMPLIANT as a [CONVENTIONAL_FOOD/BEVERAGE] due to inappropriate fortification. [Product type] is not an appropriate vehicle for adding vitamins/minerals per FDA fortification policy (21 CFR 104). You have two compliance options:
+
+   OPTION 1: Remove fortification and remain as food/beverage
+   • Remove all added vitamins/minerals from the formula
+   • Keep the Nutrition Facts panel
+   • Continue marketing as a [food/beverage product]
+   • This maintains your current product category with simpler regulations
+
+   OPTION 2: Reclassify as dietary supplement
+   • Replace Nutrition Facts panel with Supplement Facts panel (21 CFR 101.36)
+   • Add 'dietary supplement' statement on principal display panel
+   • Include required disclaimer for structure/function claims (21 CFR 101.93)
+   • Follow all DSHEA supplement regulations
+   • This allows vitamins/minerals to remain but requires different labeling
+
+   To compare these options side-by-side and see detailed requirements for each category, use the category comparison feature in the Continue Improving section below.
+
+   Regulation: 21 CFR 104 (FDA Fortification Policy), 21 CFR 101.36 (Supplement Facts)"
+
+   **DO NOT say "Replace Nutrition Facts with Supplement Facts to reclassify" without also presenting Option 1**
+   **DO NOT present only the reclassification option - BOTH options must be clearly explained**
 
    **IMPORTANT: ADD CATEGORY VIOLATION RECOMMENDATION**
-   When this violation is present, you MUST add the category violation HIGH priority recommendation (see recommendations section instructions below) that:
-   - States label is NOT compliant as presented in this category
-   - Notes user chose to review as [CATEGORY]
-   - Offers option to re-review as DIETARY_SUPPLEMENT
-   - Mentions side-by-side comparison feature
+   When this violation is present, you MUST add a HIGH priority recommendation with the exact wording template above that:
+   - States label is NOT COMPLIANT as presented in this category (not just "could be reclassified")
+   - Presents BOTH options (remove fortification OR reclassify) with equal weight
+   - Mentions the side-by-side comparison feature for detailed comparison
+   - Provides specific action steps for each option
 
    **📢 CLAIMS DETECTION & VALIDATION:**
 
@@ -1031,6 +1133,12 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
    - Product-Specific Requirements: Based on product type (beverage, coffee, meat, etc.)
 
 6. **Summary Compliance Table**: Provide a structured summary
+
+**JSON RESPONSE STRUCTURE:**
+
+**IMPORTANT:** The response structure differs based on which path you took:
+- **PATH A (Clear category):** Return FULL structure with all sections below
+- **PATH B (Ambiguous):** Return MINIMAL structure - only include: product_name, product_type, product_category, category_confidence, category_ambiguity, category_options, general_labeling, overall_assessment, recommendations
 
 Return your response as a JSON object with the following structure:
 {
@@ -1820,6 +1928,36 @@ ONLY assign CRITICAL or HIGH when you can SEE a clear regulatory violation on th
       recommendation: 'Continue monitoring for compliance with any new regulations or labeling requirements. FDA regulations and guidance documents are updated periodically, and maintaining ongoing awareness of regulatory changes is essential for continued compliance.',
       regulation: 'General FDA guidelines for product labeling',
     });
+
+    // ENFORCE CONSISTENT COMPLIANCE STATUS BASED ON RECOMMENDATION PRIORITIES
+    // This ensures the overall status matches the severity of issues found
+    if (analysisData.recommendations && analysisData.recommendations.length > 0 && analysisData.overall_assessment) {
+      const criticalCount = analysisData.recommendations.filter((r: any) => r.priority === 'critical').length;
+      const highCount = analysisData.recommendations.filter((r: any) => r.priority === 'high').length;
+      const mediumCount = analysisData.recommendations.filter((r: any) => r.priority === 'medium').length;
+      const lowCount = analysisData.recommendations.filter((r: any) => r.priority === 'low').length;
+
+      // Override primary_compliance_status to ensure consistency
+      if (criticalCount > 0 || highCount > 0) {
+        // Blocking issues present → Must be non-compliant
+        analysisData.overall_assessment.primary_compliance_status = 'non_compliant';
+        console.log(`Enforced non_compliant status due to ${criticalCount} critical and ${highCount} high priority issues`);
+      } else if (mediumCount > 0) {
+        // Only medium issues → Potentially non-compliant (requires verification)
+        if (analysisData.overall_assessment.primary_compliance_status === 'compliant' ||
+            analysisData.overall_assessment.primary_compliance_status === 'likely_compliant') {
+          analysisData.overall_assessment.primary_compliance_status = 'potentially_non_compliant';
+          console.log(`Enforced potentially_non_compliant status due to ${mediumCount} medium priority issues`);
+        }
+      } else if (lowCount > 0 && (criticalCount + highCount + mediumCount === 0)) {
+        // Only low priority suggestions → Likely compliant
+        if (analysisData.overall_assessment.primary_compliance_status === 'non_compliant' ||
+            analysisData.overall_assessment.primary_compliance_status === 'potentially_non_compliant') {
+          analysisData.overall_assessment.primary_compliance_status = 'likely_compliant';
+          console.log(`Enforced likely_compliant status - only ${lowCount} low priority suggestions`);
+        }
+      }
+    }
 
     // Determine compliance status from the new analysis structure
     const complianceStatus = analysisData.overall_assessment?.primary_compliance_status || 'unknown';
