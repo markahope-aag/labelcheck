@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { ProductCategory } from '@/lib/supabase';
-import { AlertTriangle, CheckCircle2, XCircle, ChevronDown, ChevronUp, Info } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, XCircle, Info } from 'lucide-react';
 
 interface CategoryOption {
   category: ProductCategory;
@@ -65,17 +65,19 @@ export default function CategorySelector({
   onSelect,
   onCompare,
 }: CategorySelectorProps) {
-  const [expandedCategory, setExpandedCategory] = useState<ProductCategory | null>(aiCategory);
   const [showCustomReason, setShowCustomReason] = useState(false);
   const [customReason, setCustomReason] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<ProductCategory | null>(null);
 
   const hasAlternatives = alternatives && alternatives.length > 0;
   const hasConflicts = labelConflicts && labelConflicts.length > 0;
 
-  const getCategoryColor = (category: ProductCategory, isSelected: boolean) => {
-    if (isSelected) return 'border-blue-500 bg-blue-50';
+  const getCategoryColor = (category: ProductCategory) => {
     if (recommendation && recommendation.suggested_category === category) {
       return 'border-green-500 bg-green-50';
+    }
+    if (category === aiCategory) {
+      return 'border-blue-500 bg-blue-50';
     }
     return 'border-gray-300 bg-white';
   };
@@ -185,13 +187,10 @@ export default function CategorySelector({
         {categoryOptionsData.map((option) => (
           <div
             key={option.category}
-            className={`border-2 rounded-lg p-4 transition-all ${getCategoryColor(option.category, expandedCategory === option.category)}`}
+            className={`border-2 rounded-lg p-4 transition-all ${getCategoryColor(option.category)}`}
           >
             {/* Category Header */}
-            <div
-              className="flex items-center justify-between cursor-pointer"
-              onClick={() => setExpandedCategory(expandedCategory === option.category ? null : option.category)}
-            >
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <input
                   type="radio"
@@ -212,17 +211,11 @@ export default function CategorySelector({
                 {recommendation && recommendation.suggested_category === option.category && (
                   <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Recommended</span>
                 )}
-                {expandedCategory === option.category ? (
-                  <ChevronUp className="w-5 h-5 text-gray-400" />
-                ) : (
-                  <ChevronDown className="w-5 h-5 text-gray-400" />
-                )}
               </div>
             </div>
 
-            {/* Expanded Details */}
-            {expandedCategory === option.category && (
-              <div className="mt-4 pt-4 border-t border-gray-200 space-y-4">
+            {/* Details - Always Visible */}
+            <div className="mt-4 pt-4 border-t border-gray-200 space-y-4">
                 {/* Compliance Status */}
                 <div>
                   <span className="text-sm font-medium text-gray-700">Current Label Status:</span>
@@ -302,6 +295,7 @@ export default function CategorySelector({
                 <button
                   onClick={() => {
                     if (option.category !== aiCategory) {
+                      setSelectedCategory(option.category);
                       setShowCustomReason(true);
                     } else {
                       onSelect(option.category);
@@ -312,7 +306,6 @@ export default function CategorySelector({
                   Select {CATEGORY_DISPLAY_NAMES[option.category]}
                 </button>
               </div>
-            )}
           </div>
         ))}
       </div>
@@ -355,6 +348,7 @@ export default function CategorySelector({
                 onClick={() => {
                   setShowCustomReason(false);
                   setCustomReason('');
+                  setSelectedCategory(null);
                 }}
                 className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-4 rounded"
               >
@@ -362,12 +356,12 @@ export default function CategorySelector({
               </button>
               <button
                 onClick={() => {
-                  const selectedCategory = categoryOptionsData.find(opt => expandedCategory === opt.category)?.category;
                   if (selectedCategory) {
                     onSelect(selectedCategory, customReason || undefined);
                   }
                   setShowCustomReason(false);
                   setCustomReason('');
+                  setSelectedCategory(null);
                 }}
                 className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded"
               >
