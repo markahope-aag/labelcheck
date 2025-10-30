@@ -24,7 +24,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    let user = await supabase
+    // Use admin client to bypass RLS when looking up user
+    let user = await supabaseAdmin
       .from('users')
       .select('id, email')
       .eq('clerk_user_id', userId)
