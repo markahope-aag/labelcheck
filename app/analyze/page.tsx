@@ -1662,7 +1662,7 @@ export default function AnalyzePage() {
                         <h3 className="text-lg font-semibold text-slate-900 mb-4">
                           Continue Improving This Analysis
                         </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <button
                             onClick={() => setIsChatOpen(true)}
                             className="flex items-center gap-3 p-4 bg-white border-2 border-blue-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-all"
@@ -1707,6 +1707,24 @@ export default function AnalyzePage() {
                               <div className="text-xs text-slate-600">Test your improvements</div>
                             </div>
                           </button>
+
+                          {(result.category_ambiguity?.is_ambiguous || result.overall_assessment?.category_violation_present) && (
+                            <button
+                              onClick={() => setShowComparison(true)}
+                              className="flex items-center gap-3 p-4 bg-white border-2 border-amber-200 rounded-lg hover:border-amber-400 hover:bg-amber-50 transition-all"
+                            >
+                              <div className="p-2 bg-amber-100 rounded">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                                  <path d="M12 3v18" strokeDasharray="2 2" />
+                                </svg>
+                              </div>
+                              <div className="text-left">
+                                <div className="font-semibold text-slate-900">Compare Categories</div>
+                                <div className="text-xs text-slate-600">View side-by-side options</div>
+                              </div>
+                            </button>
+                          )}
                         </div>
                       </div>
                     )}
