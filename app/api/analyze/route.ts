@@ -78,7 +78,8 @@ export async function POST(request: NextRequest) {
 
     const currentMonth = new Date().toISOString().slice(0, 7);
 
-    const { data: usage } = await supabase
+    // Use admin client for usage tracking (bypass RLS)
+    const { data: usage } = await supabaseAdmin
       .from('usage_tracking')
       .select('*')
       .eq('user_id', user.id)
@@ -86,7 +87,8 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     if (!usage) {
-      const { data: subscription } = await supabase
+      // Use admin client for subscription lookup (bypass RLS)
+      const { data: subscription } = await supabaseAdmin
         .from('subscriptions')
         .select('plan_tier, status')
         .eq('user_id', user.id)
@@ -102,7 +104,8 @@ export async function POST(request: NextRequest) {
       const planTier = subscription?.plan_tier || 'starter';
       const limit = limits[planTier] || 10;
 
-      const { error: usageError } = await supabase.from('usage_tracking').insert({
+      // Use admin client to create usage tracking (bypass RLS)
+      const { error: usageError } = await supabaseAdmin.from('usage_tracking').insert({
         user_id: user.id,
         month: currentMonth,
         analyses_used: 0,
@@ -114,7 +117,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const { data: currentUsage } = await supabase
+    // Use admin client for usage lookup (bypass RLS)
+    const { data: currentUsage } = await supabaseAdmin
       .from('usage_tracking')
       .select('*')
       .eq('user_id', user.id)
