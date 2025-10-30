@@ -470,11 +470,36 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
    • Net quantity declaration should be on or near the PDP
    • Other panels (sides, back, top, bottom) contain supplemental information (ingredients, nutrition facts, instructions)
 
-   **Note on package templates:** If you see multiple panels (front, back, sides) in the image:
-   • The front/primary panel is where the product name appears in the largest font
-   • Side panels often contain nutrition facts and ingredient lists
-   • Back panels often contain manufacturer info and instructions
-   • Do NOT confuse side/back panel text with the primary product name
+   **CRITICAL: Analyzing unfolded box templates**
+
+   If you see a flat layout with multiple panels, this is an UNFOLDED BOX. Use contextual clues to identify the PDP:
+
+   **Panel Location Indicators:**
+   • **PDP (Front Panel):** Has the LARGEST product name font + net contents/weight on or adjacent to it
+   • **Side Panels:** Contain Nutrition Facts panel, ingredient list (smaller text, dense information)
+   • **Back Panel:** Contains manufacturer address, distributor info, contact details, instructions
+   • **Top/Bottom Panels:** Often have small text, barcodes, or fold markings
+
+   **Step-by-step process for unfolded boxes:**
+   1. Scan ALL panels and note where these elements appear:
+      - Product name in largest font = likely PDP
+      - Net quantity/weight declaration = on or near PDP
+      - Nutrition Facts panel = NOT on PDP (side/back panel)
+      - Manufacturer address = NOT on PDP (back panel)
+      - Ingredient list = NOT on PDP (side/back panel)
+      - Barcode = NOT on PDP (back/side panel)
+
+   2. The panel with the largest product name AND the net quantity is the PDP
+
+   3. Use ONLY the product name from that PDP panel - ignore any similar text on other panels
+
+   4. Do NOT confuse descriptive text on side panels (like "Superfood Café") with the actual Statement of Identity on the PDP
+
+   **Example:** La Natura Coffee box template:
+   - PDP: Large "La Natura" branding + "Vitamin Coffee" + net weight "2 oz (56g)"
+   - Side panel: Nutrition Facts + ingredients list
+   - Back panel: Manufacturer address "La Natura USA, Inc." + instructions
+   - The correct product name is from the PDP, NOT from side panel descriptive text
 
    **REQUIRED on the PDP (21 CFR 101.3, 101.105):**
    1. Statement of Identity (product name) - must be in prominent, easily legible type
