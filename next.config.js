@@ -40,15 +40,15 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://challenges.cloudflare.com https://*.clerk.accounts.dev https://clerk.com",
-              "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https://*.supabase.co https://img.clerk.com",
-              "font-src 'self' data:",
-              "connect-src 'self' https://*.supabase.co https://*.clerk.accounts.dev https://clerk.com https://api.stripe.com https://api.openai.com wss://*.supabase.co",
-              "frame-src 'self' https://challenges.cloudflare.com https://js.stripe.com",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https: http:",
+              "style-src 'self' 'unsafe-inline' https:",
+              "img-src 'self' data: blob: https: http:",
+              "font-src 'self' data: https:",
+              "connect-src 'self' https: http: wss: ws:",
+              "frame-src 'self' https:",
               "object-src 'none'",
               "base-uri 'self'",
-              "form-action 'self'",
+              "form-action 'self' https:",
               "frame-ancestors 'self'",
               "upgrade-insecure-requests"
             ].join('; ')
