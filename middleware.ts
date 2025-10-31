@@ -1,6 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { generateNonce, buildCSP } from '@/lib/csp';
 
 const isPublicRoute = createRouteMatcher([
   '/',
@@ -19,12 +20,18 @@ const isAdminRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
+  // Generate nonce for CSP
+  const nonce = generateNonce();
+
   // Protect admin routes - require System Admin role from database
   if (isAdminRoute(request)) {
     const { userId } = await auth();
 
     if (!userId) {
-      return NextResponse.redirect(new URL('/sign-in', request.url));
+      const response = NextResponse.redirect(new URL('/sign-in', request.url));
+      response.headers.set('Content-Security-Policy', buildCSP(nonce));
+      response.headers.set('X-Nonce', nonce);
+      return response;
     }
 
     // Check if user is system admin in database
@@ -40,7 +47,10 @@ export default clerkMiddleware(async (auth, request) => {
       .single();
 
     if (!user?.is_system_admin) {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
+      const response = NextResponse.redirect(new URL('/dashboard', request.url));
+      response.headers.set('Content-Security-Policy', buildCSP(nonce));
+      response.headers.set('X-Nonce', nonce);
+      return response;
     }
   }
 
@@ -48,6 +58,13 @@ export default clerkMiddleware(async (auth, request) => {
   if (!isPublicRoute(request)) {
     await auth.protect();
   }
+
+  // Create response and set CSP headers
+  const response = NextResponse.next();
+  response.headers.set('Content-Security-Policy', buildCSP(nonce));
+  response.headers.set('X-Nonce', nonce);
+
+  return response;
 });
 
 export const config = {
