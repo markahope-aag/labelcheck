@@ -31,7 +31,7 @@ export default clerkMiddleware(async (auth, request) => {
       const response = NextResponse.redirect(new URL('/sign-in', request.url));
       response.headers.set('Content-Security-Policy', buildCSP(nonce));
       response.headers.set('X-Nonce', nonce);
-      return response;
+      return secureCookies(response);
     }
 
     // Check if user is system admin in database
@@ -50,7 +50,7 @@ export default clerkMiddleware(async (auth, request) => {
       const response = NextResponse.redirect(new URL('/dashboard', request.url));
       response.headers.set('Content-Security-Policy', buildCSP(nonce));
       response.headers.set('X-Nonce', nonce);
-      return response;
+      return secureCookies(response);
     }
   }
 
@@ -64,36 +64,46 @@ export default clerkMiddleware(async (auth, request) => {
   response.headers.set('Content-Security-Policy', buildCSP(nonce));
   response.headers.set('X-Nonce', nonce);
 
-  // Ensure all cookies have Secure, HttpOnly, and SameSite flags
-  // This fixes the Mozilla Observatory warning about missing Secure flags
-  const setCookieHeader = response.headers.get('set-cookie');
-  if (setCookieHeader) {
-    const cookies = setCookieHeader.split(',').map(cookie => {
-      let modifiedCookie = cookie.trim();
+  return secureCookies(response);
+});
 
-      // Add Secure flag if not present (for HTTPS)
-      if (!modifiedCookie.includes('Secure')) {
-        modifiedCookie += '; Secure';
+/**
+ * Ensures all cookies have Secure, HttpOnly, and SameSite flags
+ * Works around Clerk test mode not setting Secure flag
+ */
+function secureCookies(response: NextResponse): NextResponse {
+  // Get all Set-Cookie headers (there can be multiple)
+  const cookieHeaders = response.headers.getSetCookie?.() || [];
+
+  if (cookieHeaders.length > 0) {
+    // Delete existing Set-Cookie headers
+    response.headers.delete('set-cookie');
+
+    // Add each cookie back with security flags
+    for (const cookie of cookieHeaders) {
+      let secureCookie = cookie;
+
+      // Add Secure flag if not present
+      if (!secureCookie.toLowerCase().includes('secure')) {
+        secureCookie += '; Secure';
       }
 
-      // Add HttpOnly if not present (prevent XSS)
-      if (!modifiedCookie.includes('HttpOnly')) {
-        modifiedCookie += '; HttpOnly';
+      // Add HttpOnly flag if not present (unless it's a cookie that needs JS access)
+      if (!secureCookie.toLowerCase().includes('httponly') && !secureCookie.startsWith('__clerk_db')) {
+        secureCookie += '; HttpOnly';
       }
 
-      // Add SameSite if not present (prevent CSRF)
-      if (!modifiedCookie.includes('SameSite')) {
-        modifiedCookie += '; SameSite=Lax';
+      // Add SameSite if not present
+      if (!secureCookie.toLowerCase().includes('samesite')) {
+        secureCookie += '; SameSite=Lax';
       }
 
-      return modifiedCookie;
-    });
-
-    response.headers.set('set-cookie', cookies.join(', '));
+      response.headers.append('set-cookie', secureCookie);
+    }
   }
 
   return response;
-});
+}
 
 export const config = {
   matcher: [
