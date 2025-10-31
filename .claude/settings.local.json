@@ -53,7 +53,8 @@
       "WebFetch(domain:labelcheck.io)",
       "Bash(awk:*)",
       "Bash(powershell -Command \"Get-Item lib/analysis-prompts.ts | Select-Object FullName\")",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "Bash(supabase --version:*)"
     ],
     "deny": [],
     "ask": []
