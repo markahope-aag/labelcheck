@@ -78,3 +78,48 @@ export async function isUserAdmin(userId: string): Promise<boolean> {
 
   return user?.is_system_admin === true;
 }
+
+/**
+ * Get authenticated user from database
+ *
+ * Common pattern for protected routes that need user data:
+ * 1. Verify Clerk authentication
+ * 2. Lookup user in database
+ * 3. Return user data or throw appropriate error
+ *
+ * @returns User data from database
+ * @throws Error with appropriate message for 401 or 404
+ */
+export async function getAuthenticatedUser(): Promise<{
+  userId: string;
+  userInternalId: string;
+  userEmail: string;
+}> {
+  const { userId } = await auth();
+
+  if (!userId) {
+    throw new Error('Unauthorized');
+  }
+
+  // Get user from database
+  const { data: user, error } = await supabaseAdmin
+    .from('users')
+    .select('id, email')
+    .eq('clerk_user_id', userId)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error fetching user:', error);
+    throw new Error('Failed to fetch user data');
+  }
+
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  return {
+    userId,
+    userInternalId: user.id,
+    userEmail: user.email,
+  };
+}

@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { getAuthenticatedUser } from '@/lib/auth-helpers';
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Get authenticated user (throws if not authenticated or not found)
+    const { userInternalId, userEmail } = await getAuthenticatedUser();
+
+    // Create userData object for compatibility with existing code
+    const userData = { id: userInternalId, email: userEmail };
 
     const { name, slug } = await req.json();
 
@@ -15,20 +16,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: 'Organization name and slug are required' },
         { status: 400 }
-      );
-    }
-
-    // Get user from database
-    const { data: userData, error: userError } = await supabaseAdmin
-      .from('users')
-      .select('id, email')
-      .eq('clerk_user_id', userId)
-      .single();
-
-    if (userError || !userData) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
       );
     }
 
@@ -105,10 +92,19 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(newOrg, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in organization creation:', error);
+
+    // Handle auth errors with appropriate status codes
+    if (error.message === 'Unauthorized') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (error.message === 'User not found') {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: error.message || 'Internal server error' },
       { status: 500 }
     );
   }

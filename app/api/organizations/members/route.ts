@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { getAuthenticatedUser } from '@/lib/auth-helpers';
 import { Resend } from 'resend';
 import { generateInvitationEmail } from '@/lib/email-templates';
 import crypto from 'crypto';
@@ -9,24 +9,10 @@ const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KE
 
 export async function GET(req: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Get authenticated user (throws if not authenticated or not found)
+    const { userInternalId } = await getAuthenticatedUser();
 
-    // Get current user from database
-    const { data: currentUser, error: currentUserError } = await supabaseAdmin
-      .from('users')
-      .select('id')
-      .eq('clerk_user_id', userId)
-      .single();
-
-    if (currentUserError || !currentUser) {
-      return NextResponse.json(
-        { error: 'Current user not found' },
-        { status: 404 }
-      );
-    }
+    const currentUser = { id: userInternalId };
 
     // Get user's organization membership
     const { data: membership } = await supabaseAdmin
@@ -79,10 +65,19 @@ export async function GET(req: NextRequest) {
       members: members || [],
       pendingInvitations: pendingInvitations || [],
     }, { status: 200 });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching organization members:', error);
+
+    // Handle auth errors with appropriate status codes
+    if (error.message === 'Unauthorized') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (error.message === 'User not found') {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: error.message || 'Internal server error' },
       { status: 500 }
     );
   }
@@ -90,10 +85,10 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Get authenticated user (throws if not authenticated or not found)
+    const { userInternalId } = await getAuthenticatedUser();
+
+    const currentUser = { id: userInternalId };
 
     const { organizationId, email, role } = await req.json();
 
@@ -101,20 +96,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: 'Organization ID, email, and role are required' },
         { status: 400 }
-      );
-    }
-
-    // Get current user from database
-    const { data: currentUser, error: currentUserError } = await supabaseAdmin
-      .from('users')
-      .select('id')
-      .eq('clerk_user_id', userId)
-      .single();
-
-    if (currentUserError || !currentUser) {
-      return NextResponse.json(
-        { error: 'Current user not found' },
-        { status: 404 }
       );
     }
 
@@ -277,10 +258,19 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({ ...pendingInvitation, type: 'pending' }, { status: 201 });
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in member invitation:', error);
+
+    // Handle auth errors with appropriate status codes
+    if (error.message === 'Unauthorized') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (error.message === 'User not found') {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: error.message || 'Internal server error' },
       { status: 500 }
     );
   }
