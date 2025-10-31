@@ -11,6 +11,12 @@ export function generateNonce(): string {
 /**
  * Build a strict Content Security Policy with nonces
  * Balanced approach: Strict on sources, but allows unsafe-inline for Next.js compatibility
+ *
+ * Note on SRI (Subresource Integrity):
+ * - Third-party scripts (Clerk, Stripe) are loaded by official React components
+ * - We rely on CSP domain restrictions + HTTPS instead of SRI
+ * - For manual external scripts, use the SecureScript component
+ * - See docs/SRI_IMPLEMENTATION.md for details
  */
 export function buildCSP(nonce: string): string {
   const directives = [
