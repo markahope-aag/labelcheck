@@ -54,6 +54,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No image provided' }, { status: 400 });
     }
 
+    // Validate file size (10MB limit)
+    if (imageFile.size > 10 * 1024 * 1024) {
+      return NextResponse.json(
+        { error: 'File too large. Maximum file size is 10MB.' },
+        { status: 413 }
+      );
+    }
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
+    if (!allowedTypes.includes(imageFile.type)) {
+      return NextResponse.json(
+        { error: `Invalid file type. Allowed types: ${allowedTypes.join(', ')}` },
+        { status: 400 }
+      );
+    }
+
     // 4. Handle session
     const { sessionId, session } = await handleSession(user.id, existingSessionId, imageFile);
 

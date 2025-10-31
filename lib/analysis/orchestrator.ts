@@ -21,6 +21,7 @@ import { generateAnalysisResultEmail } from '@/lib/email-templates';
 import { preprocessImage } from '@/lib/image-processing';
 import { createSession, addIteration } from '@/lib/session-helpers';
 import { processPdfForAnalysis } from '@/lib/pdf-helpers';
+import { isUserAdmin } from '@/lib/auth-helpers';
 
 export interface UserInfo {
   id: string;
@@ -171,9 +172,7 @@ export async function checkUsageLimits(
   }
 
   // Check if user is an admin - admins have unlimited access
-  const client = await clerkClient();
-  const clerkUser = await client.users.getUser(userId);
-  const isAdmin = clerkUser?.publicMetadata?.role === 'admin';
+  const isAdmin = await isUserAdmin(userId);
 
   // Only enforce limits for non-admin users
   if (

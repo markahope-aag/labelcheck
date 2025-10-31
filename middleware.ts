@@ -11,8 +11,6 @@ const isPublicRoute = createRouteMatcher([
   '/accept-invitation(.*)',
   '/api/webhooks/clerk(.*)',
   '/api/webhooks/stripe(.*)',
-  '/api/test-session(.*)',  // Temporary for testing
-  '/api/test-migration(.*)', // Temporary for testing
 ]);
 
 const isAdminRoute = createRouteMatcher([
