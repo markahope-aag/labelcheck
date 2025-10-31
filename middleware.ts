@@ -64,6 +64,34 @@ export default clerkMiddleware(async (auth, request) => {
   response.headers.set('Content-Security-Policy', buildCSP(nonce));
   response.headers.set('X-Nonce', nonce);
 
+  // Ensure all cookies have Secure, HttpOnly, and SameSite flags
+  // This fixes the Mozilla Observatory warning about missing Secure flags
+  const setCookieHeader = response.headers.get('set-cookie');
+  if (setCookieHeader) {
+    const cookies = setCookieHeader.split(',').map(cookie => {
+      let modifiedCookie = cookie.trim();
+
+      // Add Secure flag if not present (for HTTPS)
+      if (!modifiedCookie.includes('Secure')) {
+        modifiedCookie += '; Secure';
+      }
+
+      // Add HttpOnly if not present (prevent XSS)
+      if (!modifiedCookie.includes('HttpOnly')) {
+        modifiedCookie += '; HttpOnly';
+      }
+
+      // Add SameSite if not present (prevent CSRF)
+      if (!modifiedCookie.includes('SameSite')) {
+        modifiedCookie += '; SameSite=Lax';
+      }
+
+      return modifiedCookie;
+    });
+
+    response.headers.set('set-cookie', cookies.join(', '));
+  }
+
   return response;
 });
 
