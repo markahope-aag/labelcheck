@@ -1,0 +1,53 @@
+=================================================================
+SESSION STARTUP - COPY THIS
+=================================================================
+
+🚀 SESSION STARTUP
+
+Load context and prepare for work:
+1. Check repository status (npm run status, git log -5)
+2. Review last session (SESSION_NOTES.md last 100 lines)
+3. Verify environment (.env.local, dependencies)
+4. Summarize: where we left off, what's completed, what's next
+5. Recommend priority for this session
+6. Create todos if we're tackling multi-step work
+
+After context loaded, ask: "What would you like to work on today?"
+
+=================================================================
+SESSION SHUTDOWN - COPY THIS
+=================================================================
+
+🏁 SESSION SHUTDOWN
+
+Close session properly:
+1. Run pre-switch check, fix any issues
+2. Test changes (typecheck, manual test if needed)
+3. Update SESSION_NOTES.md with session summary
+4. Create comprehensive session summary:
+   - Completed work
+   - Metrics (commits, files, lines)
+   - Production readiness
+   - Next priorities
+   - Open issues
+5. Commit and push everything (code + notes)
+6. Final pre-switch verification
+7. Confirm "✅ Safe to switch computers"
+
+=================================================================
+ULTRA-SHORT VERSIONS
+=================================================================
+
+STARTUP (minimal):
+Load session context: status, recent work, last session notes, recommend priority.
+
+SHUTDOWN (minimal):
+Close session: verify clean state, update notes, summary, commit all, confirm ready.
+
+=================================================================
+EMERGENCY SHUTDOWN (need to leave quickly)
+=================================================================
+
+Emergency shutdown: commit everything with WIP message, push, done.
+
+=================================================================
