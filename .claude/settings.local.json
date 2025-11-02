@@ -54,7 +54,12 @@
       "Bash(awk:*)",
       "Bash(powershell -Command \"Get-Item lib/analysis-prompts.ts | Select-Object FullName\")",
       "Bash(powershell:*)",
-      "Bash(supabase --version:*)"
+      "Bash(supabase --version:*)",
+      "Bash(vercel ls:*)",
+      "Bash(gh api:*)",
+      "Bash(vercel:*)",
+      "Bash(git config:*)",
+      "Bash(npm run status:*)"
     ],
     "deny": [],
     "ask": []

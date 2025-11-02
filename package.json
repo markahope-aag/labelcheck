@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "pre-switch": "node scripts/pre-switch.js",
+    "post-pull": "node scripts/post-pull.js",
+    "status": "node scripts/status.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.67.0",
