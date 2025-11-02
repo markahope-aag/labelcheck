@@ -97,15 +97,20 @@ export async function POST(request: NextRequest) {
 
     let originalContext = '';
     if (originalAnalysis?.result_data) {
-      originalContext += '\n\n## Original Label Analysis (For Comparison)\n\n';
-      originalContext += `**Product:** ${originalAnalysis.result_data.product_name || 'Unknown'}\n`;
-      originalContext += `**Overall Status:** ${originalAnalysis.result_data.overall_assessment?.primary_compliance_status || 'Unknown'}\n`;
+      const resultData = originalAnalysis.result_data;
 
-      if (originalAnalysis.result_data.recommendations) {
-        originalContext += '\n**Original Issues Found:**\n';
-        originalAnalysis.result_data.recommendations.forEach((rec: any, idx: number) => {
-          originalContext += `${idx + 1}. [${rec.priority.toUpperCase()}] ${rec.recommendation}\n`;
-        });
+      // Type guard: Check if result_data is an AnalysisResult (not a chat response)
+      if ('product_name' in resultData) {
+        originalContext += '\n\n## Original Label Analysis (For Comparison)\n\n';
+        originalContext += `**Product:** ${resultData.product_name || 'Unknown'}\n`;
+        originalContext += `**Overall Status:** ${resultData.overall_assessment?.primary_compliance_status || 'Unknown'}\n`;
+
+        if (resultData.recommendations) {
+          originalContext += '\n**Original Issues Found:**\n';
+          resultData.recommendations.forEach((rec, idx: number) => {
+            originalContext += `${idx + 1}. [${rec.priority.toUpperCase()}] ${rec.recommendation}\n`;
+          });
+        }
       }
     }
 

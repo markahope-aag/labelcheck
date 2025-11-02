@@ -77,83 +77,103 @@ export async function POST(request: NextRequest) {
 
     if (analysisIterations.length > 0) {
       const latestAnalysis = analysisIterations[analysisIterations.length - 1];
-      cachedContext += '## Latest Analysis Results\n\n';
-      cachedContext += `**Product:** ${latestAnalysis.result_data?.product_name || 'Unknown'}\n`;
-      cachedContext += `**Product Type:** ${latestAnalysis.result_data?.product_type || 'Unknown'}\n\n`;
+      const resultData = latestAnalysis.result_data;
 
-      if (latestAnalysis.result_data?.overall_assessment) {
-        cachedContext += '**Overall Compliance Status:** ';
-        cachedContext += `${latestAnalysis.result_data.overall_assessment.primary_compliance_status}\n`;
-        cachedContext += `**Summary:** ${latestAnalysis.result_data.overall_assessment.summary}\n\n`;
-      }
+      // Type guard: Check if result_data is an AnalysisResult (not a chat response)
+      if (resultData && 'product_name' in resultData) {
+        cachedContext += '## Latest Analysis Results\n\n';
+        cachedContext += `**Product:** ${resultData.product_name || 'Unknown'}\n`;
+        cachedContext += `**Product Type:** ${resultData.product_type || 'Unknown'}\n\n`;
 
-      if (latestAnalysis.result_data?.recommendations) {
-        cachedContext += '**Key Recommendations:**\n';
-        latestAnalysis.result_data.recommendations.forEach((rec: any, idx: number) => {
-          cachedContext += `${idx + 1}. [${rec.priority.toUpperCase()}] ${rec.recommendation} (${rec.regulation})\n`;
-        });
-        cachedContext += '\n';
-      }
-
-      if (latestAnalysis.result_data?.allergen_labeling) {
-        cachedContext += '**Allergen Status:** ';
-        cachedContext += `${latestAnalysis.result_data.allergen_labeling.status}\n`;
-        if (latestAnalysis.result_data.allergen_labeling.potential_allergens?.length > 0) {
-          cachedContext += `**Potential Allergens:** ${latestAnalysis.result_data.allergen_labeling.potential_allergens.join(', ')}\n`;
-        }
-        cachedContext += '\n';
-      }
-
-      // Include ingredient list so AI can answer questions about specific ingredients
-      if (latestAnalysis.result_data?.ingredient_labeling?.ingredients_list?.length > 0) {
-        cachedContext += '**Complete Ingredient List (as analyzed from the label):**\n';
-        cachedContext +=
-          latestAnalysis.result_data.ingredient_labeling.ingredients_list.join(', ') + '\n\n';
-        cachedContext += `IMPORTANT: This is the complete list of ALL ingredients found on the label. If an ingredient is not in this list, it is NOT present in the product.\n\n`;
-      }
-
-      // Include GRAS compliance data if available
-      if (latestAnalysis.result_data?.gras_compliance) {
-        cachedContext += 'GRAS Compliance Check:\n';
-        cachedContext += `- Total ingredients checked: ${latestAnalysis.result_data.gras_compliance.total || 0}\n`;
-        cachedContext += `- GRAS-compliant: ${latestAnalysis.result_data.gras_compliance.compliant || 0}\n`;
-        if (latestAnalysis.result_data.gras_compliance.nonGRASIngredients?.length > 0) {
-          cachedContext += `- Non-GRAS ingredients: ${latestAnalysis.result_data.gras_compliance.nonGRASIngredients.join(', ')}\n`;
-        }
-        cachedContext += '\n';
-      }
-
-      // Include claims analysis if available
-      if (latestAnalysis.result_data?.claims) {
-        cachedContext += 'Label Claims Analysis:\n';
-        cachedContext += `- Status: ${latestAnalysis.result_data.claims.status || 'unknown'}\n`;
-
-        if (latestAnalysis.result_data.claims.structure_function_claims?.length > 0) {
-          cachedContext += `- Structure/Function Claims Found: ${latestAnalysis.result_data.claims.structure_function_claims.join('; ')}\n`;
+        if (resultData.overall_assessment) {
+          cachedContext += '**Overall Compliance Status:** ';
+          cachedContext += `${resultData.overall_assessment.primary_compliance_status}\n`;
+          cachedContext += `**Summary:** ${resultData.overall_assessment.summary}\n\n`;
         }
 
-        if (latestAnalysis.result_data.claims.nutrient_content_claims?.length > 0) {
-          cachedContext += `- Nutrient Content Claims Found: ${latestAnalysis.result_data.claims.nutrient_content_claims.join('; ')}\n`;
+        if (resultData.recommendations) {
+          cachedContext += '**Key Recommendations:**\n';
+          resultData.recommendations.forEach((rec, idx: number) => {
+            cachedContext += `${idx + 1}. [${rec.priority.toUpperCase()}] ${rec.recommendation} (${rec.regulation})\n`;
+          });
+          cachedContext += '\n';
         }
 
-        if (latestAnalysis.result_data.claims.health_claims?.length > 0) {
-          cachedContext += `- Health Claims Found: ${latestAnalysis.result_data.claims.health_claims.join('; ')}\n`;
+        if (resultData.allergen_labeling) {
+          cachedContext += '**Allergen Status:** ';
+          cachedContext += `${resultData.allergen_labeling.status}\n`;
+          if (
+            resultData.allergen_labeling.allergens_declared &&
+            resultData.allergen_labeling.allergens_declared.length > 0
+          ) {
+            cachedContext += `**Allergens Declared:** ${resultData.allergen_labeling.allergens_declared.join(', ')}\n`;
+          }
+          cachedContext += '\n';
         }
 
-        if (latestAnalysis.result_data.claims.prohibited_claims?.length > 0) {
-          cachedContext += `- PROHIBITED Claims Detected: ${latestAnalysis.result_data.claims.prohibited_claims.join('; ')}\n`;
-        }
-
+        // Include ingredient list so AI can answer questions about specific ingredients
         if (
-          !latestAnalysis.result_data.claims.structure_function_claims?.length &&
-          !latestAnalysis.result_data.claims.nutrient_content_claims?.length &&
-          !latestAnalysis.result_data.claims.health_claims?.length &&
-          !latestAnalysis.result_data.claims.prohibited_claims?.length
+          resultData.ingredient_labeling?.ingredients_list &&
+          resultData.ingredient_labeling.ingredients_list.length > 0
         ) {
-          cachedContext += '- No claims detected on the label\n';
+          cachedContext += '**Complete Ingredient List (as analyzed from the label):**\n';
+          cachedContext += resultData.ingredient_labeling.ingredients_list.join(', ') + '\n\n';
+          cachedContext += `IMPORTANT: This is the complete list of ALL ingredients found on the label. If an ingredient is not in this list, it is NOT present in the product.\n\n`;
         }
 
-        cachedContext += '\n';
+        // Include GRAS compliance data if available
+        if (resultData.ingredient_labeling?.gras_compliance) {
+          const grasData = resultData.ingredient_labeling.gras_compliance;
+          cachedContext += 'GRAS Compliance Check:\n';
+          cachedContext += `- Total ingredients checked: ${grasData.total_ingredients || 0}\n`;
+          cachedContext += `- GRAS-compliant: ${grasData.gras_compliant_count || 0}\n`;
+          if (grasData.non_gras_ingredients && grasData.non_gras_ingredients.length > 0) {
+            cachedContext += `- Non-GRAS ingredients: ${grasData.non_gras_ingredients.join(', ')}\n`;
+          }
+          cachedContext += '\n';
+        }
+
+        // Include claims analysis if available
+        if (resultData.claims) {
+          cachedContext += 'Label Claims Analysis:\n';
+          cachedContext += `- Status: ${resultData.claims.status || 'unknown'}\n`;
+
+          if (
+            resultData.claims.structure_function_claims &&
+            resultData.claims.structure_function_claims.length > 0
+          ) {
+            cachedContext += `- Structure/Function Claims Found: ${resultData.claims.structure_function_claims.join('; ')}\n`;
+          }
+
+          if (
+            resultData.claims.nutrient_content_claims &&
+            resultData.claims.nutrient_content_claims.length > 0
+          ) {
+            cachedContext += `- Nutrient Content Claims Found: ${resultData.claims.nutrient_content_claims.join('; ')}\n`;
+          }
+
+          if (resultData.claims.health_claims && resultData.claims.health_claims.length > 0) {
+            cachedContext += `- Health Claims Found: ${resultData.claims.health_claims.join('; ')}\n`;
+          }
+
+          if (
+            resultData.claims.prohibited_claims &&
+            resultData.claims.prohibited_claims.length > 0
+          ) {
+            cachedContext += `- PROHIBITED Claims Detected: ${resultData.claims.prohibited_claims.join('; ')}\n`;
+          }
+
+          if (
+            !resultData.claims.structure_function_claims?.length &&
+            !resultData.claims.nutrient_content_claims?.length &&
+            !resultData.claims.health_claims?.length &&
+            !resultData.claims.prohibited_claims?.length
+          ) {
+            cachedContext += '- No claims detected on the label\n';
+          }
+
+          cachedContext += '\n';
+        }
       }
     }
 
@@ -168,7 +188,10 @@ export async function POST(request: NextRequest) {
       const recentChats = chatIterations.slice(-5); // Last 5 chat exchanges
       recentChats.forEach((chat) => {
         dynamicContext += `**User:** ${chat.input_data?.message || ''}\n`;
-        dynamicContext += `**Assistant:** ${chat.result_data?.response || ''}\n\n`;
+        // Type guard: Check if result_data is a chat response (has 'response' property)
+        const chatResponse =
+          chat.result_data && 'response' in chat.result_data ? chat.result_data.response : '';
+        dynamicContext += `**Assistant:** ${chatResponse}\n\n`;
       });
     }
 
