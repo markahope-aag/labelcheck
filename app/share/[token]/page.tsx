@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase';
 import { exportSingleAnalysisAsPDF } from '@/lib/export-helpers';
 import { useToast } from '@/hooks/use-toast';
 import { clientLogger } from '@/lib/client-logger';
+import type { ComplianceTableRow, Recommendation } from '@/types';
 
 export default function SharePage() {
   const params = useParams();
@@ -45,8 +46,9 @@ export default function SharePage() {
       }
 
       setAnalysis(data);
-    } catch (err: any) {
-      clientLogger.error('Failed to load shared analysis', { error: err, token });
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      clientLogger.error('Failed to load shared analysis', { error, token });
       setError('Failed to load analysis');
     } finally {
       setLoading(false);
@@ -217,7 +219,7 @@ export default function SharePage() {
                           </tr>
                         </thead>
                         <tbody>
-                          {result.compliance_table.map((row: any, idx: number) => (
+                          {result.compliance_table.map((row: ComplianceTableRow, idx: number) => (
                             <tr key={idx} className="hover:bg-slate-50">
                               <td className="border border-slate-300 px-4 py-2 text-sm text-slate-900">
                                 {row.element}
@@ -225,7 +227,7 @@ export default function SharePage() {
                               <td className="border border-slate-300 px-4 py-2 text-sm">
                                 <span
                                   className={`px-2 py-1 rounded text-xs font-semibold ${
-                                    row.status === 'Compliant' || row.status === 'Likely Compliant'
+                                    row.status === 'Compliant'
                                       ? 'bg-green-100 text-green-800'
                                       : row.status === 'Potentially Non-compliant'
                                         ? 'bg-yellow-100 text-yellow-800'
@@ -255,7 +257,7 @@ export default function SharePage() {
                       Recommendations
                     </h3>
                     <div className="space-y-3">
-                      {result.recommendations.map((rec: any, index: number) => (
+                      {result.recommendations.map((rec: Recommendation, index: number) => (
                         <div
                           key={index}
                           className={`rounded-lg p-4 border-l-4 ${

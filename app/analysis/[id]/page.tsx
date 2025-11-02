@@ -20,6 +20,12 @@ import { useToast } from '@/hooks/use-toast';
 import { AnalysisChat } from '@/components/AnalysisChat';
 import { clientLogger } from '@/lib/client-logger';
 import { PrintReadyCertification } from '@/components/PrintReadyCertification';
+import type {
+  AnalysisIteration,
+  Recommendation,
+  ComplianceTableRow,
+  OtherRequirement,
+} from '@/types';
 
 // Helper function to format compliance status for display
 const formatComplianceStatus = (status: string): string => {
@@ -117,7 +123,7 @@ export default function AnalysisDetailPage() {
 
         if (!iterError && iterations) {
           // Convert iterations to chat message format
-          const messages = iterations.flatMap((iter: any) => [
+          const messages = iterations.flatMap((iter: AnalysisIteration) => [
             {
               role: 'user' as const,
               content: iter.input_data?.message || '',
@@ -125,15 +131,26 @@ export default function AnalysisDetailPage() {
             },
             {
               role: 'assistant' as const,
-              content: iter.result_data?.response || '',
-              timestamp: iter.result_data?.timestamp || iter.created_at,
+              content:
+                typeof iter.result_data === 'object' &&
+                iter.result_data &&
+                'response' in iter.result_data
+                  ? (iter.result_data as { response: string }).response
+                  : '',
+              timestamp:
+                typeof iter.result_data === 'object' &&
+                iter.result_data &&
+                'timestamp' in iter.result_data
+                  ? (iter.result_data as { timestamp: string }).timestamp
+                  : iter.created_at,
             },
           ]);
           setChatHistory(messages);
         }
       }
-    } catch (err: any) {
-      clientLogger.error('Failed to load analysis', { error: err, analysisId: params.id });
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      clientLogger.error('Failed to load analysis', { error, analysisId: params.id });
       setError('Failed to load analysis');
     } finally {
       setLoading(false);
@@ -178,11 +195,12 @@ export default function AnalysisDetailPage() {
       setShareUrl(data.shareUrl);
       setShareDialogOpen(true);
       setCopied(false);
-    } catch (error: any) {
-      clientLogger.error('Share link generation failed', { error, analysisId: analysis.id });
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      clientLogger.error('Share link generation failed', { error: err, analysisId: analysis.id });
       toast({
         title: 'Error',
-        description: error.message || 'Failed to generate share link',
+        description: err.message || 'Failed to generate share link',
         variant: 'destructive',
       });
     }
@@ -351,22 +369,29 @@ export default function AnalysisDetailPage() {
                 {result.recommendations && (
                   <PrintReadyCertification
                     criticalCount={
-                      result.recommendations.filter((r: any) => r.priority === 'critical').length
+                      result.recommendations.filter(
+                        (r: Recommendation) => r.priority === 'critical'
+                      ).length
                     }
                     highCount={
-                      result.recommendations.filter((r: any) => r.priority === 'high').length
+                      result.recommendations.filter((r: Recommendation) => r.priority === 'high')
+                        .length
                     }
                     mediumCount={
-                      result.recommendations.filter((r: any) => r.priority === 'medium').length
+                      result.recommendations.filter((r: Recommendation) => r.priority === 'medium')
+                        .length
                     }
                     lowCount={
-                      result.recommendations.filter((r: any) => r.priority === 'low').length
+                      result.recommendations.filter((r: Recommendation) => r.priority === 'low')
+                        .length
                     }
                     analysisDate={analysis.created_at}
                     criticalIssues={result.recommendations.filter(
-                      (r: any) => r.priority === 'critical'
+                      (r: Recommendation) => r.priority === 'critical'
                     )}
-                    highIssues={result.recommendations.filter((r: any) => r.priority === 'high')}
+                    highIssues={result.recommendations.filter(
+                      (r: Recommendation) => r.priority === 'high'
+                    )}
                   />
                 )}
 
@@ -548,7 +573,7 @@ export default function AnalysisDetailPage() {
                                 (ingredient: string, idx: number) => {
                                   // Find GRAS status for this ingredient
                                   const grasStatus = result.gras_compliance?.detailed_results?.find(
-                                    (r: any) => r.ingredient === ingredient
+                                    (r: Recommendation) => r.ingredient === ingredient
                                   );
                                   const isGRAS = grasStatus?.isGRAS;
 
@@ -891,7 +916,7 @@ export default function AnalysisDetailPage() {
                       {result.additional_requirements.other_requirements &&
                         result.additional_requirements.other_requirements.length > 0 &&
                         result.additional_requirements.other_requirements.map(
-                          (req: any, idx: number) => (
+                          (req: OtherRequirement, idx: number) => (
                             <div key={idx} className="bg-slate-50 rounded-lg p-4">
                               <div className="flex items-center justify-between mb-2">
                                 <h4 className="font-semibold text-slate-900">{req.requirement}</h4>
@@ -937,7 +962,7 @@ export default function AnalysisDetailPage() {
                           </tr>
                         </thead>
                         <tbody>
-                          {result.compliance_table.map((row: any, idx: number) => (
+                          {result.compliance_table.map((row: ComplianceTableRow, idx: number) => (
                             <tr key={idx} className="hover:bg-slate-50">
                               <td className="border border-slate-300 px-4 py-2 text-sm text-slate-900">
                                 {row.element}
@@ -945,7 +970,7 @@ export default function AnalysisDetailPage() {
                               <td className="border border-slate-300 px-4 py-2 text-sm">
                                 <span
                                   className={`px-2 py-1 rounded text-xs font-semibold ${
-                                    row.status === 'Compliant' || row.status === 'Likely Compliant'
+                                    row.status === 'Compliant'
                                       ? 'bg-green-100 text-green-800'
                                       : row.status === 'Potentially Non-compliant'
                                         ? 'bg-yellow-100 text-yellow-800'
@@ -975,7 +1000,7 @@ export default function AnalysisDetailPage() {
                       Recommendations
                     </h3>
                     <div className="space-y-3">
-                      {result.recommendations.map((rec: any, index: number) => (
+                      {result.recommendations.map((rec: Recommendation, index: number) => (
                         <div
                           key={index}
                           className={`rounded-lg p-4 border-l-4 ${

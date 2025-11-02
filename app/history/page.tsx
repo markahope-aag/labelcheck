@@ -48,6 +48,7 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination';
 import { supabase } from '@/lib/supabase';
+import type { Analysis, Recommendation } from '@/types';
 import {
   exportAnalysesAsCSV,
   exportAnalysesAsJSON,
@@ -245,7 +246,7 @@ function HistoryContent() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  function openDeleteDialog(analysis: any) {
+  function openDeleteDialog(analysis: Analysis) {
     setAnalysisToDelete(analysis);
     setDeleteDialogOpen(true);
   }
@@ -412,8 +413,8 @@ function HistoryContent() {
 
                       <Select
                         value={sortBy}
-                        onValueChange={(value: any) => {
-                          setSortBy(value);
+                        onValueChange={(value) => {
+                          setSortBy(value as 'name' | 'date-desc' | 'date-asc');
                           setCurrentPage(0);
                         }}
                       >
@@ -620,7 +621,7 @@ function HistoryContent() {
                               <ul className="space-y-1">
                                 {result.recommendations
                                   .slice(0, 3)
-                                  .map((rec: any, index: number) => {
+                                  .map((rec: Recommendation, index: number) => {
                                     // Handle both old string format and new object format
                                     const recText =
                                       typeof rec === 'string' ? rec : rec.recommendation;
