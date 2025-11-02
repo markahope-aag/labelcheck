@@ -1,3 +1,18 @@
+/**
+ * Landing page for LabelCheck - a FDA/USDA compliance checking service for product labels.
+ * 
+ * This page serves as the marketing homepage and entry point for unauthenticated users.
+ * It includes:
+ * - Hero section with value proposition and call-to-action buttons
+ * - "How It Works" section explaining the 3-step process (Upload, Analyze, Report)
+ * - "Why Choose LabelCheck" section highlighting key features (allergen detection, GRAS verification, claims analysis, etc.)
+ * - Pricing section with three tiers (Starter, Professional, Business)
+ * - Customer testimonials section
+ * - Final call-to-action section
+ * 
+ * Authenticated users are automatically redirected to the dashboard.
+ */
+
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
