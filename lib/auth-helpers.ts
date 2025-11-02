@@ -6,6 +6,7 @@
 
 import { auth } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { logger } from './logger';
 
 /**
  * Check if the current user is a system administrator
@@ -32,7 +33,7 @@ export async function checkAdminAuth(): Promise<{
     .maybeSingle();
 
   if (error) {
-    console.error('Error checking admin status:', error);
+    logger.error('Failed to check admin status', { error, userId });
     throw new Error('Failed to verify admin status');
   }
 
@@ -109,7 +110,7 @@ export async function getAuthenticatedUser(): Promise<{
     .maybeSingle();
 
   if (error) {
-    console.error('Error fetching user:', error);
+    logger.error('Failed to fetch authenticated user', { error, userId });
     throw new Error('Failed to fetch user data');
   }
 

@@ -2,14 +2,20 @@ import { auth } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { randomBytes } from 'crypto';
+import { logger, createRequestLogger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
+  const requestLogger = createRequestLogger({ endpoint: '/api/share' });
+
   try {
     const { userId } = await auth();
 
     if (!userId) {
+      requestLogger.warn('Unauthorized share request');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    requestLogger.info('Share link generation requested', { userId });
 
     const body = await request.json();
     const { analysisId } = body;
@@ -57,15 +63,25 @@ export async function POST(request: NextRequest) {
       .eq('id', analysisId);
 
     if (updateError) {
-      console.error('Error updating share token:', updateError);
+      requestLogger.error('Failed to update share token', {
+        error: updateError,
+        analysisId,
+        userId,
+      });
       return NextResponse.json({ error: 'Failed to generate share link' }, { status: 500 });
     }
 
     const shareUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/share/${shareToken}`;
 
+    requestLogger.info('Share link generated', {
+      userId,
+      analysisId,
+      shareToken,
+    });
+
     return NextResponse.json({ shareToken, shareUrl });
   } catch (error: any) {
-    console.error('Error generating share link:', error);
+    requestLogger.error('Share link generation failed', { error, message: error.message });
     return NextResponse.json(
       { error: error.message || 'Failed to generate share link' },
       { status: 500 }

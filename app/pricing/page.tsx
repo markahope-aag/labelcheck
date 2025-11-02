@@ -15,6 +15,7 @@ import { Check, Loader2 } from 'lucide-react';
 import { PLAN_LIMITS, PLAN_PRICES } from '@/lib/constants';
 import { useUser } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
+import { clientLogger } from '@/lib/client-logger';
 
 export default function PricingPage() {
   const [billingInterval, setBillingInterval] = useState<'monthly' | 'annual'>('monthly');
@@ -86,14 +87,14 @@ export default function PricingPage() {
       const data = await response.json();
 
       if (!data.url) {
-        console.error('No URL in response:', data);
+        clientLogger.error('No checkout URL in response', { data, tier });
         throw new Error('No checkout URL received');
       }
 
       // Redirect to Stripe checkout
       window.location.href = data.url;
     } catch (error: any) {
-      console.error('Error creating checkout session:', error);
+      clientLogger.error('Checkout session creation failed', { error, tier });
       toast({
         title: 'Error',
         description: error.message || 'Failed to start checkout process. Please try again.',

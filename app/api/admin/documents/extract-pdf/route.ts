@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { extractTextFromPDF, extractPDFMetadata, cleanExtractedText } from '@/lib/pdf-helpers';
 import { requireAdmin } from '@/lib/auth-helpers';
+import { logger, createRequestLogger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
+  const requestLogger = createRequestLogger({ endpoint: '/api/admin/documents/extract-pdf' });
+
   try {
     // Require admin access (throws if not admin)
     await requireAdmin();
@@ -13,7 +16,10 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get('pdf') as File;
 
+    requestLogger.info('PDF extraction started', { fileName: file?.name, fileSize: file?.size });
+
     if (!file) {
+      requestLogger.warn('PDF extraction request missing file');
       return NextResponse.json({ error: 'No PDF file provided' }, { status: 400 });
     }
 
@@ -34,6 +40,12 @@ export async function POST(request: NextRequest) {
     // Clean the extracted text
     const cleanedText = cleanExtractedText(rawText);
 
+    requestLogger.info('PDF extraction completed', {
+      fileName: file.name,
+      textLength: cleanedText.length,
+      pages: metadata.pages,
+    });
+
     return NextResponse.json({
       text: cleanedText,
       metadata: {
@@ -45,7 +57,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error: any) {
-    console.error('Error in POST /api/admin/documents/extract-pdf:', error);
+    requestLogger.error('PDF extraction failed', { error, message: error.message });
 
     // Handle auth errors with appropriate status codes
     if (error.message === 'Unauthorized') {

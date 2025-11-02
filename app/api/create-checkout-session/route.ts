@@ -3,18 +3,24 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { supabaseAdmin } from '@/lib/supabase';
 import { PLAN_PRICES } from '@/lib/constants';
+import { logger, createRequestLogger } from '@/lib/logger';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-02-24.acacia',
 });
 
 export async function POST(request: NextRequest) {
+  const requestLogger = createRequestLogger({ endpoint: '/api/create-checkout-session' });
+
   try {
     const { userId } = await auth();
 
     if (!userId) {
+      requestLogger.warn('Unauthorized checkout session request');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    requestLogger.info('Checkout session creation started', { userId });
 
     const formData = await request.formData();
     const plan = formData.get('plan') as string;
@@ -81,9 +87,15 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    requestLogger.info('Checkout session created', {
+      userId,
+      plan,
+      sessionId: session.id,
+    });
+
     return NextResponse.json({ url: session.url });
   } catch (error: any) {
-    console.error('Error creating checkout session:', error);
+    requestLogger.error('Checkout session creation failed', { error, message: error.message });
     return NextResponse.json(
       { error: error.message || 'Failed to create checkout session' },
       { status: 500 }

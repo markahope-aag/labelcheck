@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, AlertCircle, Loader2, Mail } from 'lucide-react';
 import Link from 'next/link';
+import { clientLogger } from '@/lib/client-logger';
 
 function AcceptInvitationContent() {
   const searchParams = useSearchParams();
@@ -77,7 +78,7 @@ function AcceptInvitationContent() {
         setMessage(data.error || 'Failed to accept invitation');
       }
     } catch (error) {
-      console.error('Error accepting invitation:', error);
+      clientLogger.error('Failed to accept invitation', { error, token });
       setStatus('error');
       setMessage('An unexpected error occurred');
     }

@@ -2,6 +2,7 @@ import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { Webhook } from 'svix';
 import { supabaseAdmin } from '@/lib/supabase';
+import { logger } from '@/lib/logger';
 
 export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
@@ -35,7 +36,7 @@ export async function POST(req: Request) {
       'svix-signature': svix_signature,
     }) as any;
   } catch (err) {
-    console.error('Error verifying webhook:', err);
+    logger.error('Clerk webhook verification failed', { error: err });
     return new Response('Error occurred', {
       status: 400,
     });
@@ -60,7 +61,7 @@ export async function POST(req: Request) {
         .single();
 
       if (error) {
-        console.error('Error creating user in database:', error);
+        logger.error('Failed to create user from Clerk webhook', { error, clerkUserId: id });
         return NextResponse.json({ error: 'Database error' }, { status: 500 });
       }
 
@@ -74,7 +75,10 @@ export async function POST(req: Request) {
         });
       }
 
-      console.log(`User created: ${id}`);
+      logger.info('User created from Clerk webhook', {
+        clerkUserId: id,
+        supabaseUserId: newUser.id,
+      });
     }
 
     if (eventType === 'user.updated') {
@@ -91,27 +95,27 @@ export async function POST(req: Request) {
         .eq('clerk_user_id', id);
 
       if (error) {
-        console.error('Error updating user in database:', error);
+        logger.error('Failed to update user from Clerk webhook', { error, clerkUserId: id });
         return NextResponse.json({ error: 'Database error' }, { status: 500 });
       }
 
-      console.log(`User updated: ${id}`);
+      logger.info('User updated from Clerk webhook', { clerkUserId: id });
     }
 
     if (eventType === 'user.deleted') {
       const { error } = await supabaseAdmin.from('users').delete().eq('clerk_user_id', id);
 
       if (error) {
-        console.error('Error deleting user from database:', error);
+        logger.error('Failed to delete user from Clerk webhook', { error, clerkUserId: id });
         return NextResponse.json({ error: 'Database error' }, { status: 500 });
       }
 
-      console.log(`User deleted: ${id}`);
+      logger.info('User deleted from Clerk webhook', { clerkUserId: id });
     }
 
     return NextResponse.json({ message: 'Webhook processed successfully' }, { status: 200 });
   } catch (error: any) {
-    console.error('Error processing webhook:', error);
+    logger.error('Clerk webhook processing failed', { error, message: error.message });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

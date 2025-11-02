@@ -1,5 +1,6 @@
 import { RegulatoryDocument } from './supabase';
 import { supabase } from './supabase';
+import { logger } from './logger';
 
 /**
  * In-memory cache for regulatory documents
@@ -29,7 +30,10 @@ function isCacheValid(): boolean {
   const isValid = age < CACHE_TTL_MS;
 
   if (!isValid) {
-    console.log(`📦 Cache expired (age: ${Math.round(age / 1000 / 60)} minutes)`);
+    logger.debug('Regulatory document cache expired', {
+      ageMinutes: Math.round(age / 1000 / 60),
+      ttlMinutes: CACHE_TTL_MS / 1000 / 60,
+    });
   }
 
   return isValid;
@@ -42,12 +46,14 @@ function isCacheValid(): boolean {
 export async function getCachedRegulatoryDocuments(): Promise<RegulatoryDocument[]> {
   // Return cached documents if valid
   if (isCacheValid() && documentCache) {
-    console.log(`✅ Cache hit: Returning ${documentCache.documents.length} cached documents`);
+    logger.debug('Regulatory document cache hit', {
+      documentCount: documentCache.documents.length,
+    });
     return documentCache.documents;
   }
 
   // Cache miss or expired - fetch from database
-  console.log('📥 Cache miss: Fetching documents from database...');
+  logger.debug('Regulatory document cache miss, fetching from database');
 
   const { data, error } = await supabase
     .from('regulatory_documents')
@@ -56,7 +62,7 @@ export async function getCachedRegulatoryDocuments(): Promise<RegulatoryDocument
     .limit(50);
 
   if (error) {
-    console.error('Error fetching regulatory documents:', error);
+    logger.error('Failed to fetch regulatory documents', { error });
     return [];
   }
 
@@ -68,7 +74,7 @@ export async function getCachedRegulatoryDocuments(): Promise<RegulatoryDocument
     timestamp: Date.now(),
   };
 
-  console.log(`💾 Cached ${documents.length} documents`);
+  logger.info('Regulatory documents cached', { documentCount: documents.length });
 
   return documents;
 }
@@ -78,7 +84,7 @@ export async function getCachedRegulatoryDocuments(): Promise<RegulatoryDocument
  * Call this when documents are created, updated, or deleted
  */
 export function invalidateDocumentCache(): void {
-  console.log('🗑️  Cache invalidated manually');
+  logger.info('Regulatory document cache invalidated manually');
   documentCache = null;
 }
 
@@ -113,7 +119,7 @@ export function getCacheStats(): {
  * This ensures first request doesn't have to wait for DB fetch
  */
 export async function warmUpCache(): Promise<void> {
-  console.log('🔥 Warming up document cache...');
+  logger.info('Warming up regulatory document cache');
   await getCachedRegulatoryDocuments();
-  console.log('✅ Cache warmed up');
+  logger.info('Regulatory document cache warmed up');
 }

@@ -17,6 +17,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import { Users, Plus, Mail, Shield, Trash2, Building2 } from 'lucide-react';
+import { clientLogger } from '@/lib/client-logger';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -113,7 +114,7 @@ export default function TeamPage() {
         await loadMembers(orgData.id);
       }
     } catch (error) {
-      console.error('Error loading organization:', error);
+      clientLogger.error('Failed to load organization', { error });
       toast({
         title: 'Error',
         description: 'Failed to load organization',
@@ -133,7 +134,10 @@ export default function TeamPage() {
         throw new Error(data.error || 'Failed to load members');
       }
 
-      console.log('Members loaded:', data);
+      clientLogger.debug('Members loaded', {
+        memberCount: data.members?.length || 0,
+        invitationCount: data.pendingInvitations?.length || 0,
+      });
 
       const formattedMembers = (data.members || []).map((item: any) => ({
         ...item,
@@ -143,7 +147,7 @@ export default function TeamPage() {
       setMembers(formattedMembers);
       setPendingInvitations(data.pendingInvitations || []);
     } catch (error) {
-      console.error('Error loading members:', error);
+      clientLogger.error('Failed to load members', { error });
       toast({
         title: 'Error',
         description: 'Failed to load team members',
@@ -185,7 +189,7 @@ export default function TeamPage() {
       setShowCreateOrg(false);
       loadOrganization();
     } catch (error: any) {
-      console.error('Error creating organization:', error);
+      clientLogger.error('Failed to create organization', { error, orgName, orgSlug });
       toast({
         title: 'Error',
         description: error.message || 'Failed to create organization',
@@ -224,7 +228,12 @@ export default function TeamPage() {
       setInviteEmail('');
       loadMembers(organization.id);
     } catch (error: any) {
-      console.error('Error inviting member:', error);
+      clientLogger.error('Failed to invite member', {
+        error,
+        organizationId: organization.id,
+        inviteEmail,
+        inviteRole,
+      });
       toast({
         title: 'Error',
         description: error.message || 'Failed to invite member',
@@ -246,7 +255,7 @@ export default function TeamPage() {
 
       loadMembers(organization!.id);
     } catch (error) {
-      console.error('Error removing member:', error);
+      clientLogger.error('Failed to remove member', { error, memberId });
       toast({
         title: 'Error',
         description: 'Failed to remove member',
@@ -274,7 +283,7 @@ export default function TeamPage() {
 
       loadMembers(organization!.id);
     } catch (error: any) {
-      console.error('Error cancelling invitation:', error);
+      clientLogger.error('Failed to cancel invitation', { error, invitationId });
       toast({
         title: 'Error',
         description: error.message || 'Failed to cancel invitation',

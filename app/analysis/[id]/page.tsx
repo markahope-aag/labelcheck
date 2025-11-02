@@ -18,6 +18,7 @@ import { supabase } from '@/lib/supabase';
 import { exportSingleAnalysisAsPDF } from '@/lib/export-helpers';
 import { useToast } from '@/hooks/use-toast';
 import { AnalysisChat } from '@/components/AnalysisChat';
+import { clientLogger } from '@/lib/client-logger';
 import { PrintReadyCertification } from '@/components/PrintReadyCertification';
 
 // Helper function to format compliance status for display
@@ -132,7 +133,7 @@ export default function AnalysisDetailPage() {
         }
       }
     } catch (err: any) {
-      console.error('Error loading analysis:', err);
+      clientLogger.error('Failed to load analysis', { error: err, analysisId: params.id });
       setError('Failed to load analysis');
     } finally {
       setLoading(false);
@@ -149,7 +150,7 @@ export default function AnalysisDetailPage() {
         description: 'Compliance report downloaded successfully',
       });
     } catch (error) {
-      console.error('Error downloading PDF:', error);
+      clientLogger.error('PDF download failed', { error, analysisId: analysis.id });
       toast({
         title: 'Error',
         description: 'Failed to download PDF report',
@@ -178,7 +179,7 @@ export default function AnalysisDetailPage() {
       setShareDialogOpen(true);
       setCopied(false);
     } catch (error: any) {
-      console.error('Error generating share link:', error);
+      clientLogger.error('Share link generation failed', { error, analysisId: analysis.id });
       toast({
         title: 'Error',
         description: error.message || 'Failed to generate share link',

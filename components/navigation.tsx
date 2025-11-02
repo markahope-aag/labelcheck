@@ -62,7 +62,6 @@ export function Navigation() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    onClick={() => console.log('Clicked:', item.label, 'href:', item.href)}
                     className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       pathname === item.href
                         ? 'bg-blue-50 text-blue-600'

@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { requireAdmin } from '@/lib/auth-helpers';
+import { logger, createRequestLogger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
+  const requestLogger = createRequestLogger({ endpoint: '/api/admin/stats' });
+
   try {
     // Require admin access (throws if not admin)
     await requireAdmin();
+    requestLogger.info('Admin stats fetch started');
 
     const currentDate = new Date();
     const currentMonth = currentDate.toISOString().slice(0, 7);
@@ -76,7 +80,7 @@ export async function GET(request: NextRequest) {
       analysesThisMonth: analysesThisMonth || 0,
     });
   } catch (error: any) {
-    console.error('Error in GET /api/admin/stats:', error);
+    requestLogger.error('Admin stats fetch failed', { error, message: error.message });
 
     // Handle auth errors with appropriate status codes
     if (error.message === 'Unauthorized') {

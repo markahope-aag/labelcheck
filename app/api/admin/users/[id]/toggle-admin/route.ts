@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { logger, createRequestLogger } from '@/lib/logger';
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+  const requestLogger = createRequestLogger({ endpoint: '/api/admin/users/[id]/toggle-admin' });
+
   try {
     const { userId } = await auth();
     if (!userId) {
+      requestLogger.warn('Unauthorized admin toggle attempt');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    requestLogger.info('Admin toggle request started', { userId });
 
     const targetUserId = params.id;
 
@@ -57,9 +63,20 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       .eq('id', targetUserId);
 
     if (updateError) {
-      console.error('Error updating admin status:', updateError);
+      requestLogger.error('Failed to update admin status', {
+        error: updateError,
+        targetUserId: targetUserId,
+        newAdminStatus,
+      });
       return NextResponse.json({ error: 'Failed to update admin status' }, { status: 500 });
     }
+
+    requestLogger.info('Admin status toggled successfully', {
+      targetUserId,
+      targetUserEmail: targetUser.email,
+      newAdminStatus,
+      toggledBy: userId,
+    });
 
     return NextResponse.json(
       {
@@ -70,7 +87,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       { status: 200 }
     );
   } catch (error) {
-    console.error('Error in toggle admin:', error);
+    requestLogger.error('Admin toggle failed', { error });
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

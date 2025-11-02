@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, FileText, X, Upload, CheckCircle, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { clientLogger } from '@/lib/client-logger';
 
 interface TextCheckerProps {
   sessionId: string;
@@ -70,7 +71,7 @@ export function TextChecker({ sessionId, isOpen, onClose, onAnalysisComplete }: 
       onAnalysisComplete(data);
       onClose();
     } catch (error: any) {
-      console.error('Error analyzing content:', error);
+      clientLogger.error('Content analysis failed', { error, sessionId, uploadMode });
       toast({
         title: 'Error',
         description: error.message || 'Failed to analyze content',

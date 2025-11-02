@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { logger, createRequestLogger } from '@/lib/logger';
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+  const requestLogger = createRequestLogger({ endpoint: '/api/organizations/invitations/[id]' });
+
   try {
     const { userId } = await auth();
     if (!userId) {
+      requestLogger.warn('Unauthorized invitation deletion attempt');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    requestLogger.info('Invitation deletion request started', { userId });
 
     const invitationId = params.id;
 
@@ -55,13 +61,19 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       .eq('id', invitationId);
 
     if (deleteError) {
-      console.error('Error deleting invitation:', deleteError);
+      requestLogger.error('Failed to delete invitation', {
+        error: deleteError,
+        invitationId,
+        userId,
+      });
       return NextResponse.json({ error: 'Failed to delete invitation' }, { status: 500 });
     }
 
+    requestLogger.info('Invitation deleted successfully', { invitationId, userId });
+
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
-    console.error('Error in invitation deletion:', error);
+    requestLogger.error('Invitation deletion failed', { error });
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -1,5 +1,6 @@
 import sharp from 'sharp';
 import { IMAGE_CONSTRAINTS, IMAGE_ENHANCEMENT } from '@/lib/constants';
+import { logger } from '@/lib/logger';
 
 /**
  * Preprocesses an image to improve readability for AI analysis
@@ -60,7 +61,7 @@ export async function preprocessImage(buffer: Buffer): Promise<Buffer> {
 
     return processedBuffer;
   } catch (error) {
-    console.error('Error preprocessing image:', error);
+    logger.error('Image preprocessing failed', { error, bufferSize: buffer.length });
     // If preprocessing fails, return original buffer
     return buffer;
   }

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Send, X, MessageCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { clientLogger } from '@/lib/client-logger';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -88,7 +89,7 @@ export function AnalysisChat({
 
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (error: any) {
-      console.error('Error sending message:', error);
+      clientLogger.error('Failed to send chat message', { error, sessionId });
       toast({
         title: 'Error',
         description: error.message || 'Failed to send message',

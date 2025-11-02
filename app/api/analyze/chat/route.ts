@@ -4,18 +4,24 @@ import OpenAI from 'openai';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getSessionWithIterations, addIteration } from '@/lib/session-helpers';
 import { getActiveRegulatoryDocuments, buildRegulatoryContext } from '@/lib/regulatory-documents';
+import { logger, createRequestLogger } from '@/lib/logger';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
 export async function POST(request: NextRequest) {
+  const requestLogger = createRequestLogger({ endpoint: '/api/analyze/chat' });
+
   try {
     const { userId } = await auth();
 
     if (!userId) {
+      requestLogger.warn('Unauthorized chat request');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    requestLogger.info('Chat request started', { userId });
 
     const { sessionId, message, parentIterationId } = await request.json();
 
@@ -43,7 +49,7 @@ export async function POST(request: NextRequest) {
     } = await getSessionWithIterations(sessionId, true);
 
     if (sessionError || !session) {
-      console.error('Error fetching session:', sessionError);
+      requestLogger.error('Session fetch failed', { error: sessionError, sessionId });
       return NextResponse.json({ error: 'Session not found or access denied' }, { status: 404 });
     }
 
@@ -219,9 +225,16 @@ export async function POST(request: NextRequest) {
     );
 
     if (iterationError) {
-      console.error('Error saving chat iteration:', iterationError);
+      requestLogger.error('Failed to save chat iteration', { error: iterationError, sessionId });
       // Don't fail the request if we can't save the iteration
     }
+
+    requestLogger.info('Chat response completed', {
+      userId,
+      sessionId,
+      iterationId: iteration?.id,
+      responseLength: aiResponse.length,
+    });
 
     return NextResponse.json({
       response: aiResponse,
@@ -229,7 +242,7 @@ export async function POST(request: NextRequest) {
       timestamp: new Date().toISOString(),
     });
   } catch (error: any) {
-    console.error('Error in chat endpoint:', error);
+    requestLogger.error('Chat endpoint failed', { error, message: error.message });
     return NextResponse.json(
       { error: error.message || 'Failed to process chat message' },
       { status: 500 }

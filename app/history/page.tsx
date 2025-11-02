@@ -18,6 +18,7 @@ import { DateRange } from 'react-day-picker';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { clientLogger } from '@/lib/client-logger';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -92,7 +93,7 @@ function HistoryContent() {
         if (filters.sortBy) setSortBy(filters.sortBy);
       }
     } catch (error) {
-      console.error('Error loading saved filters:', error);
+      clientLogger.debug('Failed to load saved filters from localStorage', { error });
     }
   }, []);
 
@@ -101,7 +102,7 @@ function HistoryContent() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ statusFilter, sortBy }));
     } catch (error) {
-      console.error('Error saving filters:', error);
+      clientLogger.debug('Failed to save filters to localStorage', { error });
     }
   }, [statusFilter, sortBy]);
 
@@ -219,7 +220,7 @@ function HistoryContent() {
       setAnalyses(results);
       setTotalCount(count || 0);
     } catch (error) {
-      console.error('Error loading analyses:', error);
+      clientLogger.error('Failed to load analyses', { error, currentPage, statusFilter, sortBy });
       toast({
         title: 'Error',
         description: 'Failed to load analysis history',
@@ -268,7 +269,7 @@ function HistoryContent() {
       // Reload the current page
       loadAnalyses();
     } catch (error) {
-      console.error('Error deleting analysis:', error);
+      clientLogger.error('Failed to delete analysis', { error, analysisId: analysisToDelete.id });
       toast({
         title: 'Error',
         description: 'Failed to delete analysis. Please try again.',
@@ -307,7 +308,7 @@ function HistoryContent() {
         export_format: exportFormat === 'pdf' ? 'pdf' : exportFormat,
       });
     } catch (error) {
-      console.error('Error exporting:', error);
+      clientLogger.error('Export failed', { error, exportFormat, analysisCount: analyses.length });
       toast({
         title: 'Error',
         description: 'Failed to export analyses',

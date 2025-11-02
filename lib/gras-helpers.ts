@@ -1,4 +1,5 @@
 import { supabase, supabaseAdmin } from './supabase';
+import { logger } from './logger';
 
 export interface GRASIngredient {
   id: string;
@@ -259,7 +260,7 @@ export async function searchGRASIngredients(
     .limit(limit);
 
   if (error) {
-    console.error('Error searching GRAS ingredients:', error);
+    logger.error('GRAS ingredient search failed', { error, query, limit });
     return [];
   }
 
@@ -286,7 +287,12 @@ export async function getGRASIngredientsByCategory(category: string): Promise<GR
       .range(page * pageSize, (page + 1) * pageSize - 1);
 
     if (error) {
-      console.error('Error fetching GRAS ingredients by category:', error);
+      logger.error('Failed to fetch GRAS ingredients by category', {
+        error,
+        category,
+        page,
+        pageSize,
+      });
       return allData; // Return what we have so far
     }
 

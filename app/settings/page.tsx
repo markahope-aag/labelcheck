@@ -16,6 +16,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import { Bell, Download, Palette, Clock } from 'lucide-react';
+import { clientLogger } from '@/lib/client-logger';
 
 interface UserSettings {
   notification_email_enabled: boolean;
@@ -76,7 +77,7 @@ export default function SettingsPage() {
         });
       }
     } catch (error) {
-      console.error('Error loading settings:', error);
+      clientLogger.error('Failed to load settings', { error });
       toast({
         title: 'Error',
         description: 'Failed to load settings',
@@ -112,7 +113,7 @@ export default function SettingsPage() {
         description: 'Settings saved successfully',
       });
     } catch (error) {
-      console.error('Error saving settings:', error);
+      clientLogger.error('Failed to save settings', { error, settings });
       toast({
         title: 'Error',
         description: 'Failed to save settings',

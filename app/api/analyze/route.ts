@@ -16,18 +16,24 @@ import {
   saveIteration,
   sendNotificationEmail,
 } from '@/lib/analysis/orchestrator';
+import { logger, createRequestLogger } from '@/lib/logger';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
 export async function POST(request: NextRequest) {
+  const requestLogger = createRequestLogger({ endpoint: '/api/analyze' });
+
   try {
     const { userId } = await auth();
 
     if (!userId) {
+      requestLogger.warn('Unauthorized analysis request');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    requestLogger.info('Analysis request started', { userId });
 
     // 1. Get or create user
     const user = await getUserWithFallback(userId);
@@ -108,17 +114,20 @@ export async function POST(request: NextRequest) {
       throw new Error('No text response from AI');
     }
 
-    console.log('=== AI Response (first 500 chars) ===');
-    console.log(responseText.substring(0, 500));
-    console.log('=== End preview ===');
+    requestLogger.debug('AI response received', {
+      responseLength: responseText.length,
+      preview: responseText.substring(0, 500),
+    });
 
     let analysisData: any;
     try {
       analysisData = JSON.parse(responseText);
-      console.log('✅ Successfully parsed analysis data');
+      requestLogger.info('Analysis data parsed successfully', { userId });
     } catch (parseError) {
-      console.error('Error parsing AI response:', parseError);
-      console.error('Raw response (first 1000 chars):', responseText.substring(0, 1000));
+      requestLogger.error('Failed to parse AI response', {
+        error: parseError,
+        responsePreview: responseText.substring(0, 1000),
+      });
       throw new Error('Failed to parse AI response');
     }
 
@@ -176,7 +185,7 @@ export async function POST(request: NextRequest) {
         : null,
     });
   } catch (error: any) {
-    console.error('Error analyzing image:', error);
+    requestLogger.error('Image analysis failed', { error, message: error.message });
     return NextResponse.json(
       { error: error.message || 'Failed to analyze image' },
       { status: 500 }

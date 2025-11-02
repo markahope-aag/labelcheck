@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth, clerkClient } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { logger, createRequestLogger } from '@/lib/logger';
 
 export async function POST(req: NextRequest) {
+  const requestLogger = createRequestLogger({ endpoint: '/api/accept-invitation' });
+
   try {
     const { userId } = await auth();
     if (!userId) {
+      requestLogger.warn('Unauthorized invitation acceptance attempt');
       return NextResponse.json({ error: 'Unauthorized - Please sign in first' }, { status: 401 });
     }
+
+    requestLogger.info('Invitation acceptance request started', { userId });
 
     const { token } = await req.json();
 
@@ -33,7 +39,7 @@ export async function POST(req: NextRequest) {
       .eq('clerk_user_id', userId)
       .single();
 
-    console.log('Current user lookup:', { userId, currentUser, currentUserError });
+    requestLogger.debug('Current user lookup', { userId, currentUser, currentUserError });
 
     if (currentUserError || !currentUser) {
       return NextResponse.json({ error: 'User not found in database' }, { status: 404 });
@@ -62,7 +68,7 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
 
     if (invitationError) {
-      console.error('Error fetching invitation:', invitationError);
+      requestLogger.error('Failed to fetch invitation', { error: invitationError, token });
       return NextResponse.json({ error: 'Error processing invitation' }, { status: 500 });
     }
 
@@ -86,7 +92,7 @@ export async function POST(req: NextRequest) {
 
     // Log email comparison for debugging (but don't block if they don't match)
     // Since the user has the invitation token (which is secret), we trust they have access
-    console.log('Email comparison:', {
+    requestLogger.debug('Email comparison', {
       invitationEmail: invitation.email,
       clerkEmail: userEmail,
       match: invitation.email.toLowerCase() === userEmail.toLowerCase(),
@@ -118,7 +124,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Add user to organization
-    console.log('Adding user to organization:', {
+    requestLogger.info('Adding user to organization', {
       organization_id: invitation.organization_id,
       user_id: currentUser.id,
       role: invitation.role,
@@ -136,10 +142,14 @@ export async function POST(req: NextRequest) {
       })
       .select();
 
-    console.log('Member insertion result:', { newMember, memberError });
+    requestLogger.debug('Member insertion result', { newMember, memberError });
 
     if (memberError) {
-      console.error('Error adding member:', memberError);
+      requestLogger.error('Failed to add member to organization', {
+        error: memberError,
+        organizationId: invitation.organization_id,
+        userId: currentUser.id,
+      });
       return NextResponse.json({ error: 'Failed to add you to the organization' }, { status: 500 });
     }
 
@@ -150,9 +160,19 @@ export async function POST(req: NextRequest) {
       .eq('id', invitation.id);
 
     if (updateError) {
-      console.error('Error updating invitation:', updateError);
+      requestLogger.warn('Failed to update invitation status', {
+        error: updateError,
+        invitationId: invitation.id,
+      });
       // Don't fail the request as the user was already added
     }
+
+    requestLogger.info('Invitation accepted successfully', {
+      userId: currentUser.id,
+      organizationId: invitation.organization_id,
+      organizationName: (invitation.organizations as any)?.name,
+      role: invitation.role,
+    });
 
     return NextResponse.json(
       {
@@ -163,7 +183,7 @@ export async function POST(req: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
-    console.error('Error accepting invitation:', error);
+    requestLogger.error('Invitation acceptance failed', { error });
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

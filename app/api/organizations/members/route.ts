@@ -4,13 +4,17 @@ import { getAuthenticatedUser } from '@/lib/auth-helpers';
 import { Resend } from 'resend';
 import { generateInvitationEmail } from '@/lib/email-templates';
 import crypto from 'crypto';
+import { logger, createRequestLogger } from '@/lib/logger';
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 export async function GET(req: NextRequest) {
+  const requestLogger = createRequestLogger({ endpoint: '/api/organizations/members' });
+
   try {
     // Get authenticated user (throws if not authenticated or not found)
     const { userInternalId } = await getAuthenticatedUser();
+    requestLogger.info('Organization members fetch started', { userId: userInternalId });
 
     const currentUser = { id: userInternalId };
 
@@ -41,11 +45,17 @@ export async function GET(req: NextRequest) {
       .eq('organization_id', membership.organization_id);
 
     if (membersError) {
-      console.error('Error fetching members:', membersError);
+      requestLogger.error('Failed to fetch organization members', {
+        error: membersError,
+        organizationId: membership.organization_id,
+      });
       return NextResponse.json({ error: 'Failed to fetch members' }, { status: 500 });
     }
 
-    console.log('Members fetched:', { count: members?.length, members });
+    requestLogger.debug('Members fetched', {
+      count: members?.length,
+      organizationId: membership.organization_id,
+    });
 
     // Fetch pending invitations
     const { data: pendingInvitations, error: invitationsError } = await supabaseAdmin
@@ -55,12 +65,15 @@ export async function GET(req: NextRequest) {
       .is('accepted_at', null);
 
     if (invitationsError) {
-      console.error('Error fetching pending invitations:', invitationsError);
+      requestLogger.warn('Failed to fetch pending invitations', {
+        error: invitationsError,
+        organizationId: membership.organization_id,
+      });
     }
 
-    console.log('Pending invitations fetched:', {
+    requestLogger.debug('Pending invitations fetched', {
       count: pendingInvitations?.length,
-      pendingInvitations,
+      organizationId: membership.organization_id,
     });
 
     return NextResponse.json(
@@ -71,7 +84,7 @@ export async function GET(req: NextRequest) {
       { status: 200 }
     );
   } catch (error: any) {
-    console.error('Error fetching organization members:', error);
+    requestLogger.error('Organization members fetch failed', { error, message: error.message });
 
     // Handle auth errors with appropriate status codes
     if (error.message === 'Unauthorized') {
@@ -86,9 +99,12 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const requestLogger = createRequestLogger({ endpoint: '/api/organizations/members' });
+
   try {
     // Get authenticated user (throws if not authenticated or not found)
     const { userInternalId } = await getAuthenticatedUser();
+    requestLogger.info('Organization member invitation started', { userId: userInternalId });
 
     const currentUser = { id: userInternalId };
 
@@ -124,7 +140,11 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
 
     if (invitedUserError) {
-      console.error('Error looking up invited user:', invitedUserError);
+      requestLogger.error('Failed to lookup invited user', {
+        error: invitedUserError,
+        email,
+        organizationId,
+      });
       return NextResponse.json({ error: 'Error looking up user' }, { status: 500 });
     }
 
@@ -170,14 +190,24 @@ export async function POST(req: NextRequest) {
         .single();
 
       if (insertError) {
-        console.error('Error adding member:', insertError);
+        requestLogger.error('Failed to add member to organization', {
+          error: insertError,
+          userId: invitedUser.id,
+          organizationId,
+        });
         return NextResponse.json({ error: 'Failed to add member' }, { status: 500 });
       }
+
+      requestLogger.info('Member added immediately to organization', {
+        userId: invitedUser.id,
+        organizationId,
+        role,
+      });
 
       return NextResponse.json({ ...newMember, type: 'immediate' }, { status: 201 });
     } else {
       // User doesn't exist - create pending invitation
-      console.log('User not found, creating pending invitation for:', email);
+      requestLogger.info('User not found, creating pending invitation', { email, organizationId });
 
       // Check if there's already a pending invitation
       const { data: existingInvitation } = await supabaseAdmin
@@ -213,7 +243,11 @@ export async function POST(req: NextRequest) {
         .single();
 
       if (invitationError) {
-        console.error('Error creating pending invitation:', invitationError);
+        requestLogger.error('Failed to create pending invitation', {
+          error: invitationError,
+          email,
+          organizationId,
+        });
         return NextResponse.json({ error: 'Failed to create invitation' }, { status: 500 });
       }
 
@@ -235,24 +269,35 @@ export async function POST(req: NextRequest) {
             html: emailHtml,
           });
 
-          console.log('Invitation email sent successfully:', { to: email, result });
+          requestLogger.info('Invitation email sent successfully', {
+            to: email,
+            organizationId,
+            invitationId: pendingInvitation.id,
+          });
         } catch (emailError: any) {
-          console.error('Error sending invitation email:', {
+          requestLogger.error('Failed to send invitation email', {
             error: emailError,
             message: emailError?.message,
             statusCode: emailError?.statusCode,
-            name: emailError?.name,
+            email,
+            organizationId,
           });
           // Don't fail the request if email fails
         }
       } else {
-        console.warn('Resend API key not configured, skipping email');
+        requestLogger.warn('Resend API key not configured, skipping invitation email', { email });
       }
+
+      requestLogger.info('Pending invitation created', {
+        invitationId: pendingInvitation.id,
+        email,
+        organizationId,
+      });
 
       return NextResponse.json({ ...pendingInvitation, type: 'pending' }, { status: 201 });
     }
   } catch (error: any) {
-    console.error('Error in member invitation:', error);
+    requestLogger.error('Organization member invitation failed', { error, message: error.message });
 
     // Handle auth errors with appropriate status codes
     if (error.message === 'Unauthorized') {

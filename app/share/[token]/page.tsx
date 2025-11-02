@@ -8,6 +8,7 @@ import { Download, AlertCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { exportSingleAnalysisAsPDF } from '@/lib/export-helpers';
 import { useToast } from '@/hooks/use-toast';
+import { clientLogger } from '@/lib/client-logger';
 
 export default function SharePage() {
   const params = useParams();
@@ -45,7 +46,7 @@ export default function SharePage() {
 
       setAnalysis(data);
     } catch (err: any) {
-      console.error('Error loading shared analysis:', err);
+      clientLogger.error('Failed to load shared analysis', { error: err, token });
       setError('Failed to load analysis');
     } finally {
       setLoading(false);
@@ -62,7 +63,7 @@ export default function SharePage() {
         description: 'Compliance report downloaded successfully',
       });
     } catch (error) {
-      console.error('Error downloading PDF:', error);
+      clientLogger.error('PDF download failed', { error, analysisId: analysis.id });
       toast({
         title: 'Error',
         description: 'Failed to download PDF report',

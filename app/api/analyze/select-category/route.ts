@@ -1,14 +1,20 @@
 import { auth } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { logger, createRequestLogger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
+  const requestLogger = createRequestLogger({ endpoint: '/api/analyze/select-category' });
+
   try {
     const { userId } = await auth();
 
     if (!userId) {
+      requestLogger.warn('Unauthorized category selection request');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    requestLogger.info('Category selection request started', { userId });
 
     const body = await request.json();
     const { analysisId, selectedCategory, selectionReason } = body;
@@ -47,16 +53,27 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Error updating category selection:', error);
+      requestLogger.error('Failed to update category selection', {
+        error,
+        analysisId,
+        selectedCategory,
+        userId,
+      });
       return NextResponse.json({ error: 'Failed to save category selection' }, { status: 500 });
     }
+
+    requestLogger.info('Category selection saved', {
+      userId,
+      analysisId,
+      selectedCategory,
+    });
 
     return NextResponse.json({
       success: true,
       analysis: data,
     });
   } catch (error: any) {
-    console.error('Error in select-category endpoint:', error);
+    requestLogger.error('Select-category endpoint failed', { error, message: error.message });
     return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
   }
 }

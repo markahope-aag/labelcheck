@@ -2,6 +2,7 @@ import { clerkClient } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { requireAdmin } from '@/lib/auth-helpers';
+import { logger, createRequestLogger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,9 +10,12 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const requestLogger = createRequestLogger({ endpoint: '/api/admin/users/[id]' });
+
   try {
     // Require admin access (throws if not admin)
     await requireAdmin();
+    requestLogger.info('Admin user deletion started');
 
     const resolvedParams = await params;
     const userIdToDelete = resolvedParams.id;
@@ -43,7 +47,10 @@ export async function DELETE(
       .eq('id', userIdToDelete);
 
     if (deleteError) {
-      console.error('Error deleting user from Supabase:', deleteError);
+      requestLogger.error('Failed to delete user from Supabase', {
+        error: deleteError,
+        userId: userIdToDelete,
+      });
       return NextResponse.json({ error: 'Failed to delete user from database' }, { status: 500 });
     }
 
@@ -51,14 +58,24 @@ export async function DELETE(
     try {
       const client = await clerkClient();
       await client.users.deleteUser(userToDelete.clerk_user_id);
+      requestLogger.info('User deleted from Clerk', {
+        userId: userIdToDelete,
+        clerkUserId: userToDelete.clerk_user_id,
+      });
     } catch (clerkError: any) {
-      console.error('Error deleting user from Clerk:', clerkError);
+      requestLogger.error('Failed to delete user from Clerk', {
+        error: clerkError,
+        userId: userIdToDelete,
+        clerkUserId: userToDelete.clerk_user_id,
+      });
       // Continue even if Clerk deletion fails - user is already deleted from DB
     }
 
+    requestLogger.info('User deleted successfully', { userId: userIdToDelete });
+
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error('Error in DELETE /api/admin/users/[id]:', error);
+    requestLogger.error('Admin user deletion failed', { error, message: error.message });
 
     // Handle auth errors with appropriate status codes
     if (error.message === 'Unauthorized') {

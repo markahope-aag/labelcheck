@@ -1,3 +1,5 @@
+import { logger } from './logger';
+
 /**
  * Extract text content from a PDF buffer
  * @param buffer - PDF file as a Buffer
@@ -9,7 +11,7 @@ export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
     const data = await pdf(buffer);
     return data.text;
   } catch (error) {
-    console.error('Error extracting text from PDF:', error);
+    logger.error('PDF text extraction failed', { error, bufferSize: buffer.length });
     throw new Error('Failed to extract text from PDF. Please ensure the file is a valid PDF.');
   }
 }
@@ -37,7 +39,7 @@ export async function extractPDFMetadata(buffer: Buffer): Promise<{
       creator: data.info?.Creator,
     };
   } catch (error) {
-    console.error('Error extracting PDF metadata:', error);
+    logger.error('PDF metadata extraction failed', { error, bufferSize: buffer.length });
     throw new Error('Failed to extract PDF metadata.');
   }
 }
@@ -137,7 +139,7 @@ export async function convertPdfToJpgViaCloudConvert(buffer: Buffer): Promise<Bu
     const response = await axios.get(file.url, { responseType: 'arraybuffer' });
     return Buffer.from(response.data);
   } catch (error) {
-    console.error('Error converting PDF via CloudConvert:', error);
+    logger.error('CloudConvert PDF conversion failed', { error, bufferSize: buffer.length });
     throw new Error('Failed to convert PDF to image using CloudConvert.');
   }
 }
@@ -158,12 +160,15 @@ export async function processPdfForAnalysis(
 }> {
   try {
     // Step 1: Try text extraction first (free, fast)
-    console.log('📄 Attempting text extraction from PDF...');
+    logger.debug('Attempting PDF text extraction', { bufferSize: buffer.length, minTextLength });
     const rawText = await extractTextFromPDF(buffer);
     const cleanedText = cleanExtractedText(rawText);
 
     if (cleanedText.length >= minTextLength) {
-      console.log(`✅ Text extraction successful (${cleanedText.length} characters)`);
+      logger.info('PDF text extraction successful', {
+        textLength: cleanedText.length,
+        method: 'text_extraction',
+      });
       return {
         type: 'text',
         content: cleanedText,
@@ -172,11 +177,13 @@ export async function processPdfForAnalysis(
     }
 
     // Step 2: Insufficient text, use CloudConvert (paid, visual analysis)
-    console.log(
-      `⚠️  Insufficient text extracted (${cleanedText.length} characters), converting to image via CloudConvert...`
-    );
+    logger.warn('Insufficient text extracted from PDF, converting to image', {
+      extractedTextLength: cleanedText.length,
+      minTextLength,
+      method: 'cloudconvert',
+    });
     const imageBuffer = await convertPdfToJpgViaCloudConvert(buffer);
-    console.log('✅ PDF converted to JPG via CloudConvert');
+    logger.info('PDF converted to JPG via CloudConvert', { imageSize: imageBuffer.length });
 
     return {
       type: 'image',
@@ -184,7 +191,7 @@ export async function processPdfForAnalysis(
       method: 'cloudconvert',
     };
   } catch (error) {
-    console.error('Error processing PDF:', error);
+    logger.error('PDF processing failed', { error });
     throw new Error('Failed to process PDF for analysis.');
   }
 }

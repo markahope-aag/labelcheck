@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import { BarChart3, FileText, TrendingUp, Calendar, Download } from 'lucide-react';
 import { exportAnalysesAsPDF } from '@/lib/export-helpers';
+import { clientLogger } from '@/lib/client-logger';
 
 interface MonthlyStats {
   month: string;
@@ -134,7 +135,7 @@ export default function ReportsPage() {
         issues: yearIssues,
       });
     } catch (error) {
-      console.error('Error loading report data:', error);
+      clientLogger.error('Failed to load report data', { error, selectedYear });
       toast({
         title: 'Error',
         description: 'Failed to load report data',
@@ -184,7 +185,7 @@ export default function ReportsPage() {
         description: `Exported ${analyses.length} analyses from ${month}`,
       });
     } catch (error) {
-      console.error('Error exporting monthly report:', error);
+      clientLogger.error('Monthly report export failed', { error, month, selectedYear });
       toast({
         title: 'Error',
         description: 'Failed to export report',

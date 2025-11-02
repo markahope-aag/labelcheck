@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { requireAdmin } from '@/lib/auth-helpers';
+import { logger, createRequestLogger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
+  const requestLogger = createRequestLogger({ endpoint: '/api/admin/documents' });
+
   try {
     // Require admin access (throws if not admin)
     await requireAdmin();
+    requestLogger.info('Admin documents fetch started');
 
     // Admin routes should use supabaseAdmin to bypass RLS
     const { data: documents, error } = await supabaseAdmin
@@ -16,18 +20,18 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching documents:', error);
+      requestLogger.error('Failed to fetch documents', { error });
       return NextResponse.json({ error: 'Failed to fetch documents' }, { status: 500 });
     }
 
-    // Log the structure of the first document to see what columns exist
-    if (documents && documents.length > 0) {
-      console.log('Database columns:', Object.keys(documents[0]));
-    }
+    requestLogger.debug('Documents fetched successfully', {
+      count: documents?.length,
+      columns: documents && documents.length > 0 ? Object.keys(documents[0]) : [],
+    });
 
     return NextResponse.json(documents);
   } catch (error: any) {
-    console.error('Error in GET /api/admin/documents:', error);
+    requestLogger.error('Admin documents fetch failed', { error, message: error.message });
 
     // Handle auth errors with appropriate status codes
     if (error.message === 'Unauthorized') {
@@ -42,9 +46,12 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const requestLogger = createRequestLogger({ endpoint: '/api/admin/documents' });
+
   try {
     // Require admin access (throws if not admin)
     await requireAdmin();
+    requestLogger.info('Admin document creation started');
 
     const body = await request.json();
 
@@ -55,13 +62,18 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Error creating document:', error);
+      requestLogger.error('Failed to create document', { error, body });
       return NextResponse.json({ error: 'Failed to create document' }, { status: 500 });
     }
 
+    requestLogger.info('Document created successfully', {
+      documentId: document?.id,
+      title: document?.title,
+    });
+
     return NextResponse.json(document);
   } catch (error: any) {
-    console.error('Error in POST /api/admin/documents:', error);
+    requestLogger.error('Admin document creation failed', { error, message: error.message });
 
     // Handle auth errors with appropriate status codes
     if (error.message === 'Unauthorized') {

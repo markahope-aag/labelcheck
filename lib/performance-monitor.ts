@@ -2,6 +2,8 @@
  * Performance monitoring utilities for tracking API route performance
  */
 
+import { logger } from './logger';
+
 export class PerformanceMonitor {
   private startTime: number;
   private checkpoints: Map<string, number>;
@@ -74,56 +76,41 @@ export class PerformanceMonitor {
   }
 
   /**
-   * Log the performance summary to console
+   * Log the performance summary to structured logger
    */
   logSummary(): void {
     const summary = this.getSummary();
 
-    console.log('\n╔════════════════════════════════════════════════════════════╗');
-    console.log(`║ 📊 Performance Report: ${summary.operation.padEnd(38)} ║`);
-    console.log('╠════════════════════════════════════════════════════════════╣');
-    console.log(`║ Total Time: ${summary.totalTime}ms`.padEnd(61) + '║');
-    console.log('╠════════════════════════════════════════════════════════════╣');
-
-    // Sort steps by duration (descending) to show bottlenecks first
+    // Sort steps by duration (descending) to identify bottlenecks
     const sortedSteps = [...summary.steps].sort((a, b) => b.duration - a.duration);
-
-    for (const step of sortedSteps) {
-      const bar = this.createProgressBar(step.percentage);
-      const durationStr = `${step.duration}ms`;
-      const percentStr = `${step.percentage.toFixed(1)}%`;
-
-      console.log(`║ ${step.from} → ${step.to}`.padEnd(61) + '║');
-      console.log(`║   ${bar} ${durationStr.padEnd(8)} (${percentStr})`.padEnd(61) + '║');
-    }
-
-    console.log('╠════════════════════════════════════════════════════════════╣');
-
-    // Show metadata
-    if (Object.keys(summary.metadata).length > 1) {
-      // More than just 'operation'
-      console.log('║ Metadata:'.padEnd(61) + '║');
-      for (const [key, value] of Object.entries(summary.metadata)) {
-        if (key !== 'operation') {
-          const line = `║   ${key}: ${value}`;
-          console.log(line.padEnd(61) + '║');
-        }
-      }
-      console.log('╠════════════════════════════════════════════════════════════╣');
-    }
-
-    // Identify bottlenecks (>20% of total time)
     const bottlenecks = sortedSteps.filter((s) => s.percentage > 20);
-    if (bottlenecks.length > 0) {
-      console.log('║ ⚠️  BOTTLENECKS (>20% of total time):'.padEnd(61) + '║');
-      for (const bottleneck of bottlenecks) {
-        const line = `║   • ${bottleneck.from} → ${bottleneck.to} (${bottleneck.duration}ms)`;
-        console.log(line.padEnd(61) + '║');
-      }
-      console.log('╠════════════════════════════════════════════════════════════╣');
-    }
 
-    console.log('╚════════════════════════════════════════════════════════════╝\n');
+    logger.info('Performance report', {
+      operation: summary.operation,
+      totalTime: summary.totalTime,
+      stepCount: summary.steps.length,
+      bottlenecks:
+        bottlenecks.length > 0
+          ? bottlenecks.map((b) => ({
+              from: b.from,
+              to: b.to,
+              duration: b.duration,
+              percentage: b.percentage,
+            }))
+          : undefined,
+      metadata: Object.keys(summary.metadata).length > 1 ? summary.metadata : undefined,
+    });
+
+    // Log detailed steps for debugging
+    logger.debug('Performance steps', {
+      operation: summary.operation,
+      steps: summary.steps.map((step) => ({
+        from: step.from,
+        to: step.to,
+        duration: step.duration,
+        percentage: step.percentage,
+      })),
+    });
   }
 
   /**
@@ -171,11 +158,11 @@ export async function measureAsync<T>(
   try {
     const result = await fn();
     const duration = Date.now() - start;
-    console.log(`⏱️  ${name}: ${duration}ms`);
+    logger.debug('Async operation completed', { operation: name, duration });
     return result;
   } catch (error) {
     const duration = Date.now() - start;
-    console.log(`❌ ${name}: ${duration}ms (failed)`);
+    logger.error('Async operation failed', { operation: name, duration, error });
     throw error;
   }
 }

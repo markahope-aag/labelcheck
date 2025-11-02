@@ -26,6 +26,7 @@ import { preprocessImage } from '@/lib/image-processing';
 import { createSession, addIteration } from '@/lib/session-helpers';
 import { processPdfForAnalysis } from '@/lib/pdf-helpers';
 import { isUserAdmin } from '@/lib/auth-helpers';
+import { logger } from '@/lib/logger';
 
 export interface UserInfo {
   id: string;
@@ -80,7 +81,7 @@ export async function getUserWithFallback(userId: string): Promise<UserInfo> {
       const userEmail = clerkUser?.emailAddresses?.[0]?.emailAddress || '';
 
       if (!userEmail) {
-        console.error('No email found for Clerk user:', userId);
+        logger.error('No email found for Clerk user', { userId });
         throw new Error('User email not found');
       }
 
@@ -95,19 +96,19 @@ export async function getUserWithFallback(userId: string): Promise<UserInfo> {
         .single();
 
       if (createError) {
-        console.error('Error creating user in Supabase:', createError);
+        logger.error('Failed to create user in Supabase', { error: createError, userId });
         throw new Error(`Failed to create user record: ${createError.message}`);
       }
 
       if (!newUser) {
-        console.error('User creation returned no data');
+        logger.error('User creation returned no data', { userId });
         throw new Error('Failed to create user record');
       }
 
       user = newUser;
-      console.log('Successfully created user:', newUser.id);
+      logger.info('User created successfully', { userId, userInternalId: newUser.id });
     } catch (err: any) {
-      console.error('Exception creating user:', err);
+      logger.error('Exception creating user', { error: err, userId });
       throw new Error(`Failed to create user: ${err.message}`);
     }
   }
@@ -156,7 +157,11 @@ export async function checkUsageLimits(userId: string, userInternalId: string): 
     });
 
     if (usageError) {
-      console.error('Error creating usage tracking:', usageError);
+      logger.error('Failed to create usage tracking', {
+        error: usageError,
+        userId,
+        userInternalId,
+      });
     }
   }
 
@@ -208,13 +213,13 @@ export async function handleSession(
     );
 
     if (sessionError || !newSession) {
-      console.error('Error creating session:', sessionError);
+      logger.error('Failed to create session', { error: sessionError, userInternalId });
       // Don't fail the analysis if session creation fails
       // The analysis will work without a session (backward compatible)
     } else {
       session = newSession;
       sessionId = newSession.id;
-      console.log('Created new session:', sessionId);
+      logger.info('Session created successfully', { sessionId, userInternalId });
     }
   }
 
@@ -225,7 +230,11 @@ export async function handleSession(
  * Process uploaded file (image or PDF)
  */
 export async function processFile(imageFile: File): Promise<ProcessedFile> {
-  console.log('📥 Processing image file...');
+  logger.debug('Processing uploaded file', {
+    fileName: imageFile.name,
+    fileType: imageFile.type,
+    fileSize: imageFile.size,
+  });
   const bytes = await imageFile.arrayBuffer();
   const buffer = Buffer.from(bytes);
 
@@ -244,23 +253,23 @@ export async function processFile(imageFile: File): Promise<ProcessedFile> {
       // Text extraction successful
       pdfTextContent = pdfResult.content as string;
       contentType = 'text';
-      console.log(`✅ Using extracted text (${pdfTextContent.length} characters)`);
+      logger.info('Using extracted PDF text', { textLength: pdfTextContent.length });
     } else {
       // CloudConvert converted PDF to image
       const imageBuffer = pdfResult.content as Buffer;
       base64Data = imageBuffer.toString('base64');
       mediaType = 'image/jpeg';
       contentType = 'document';
-      console.log('✅ Using CloudConvert image conversion');
+      logger.info('Using CloudConvert PDF conversion');
     }
   } else {
-    console.log('🖼️ Preprocessing image...');
     // For images, preprocess to improve readability
+    logger.debug('Preprocessing image file');
     const processedBuffer = await preprocessImage(buffer);
     base64Data = processedBuffer.toString('base64');
     mediaType = 'image/jpeg';
     contentType = 'image';
-    console.log('✅ Image preprocessed');
+    logger.debug('Image preprocessing completed');
   }
 
   return {
@@ -281,7 +290,7 @@ export async function extractTextForRag(
   mediaType: 'image/jpeg' | 'image/png'
 ): Promise<string | undefined> {
   try {
-    console.log('🔍 Extracting key text from image for RAG lite...');
+    logger.debug('Extracting text from image for RAG lite pre-classification');
     const quickOcrResponse = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
@@ -307,10 +316,10 @@ export async function extractTextForRag(
     });
 
     const extractedText = quickOcrResponse.choices[0]?.message?.content || '';
-    console.log(`✅ Extracted ${extractedText.length} characters for RAG lite`);
+    logger.debug('Text extracted for RAG lite', { textLength: extractedText.length });
     return extractedText;
   } catch (ocrError) {
-    console.warn('⚠️ Quick OCR failed, will use all documents:', ocrError);
+    logger.warn('Quick OCR failed, will use all documents', { error: ocrError });
     return undefined;
   }
 }
@@ -322,7 +331,7 @@ export async function loadRegulatoryDocuments(
   pdfTextContent?: string,
   extractedTextForRag?: string
 ): Promise<DocumentLoadResult> {
-  console.log('📚 Fetching regulatory documents...');
+  logger.debug('Fetching regulatory documents for RAG');
 
   // Use RAG lite for both PDFs and images (if text extraction succeeded)
   const textForRag = pdfTextContent || extractedTextForRag;
@@ -331,9 +340,11 @@ export async function loadRegulatoryDocuments(
     // RAG lite - filter by pre-classified category
     const { documents, preClassifiedCategory, documentCount, totalCount } =
       await getRecommendedDocuments(textForRag);
-    console.log(
-      `✅ RAG Lite: Loaded ${documentCount}/${totalCount} documents for ${preClassifiedCategory}`
-    );
+    logger.debug('Regulatory documents loaded via RAG lite', {
+      documentCount,
+      totalCount,
+      preClassifiedCategory,
+    });
 
     return {
       regulatoryDocuments: documents,
@@ -343,7 +354,9 @@ export async function loadRegulatoryDocuments(
   } else {
     // Fallback - load all documents if text extraction failed
     const documents = await getActiveRegulatoryDocuments();
-    console.log(`✅ Loaded all ${documents.length} documents (fallback mode)`);
+    logger.debug('Regulatory documents loaded in fallback mode', {
+      documentCount: documents.length,
+    });
 
     return {
       regulatoryDocuments: documents,
@@ -366,7 +379,7 @@ export async function callAIWithRetry(
   maxRetries = 3
 ): Promise<OpenAI.Chat.Completions.ChatCompletion> {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    console.log(`🤖 Calling OpenAI GPT-4o (attempt ${attempt}/${maxRetries})...`);
+    logger.debug('Calling OpenAI API', { attempt, maxRetries });
     try {
       // Construct the message content based on content type
       let userMessage: any;
@@ -413,7 +426,7 @@ export async function callAIWithRetry(
     } catch (error: any) {
       // Check if it's a rate limit error
       if (error?.status === 429 || error?.error?.type === 'rate_limit_error') {
-        console.log(`Rate limit hit, attempt ${attempt}/${maxRetries}`);
+        logger.warn('OpenAI rate limit exceeded', { attempt, maxRetries });
 
         if (attempt === maxRetries) {
           // On final attempt, throw a user-friendly error
@@ -424,7 +437,7 @@ export async function callAIWithRetry(
 
         // Exponential backoff: wait 5s, 10s, 20s
         const waitTime = 5000 * Math.pow(2, attempt - 1);
-        console.log(`Waiting ${waitTime}ms before retry...`);
+        logger.debug('Waiting before retry', { waitTime, attempt, maxRetries });
         await new Promise((resolve) => setTimeout(resolve, waitTime));
         continue;
       }
@@ -487,7 +500,7 @@ export async function saveAnalysis(
     .single();
 
   if (insertError) {
-    console.error('Error saving analysis:', insertError);
+    logger.error('Failed to save analysis', { error: insertError, userInternalId });
     throw new Error('Failed to save analysis');
   }
 
@@ -509,7 +522,10 @@ export async function updateUsage(
     .eq('month', currentMonth);
 
   if (usageUpdateError) {
-    console.error('Error updating usage:', usageUpdateError);
+    logger.error('Failed to update usage tracking', {
+      error: usageUpdateError,
+      userInternalId,
+    });
   }
 }
 
@@ -538,10 +554,14 @@ export async function saveIteration(
   );
 
   if (iterationError) {
-    console.error('Error creating iteration:', iterationError);
+    logger.error('Failed to create iteration', {
+      error: iterationError,
+      sessionId,
+      analysisId,
+    });
     // Don't fail the analysis if iteration creation fails
   } else {
-    console.log('Created iteration for session:', sessionId);
+    logger.debug('Iteration created successfully', { sessionId, analysisId });
   }
 }
 
@@ -572,7 +592,11 @@ export async function sendNotificationEmail(
       html: emailHtml,
     });
   } catch (emailError) {
-    console.error('Error sending email notification:', emailError);
+    logger.error('Failed to send email notification', {
+      error: emailError,
+      userEmail,
+      analysisId: analysis.id,
+    });
     // Don't fail the analysis if email fails
   }
 }

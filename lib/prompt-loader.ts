@@ -15,6 +15,8 @@ import { ProductCategory } from './supabase';
  * - Better separation of concerns
  */
 
+import { logger } from './logger';
+
 // Cache loaded prompts to avoid repeated file reads
 const promptCache: Map<string, string> = new Map();
 
@@ -114,7 +116,7 @@ ${jsonSchema}`;
  */
 export function clearPromptCache(): void {
   promptCache.clear();
-  console.log('🗑️ Prompt cache cleared');
+  logger.info('Prompt cache cleared');
 }
 
 /**

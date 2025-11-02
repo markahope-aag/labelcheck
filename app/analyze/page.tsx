@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
+import { clientLogger } from '@/lib/client-logger';
 import {
   Camera,
   Upload,
@@ -87,7 +88,11 @@ export default function AnalyzePage() {
   const [showQualityWarning, setShowQualityWarning] = useState(false);
 
   const processFile = async (file: File) => {
-    console.log('Processing file:', file.name, 'Type:', file.type, 'Size:', file.size);
+    clientLogger.debug('Processing file', {
+      fileName: file.name,
+      fileType: file.type,
+      fileSize: file.size,
+    });
 
     // Accept both images and PDFs
     const isImage = file.type.startsWith('image/');
@@ -96,11 +101,11 @@ export default function AnalyzePage() {
       file.type === 'application/x-pdf' ||
       file.name.toLowerCase().endsWith('.pdf');
 
-    console.log('File validation - isImage:', isImage, 'isPdf:', isPdf);
+    clientLogger.debug('File validation', { isImage, isPdf, fileType: file.type });
 
     if (!isImage && !isPdf) {
       const errorMsg = `Please select a valid image or PDF file (received: ${file.type || 'unknown type'})`;
-      console.error(errorMsg);
+      clientLogger.error('Invalid file type', { fileType: file.type, fileName: file.name });
       setError(errorMsg);
       return;
     }
@@ -148,7 +153,7 @@ export default function AnalyzePage() {
           }
         }
       } catch (error) {
-        console.error('Error checking image quality:', error);
+        clientLogger.error('Image quality check failed', { error, fileName: file.name });
         // Don't block upload if quality check fails
         setImageQuality(null);
         setShowQualityWarning(false);
@@ -193,14 +198,14 @@ export default function AnalyzePage() {
     e.stopPropagation();
     setIsDragging(false);
 
-    console.log('Drop event triggered');
+    clientLogger.debug('File drop event triggered');
     const files = e.dataTransfer.files;
-    console.log('Files dropped:', files.length);
+    clientLogger.debug('Files dropped', { fileCount: files.length });
 
     if (files && files.length > 0) {
       processFile(files[0]);
     } else {
-      console.error('No files in drop event');
+      clientLogger.warn('No files in drop event');
     }
   };
 
@@ -376,7 +381,11 @@ export default function AnalyzePage() {
             }),
           });
         } catch (error) {
-          console.error('Error saving category selection:', error);
+          clientLogger.error('Failed to save category selection', {
+            error,
+            analysisId: data.id,
+            category,
+          });
           // Continue anyway - don't block user from seeing results
         }
       }
@@ -429,7 +438,7 @@ export default function AnalyzePage() {
         description: 'Compliance report downloaded successfully',
       });
     } catch (error) {
-      console.error('Error downloading PDF:', error);
+      clientLogger.error('PDF download failed', { error, analysisId: result.id });
       toast({
         title: 'Error',
         description: 'Failed to download PDF report',
@@ -458,7 +467,7 @@ export default function AnalyzePage() {
       setShareDialogOpen(true);
       setCopied(false);
     } catch (error: any) {
-      console.error('Error generating share link:', error);
+      clientLogger.error('Share link generation failed', { error, analysisId: result.id });
       toast({
         title: 'Error',
         description: error.message || 'Failed to generate share link',

@@ -2,6 +2,7 @@ import { supabase } from './supabase';
 
 import { RegulatoryDocument, ProductCategory } from './supabase';
 import { getCachedRegulatoryDocuments, invalidateDocumentCache } from './regulatory-cache';
+import { logger } from './logger';
 
 export interface DocumentCategory {
   id: string;
@@ -171,9 +172,11 @@ export async function getRegulatoryDocumentsByCategory(
     return applicableCategories.includes(productCategory);
   });
 
-  console.log(
-    `📚 RAG Lite: Filtered ${filteredDocs.length} of ${allDocs.length} documents for ${productCategory}`
-  );
+  logger.debug('RAG lite document filtering', {
+    productCategory,
+    filteredCount: filteredDocs.length,
+    totalCount: allDocs.length,
+  });
 
   return filteredDocs;
 }
@@ -298,9 +301,11 @@ export async function getRecommendedDocuments(extractedText: string): Promise<{
     const filteredDocs = await getRegulatoryDocumentsByCategory(preClassifiedCategory);
     const allDocs = await getActiveRegulatoryDocuments();
 
-    console.log(
-      `🎯 Pre-classified as ${preClassifiedCategory}, loading ${filteredDocs.length}/${allDocs.length} documents`
-    );
+    logger.info('Pre-classified product category for RAG lite', {
+      preClassifiedCategory,
+      filteredDocumentCount: filteredDocs.length,
+      totalDocumentCount: allDocs.length,
+    });
 
     return {
       documents: filteredDocs,
@@ -312,7 +317,9 @@ export async function getRecommendedDocuments(extractedText: string): Promise<{
 
   // Fallback: load all documents if uncertain
   const allDocs = await getActiveRegulatoryDocuments();
-  console.log(`⚠️  Could not pre-classify, loading all ${allDocs.length} documents`);
+  logger.warn('Could not pre-classify product category, loading all documents', {
+    totalDocumentCount: allDocs.length,
+  });
 
   return {
     documents: allDocs,
@@ -326,7 +333,7 @@ export async function getDocumentCategories(): Promise<DocumentCategory[]> {
   const { data, error } = await supabase.from('document_categories').select('*').order('name');
 
   if (error) {
-    console.error('Error fetching categories:', error);
+    logger.error('Failed to fetch document categories', { error });
     return [];
   }
 
@@ -392,7 +399,7 @@ export async function searchDocuments(query: string): Promise<RegulatoryDocument
     .limit(50);
 
   if (error) {
-    console.error('Error searching documents:', error);
+    logger.error('Document search failed', { error, query });
     return [];
   }
 

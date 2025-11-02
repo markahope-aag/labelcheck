@@ -5,6 +5,8 @@
  * if critical configuration is missing.
  */
 
+import { logger } from './logger';
+
 interface RequiredEnvVars {
   // Authentication
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: string;
@@ -87,10 +89,9 @@ export function validateEnv(): void {
   }
 
   if (missingOptional.length > 0 && process.env.NODE_ENV !== 'production') {
-    console.warn(
-      '⚠️  Optional environment variables not set:\n' +
-        missingOptional.map((v) => `  - ${v}`).join('\n')
-    );
+    logger.warn('Optional environment variables not set', {
+      missingVariables: missingOptional,
+    });
   }
 }
 
@@ -98,9 +99,9 @@ export function validateEnv(): void {
 if (typeof window === 'undefined') {
   try {
     validateEnv();
-    console.log('✅ Environment variables validated successfully');
+    logger.info('Environment variables validated successfully');
   } catch (error) {
-    console.error('❌ Environment validation failed:', error);
+    logger.error('Environment validation failed', { error });
     // Don't throw in production to prevent crashes during builds
     if (process.env.NODE_ENV === 'development') {
       throw error;

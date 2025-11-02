@@ -1,4 +1,5 @@
 import { supabase, supabaseAdmin } from './supabase';
+import { logger } from './logger';
 
 /**
  * Cache for old dietary ingredients from database
@@ -35,7 +36,7 @@ async function getOldDietaryIngredients(): Promise<Set<string>> {
         .range(page * pageSize, (page + 1) * pageSize - 1);
 
       if (error) {
-        console.error('Error fetching old dietary ingredients:', error);
+        logger.error('Failed to fetch old dietary ingredients', { error, page });
         // Return fallback list on error
         return getFallbackPre1994Ingredients();
       }
@@ -64,9 +65,10 @@ async function getOldDietaryIngredients(): Promise<Set<string>> {
       }
     });
 
-    console.log(
-      `Loaded ${allData.length} old dietary ingredients into cache (${ingredientSet.size} total entries including synonyms)`
-    );
+    logger.info('Old dietary ingredients loaded into cache', {
+      ingredientCount: allData.length,
+      totalEntriesWithSynonyms: ingredientSet.size,
+    });
 
     // Update cache
     oldDietaryIngredientsCache = ingredientSet;
@@ -74,7 +76,7 @@ async function getOldDietaryIngredients(): Promise<Set<string>> {
 
     return ingredientSet;
   } catch (error) {
-    console.error('Error in getOldDietaryIngredients:', error);
+    logger.error('Old dietary ingredients fetch failed', { error });
     return getFallbackPre1994Ingredients();
   }
 }
@@ -383,7 +385,7 @@ export async function checkNDICompliance(ingredients: string[]): Promise<{
       .range(page * pageSize, (page + 1) * pageSize - 1);
 
     if (error) {
-      console.error('Error fetching NDI ingredients:', error);
+      logger.error('Failed to fetch NDI ingredients', { error, page });
       return {
         results: ingredients.map((ing) => ({
           ingredient: ing,
@@ -411,7 +413,7 @@ export async function checkNDICompliance(ingredients: string[]): Promise<{
     }
   }
 
-  console.log(`Loaded ${ndiIngredients.length} NDI ingredients for matching`);
+  logger.debug('NDI ingredients loaded for matching', { ingredientCount: ndiIngredients.length });
 
   const results: NDICheckResult[] = [];
   let withNDI = 0;

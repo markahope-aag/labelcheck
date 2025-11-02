@@ -1,16 +1,22 @@
 import { auth } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { logger, createRequestLogger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
+  const requestLogger = createRequestLogger({ endpoint: '/api/admin/subscriptions' });
+
   try {
     const { userId } = await auth();
 
     if (!userId) {
+      requestLogger.warn('Unauthorized subscriptions fetch attempt');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    requestLogger.info('Admin subscriptions fetch started', { userId });
 
     // Check if user is system admin in database
     const { data: currentUser } = await supabaseAdmin
@@ -39,7 +45,7 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching subscriptions:', error);
+      requestLogger.error('Failed to fetch subscriptions', { error });
       return NextResponse.json({ error: 'Failed to fetch subscriptions' }, { status: 500 });
     }
 
@@ -50,12 +56,17 @@ export async function GET(request: NextRequest) {
       total: subscriptions?.length || 0,
     };
 
+    requestLogger.debug('Subscriptions fetched successfully', {
+      count: subscriptions?.length,
+      stats,
+    });
+
     return NextResponse.json({
       subscriptions: subscriptions || [],
       stats,
     });
   } catch (error: any) {
-    console.error('Error in GET /api/admin/subscriptions:', error);
+    requestLogger.error('Admin subscriptions fetch failed', { error, message: error.message });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

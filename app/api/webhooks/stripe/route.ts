@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { supabaseAdmin } from '@/lib/supabase';
+import { logger } from '@/lib/logger';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-02-24.acacia',
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
     try {
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
     } catch (err: any) {
-      console.error('Webhook signature verification failed:', err.message);
+      logger.error('Stripe webhook signature verification failed', { error: err.message });
       return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
     }
 
@@ -33,7 +34,10 @@ export async function POST(request: NextRequest) {
         const planTier = session.metadata?.plan_tier;
 
         if (!supabaseUserId || !planTier) {
-          console.error('Missing metadata in checkout session');
+          logger.error('Missing metadata in Stripe checkout session', {
+            sessionId: session.id,
+            metadata: session.metadata,
+          });
           break;
         }
 
@@ -67,7 +71,11 @@ export async function POST(request: NextRequest) {
           { onConflict: 'user_id,month' }
         );
 
-        console.log(`Subscription created for user: ${supabaseUserId}`);
+        logger.info('Subscription created from Stripe webhook', {
+          userId: supabaseUserId,
+          planTier,
+          subscriptionId: subscription.id,
+        });
         break;
       }
 
@@ -82,7 +90,9 @@ export async function POST(request: NextRequest) {
           .maybeSingle();
 
         if (!user) {
-          console.error('User not found for customer:', customerId);
+          logger.error('User not found for Stripe customer during subscription update', {
+            customerId,
+          });
           break;
         }
 
@@ -97,7 +107,11 @@ export async function POST(request: NextRequest) {
           .eq('user_id', user.id)
           .eq('stripe_subscription_id', subscription.id);
 
-        console.log(`Subscription updated for user: ${user.id}`);
+        logger.info('Subscription updated from Stripe webhook', {
+          userId: user.id,
+          subscriptionId: subscription.id,
+          status: subscription.status,
+        });
         break;
       }
 
@@ -112,7 +126,9 @@ export async function POST(request: NextRequest) {
           .maybeSingle();
 
         if (!user) {
-          console.error('User not found for customer:', customerId);
+          logger.error('User not found for Stripe customer during subscription deletion', {
+            customerId,
+          });
           break;
         }
 
@@ -133,29 +149,38 @@ export async function POST(request: NextRequest) {
           { onConflict: 'user_id,month' }
         );
 
-        console.log(`Subscription canceled for user: ${user.id}`);
+        logger.info('Subscription canceled from Stripe webhook', {
+          userId: user.id,
+          subscriptionId: subscription.id,
+        });
         break;
       }
 
       case 'invoice.payment_succeeded': {
         const invoice = event.data.object as Stripe.Invoice;
-        console.log('Payment succeeded for invoice:', invoice.id);
+        logger.info('Stripe payment succeeded', {
+          invoiceId: invoice.id,
+          customerId: invoice.customer,
+        });
         break;
       }
 
       case 'invoice.payment_failed': {
         const invoice = event.data.object as Stripe.Invoice;
-        console.log('Payment failed for invoice:', invoice.id);
+        logger.warn('Stripe payment failed', {
+          invoiceId: invoice.id,
+          customerId: invoice.customer,
+        });
         break;
       }
 
       default:
-        console.log(`Unhandled event type: ${event.type}`);
+        logger.debug('Unhandled Stripe webhook event type', { eventType: event.type });
     }
 
     return NextResponse.json({ received: true });
   } catch (error: any) {
-    console.error('Error processing webhook:', error);
+    logger.error('Stripe webhook processing failed', { error, message: error.message });
     return NextResponse.json({ error: 'Webhook processing failed' }, { status: 500 });
   }
 }

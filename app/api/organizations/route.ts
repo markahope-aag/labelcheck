@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getAuthenticatedUser } from '@/lib/auth-helpers';
+import { logger, createRequestLogger } from '@/lib/logger';
 
 export async function POST(req: NextRequest) {
+  const requestLogger = createRequestLogger({ endpoint: '/api/organizations' });
+
   try {
     // Get authenticated user (throws if not authenticated or not found)
     const { userInternalId, userEmail } = await getAuthenticatedUser();
+
+    requestLogger.info('Organization creation request started', { userId: userInternalId });
 
     // Create userData object for compatibility with existing code
     const userData = { id: userInternalId, email: userEmail };
@@ -57,7 +62,12 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (orgError) {
-      console.error('Error creating organization:', orgError);
+      requestLogger.error('Failed to create organization', {
+        error: orgError,
+        userId: userData.id,
+        name,
+        slug,
+      });
       return NextResponse.json({ error: 'Failed to create organization' }, { status: 500 });
     }
 
@@ -70,16 +80,27 @@ export async function POST(req: NextRequest) {
     });
 
     if (memberError) {
-      console.error('Error adding organization member:', memberError);
+      requestLogger.error('Failed to add member to organization', {
+        error: memberError,
+        organizationId: newOrg.id,
+        userId: userData.id,
+      });
       // Rollback organization creation
       await supabaseAdmin.from('organizations').delete().eq('id', newOrg.id);
 
       return NextResponse.json({ error: 'Failed to add user to organization' }, { status: 500 });
     }
 
+    requestLogger.info('Organization created successfully', {
+      userId: userData.id,
+      organizationId: newOrg.id,
+      name,
+      slug,
+    });
+
     return NextResponse.json(newOrg, { status: 201 });
   } catch (error: any) {
-    console.error('Error in organization creation:', error);
+    requestLogger.error('Organization creation endpoint failed', { error, message: error.message });
 
     // Handle auth errors with appropriate status codes
     if (error.message === 'Unauthorized') {
