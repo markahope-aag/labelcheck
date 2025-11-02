@@ -1,0 +1,43 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Build outputs
+.next
+out
+dist
+build
+
+# Cache
+.turbo
+.cache
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.*
+
+# Database
+*.db
+*.sqlite
+
+# Generated files
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# IDE
+.vscode
+.idea
+
+# Data files
+data/*.csv
+data/*.json
+
+# Migrations (preserve exact formatting)
+supabase/migrations/*.sql
+
+# Documentation (may have special formatting)
+*.md

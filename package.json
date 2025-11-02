@@ -8,9 +8,13 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
     "pre-switch": "node scripts/pre-switch.js",
     "post-pull": "node scripts/post-pull.js",
-    "status": "node scripts/status.js"
+    "status": "node scripts/status.js",
+    "pre-deploy": "node scripts/pre-deploy-check.js",
+    "prepare": "husky"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.67.0",
@@ -88,5 +92,19 @@
     "vaul": "^0.9.9",
     "xlsx": "^0.18.5",
     "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.6",
+    "prettier": "^3.6.2"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "*.{json,css,md}": [
+      "prettier --write"
+    ]
   }
 }
