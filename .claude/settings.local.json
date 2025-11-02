@@ -59,7 +59,9 @@
       "Bash(gh api:*)",
       "Bash(vercel:*)",
       "Bash(git config:*)",
-      "Bash(npm run status:*)"
+      "Bash(npm run status:*)",
+      "Bash(git push:*)",
+      "Bash(npm run pre-switch:*)"
     ],
     "deny": [],
     "ask": []
