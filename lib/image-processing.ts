@@ -1,4 +1,5 @@
 import sharp from 'sharp';
+import { IMAGE_CONSTRAINTS, IMAGE_ENHANCEMENT } from '@/lib/constants';
 
 /**
  * Preprocesses an image to improve readability for AI analysis
@@ -19,10 +20,10 @@ export async function preprocessImage(buffer: Buffer): Promise<Buffer> {
     const width = metadata.width || 1000;
     const height = metadata.height || 1000;
 
-    // Upscale if image is too small (min 1500px on longest side for better text recognition)
+    // Upscale if image is too small (min dimension from constants)
     const longestSide = Math.max(width, height);
-    if (longestSide < 1500) {
-      const scaleFactor = 1500 / longestSide;
+    if (longestSide < IMAGE_CONSTRAINTS.MIN_DIMENSION_PX) {
+      const scaleFactor = IMAGE_CONSTRAINTS.MIN_DIMENSION_PX / longestSide;
       processedImage = processedImage.resize({
         width: Math.round(width * scaleFactor),
         height: Math.round(height * scaleFactor),
@@ -37,20 +38,23 @@ export async function preprocessImage(buffer: Buffer): Promise<Buffer> {
       .normalize()
       // Sharpen to make text clearer
       .sharpen({
-        sigma: 1.5,
-        m1: 1.0,
-        m2: 0.7,
-        x1: 3,
-        y2: 15,
+        sigma: IMAGE_ENHANCEMENT.SHARPEN_SIGMA,
+        m1: IMAGE_ENHANCEMENT.SHARPEN_M1,
+        m2: IMAGE_ENHANCEMENT.SHARPEN_M2,
+        x1: IMAGE_ENHANCEMENT.SHARPEN_X1,
+        y2: IMAGE_ENHANCEMENT.SHARPEN_Y2,
       })
       // Enhance contrast
-      .linear(1.2, -(128 * 1.2) + 128);
+      .linear(
+        IMAGE_ENHANCEMENT.CONTRAST_MULTIPLIER,
+        -(128 * IMAGE_ENHANCEMENT.CONTRAST_MULTIPLIER) + 128
+      );
 
     // Convert to JPEG with high quality
     const processedBuffer = await processedImage
       .jpeg({
-        quality: 95,
-        chromaSubsampling: '4:4:4',
+        quality: IMAGE_CONSTRAINTS.JPEG_QUALITY,
+        chromaSubsampling: IMAGE_ENHANCEMENT.CHROMA_SUBSAMPLING,
       })
       .toBuffer();
 
@@ -65,7 +69,10 @@ export async function preprocessImage(buffer: Buffer): Promise<Buffer> {
 /**
  * Validates image dimensions and file size
  */
-export function validateImageSize(buffer: Buffer, maxSizeMB: number = 10): boolean {
+export function validateImageSize(
+  buffer: Buffer,
+  maxSizeMB: number = IMAGE_CONSTRAINTS.MAX_FILE_SIZE_MB
+): boolean {
   const sizeMB = buffer.length / (1024 * 1024);
   return sizeMB <= maxSizeMB;
 }

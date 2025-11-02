@@ -5,6 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { getSessionWithIterations, addIteration } from '@/lib/session-helpers';
 import { getActiveRegulatoryDocuments, buildRegulatoryContext } from '@/lib/regulatory-documents';
 import { processPdfForAnalysis } from '@/lib/pdf-helpers';
+import { TEXT_LIMITS } from '@/lib/constants';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -263,7 +264,9 @@ Additionally, include a "comparison" field if original analysis exists:
       'text_check',
       {
         inputType: isPdfMode ? 'pdf' : 'text',
-        textContent: isPdfMode ? undefined : textContent?.substring(0, 5000), // Limit stored text length
+        textContent: isPdfMode
+          ? undefined
+          : textContent?.substring(0, TEXT_LIMITS.MAX_STORED_TEXT_LENGTH), // Limit stored text length
         pdfFileName: isPdfMode && pdfFile ? pdfFile.name : undefined,
         pdfSize: isPdfMode && pdfFile ? pdfFile.size : undefined,
         timestamp: new Date().toISOString(),
