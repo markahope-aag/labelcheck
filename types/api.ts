@@ -47,9 +47,18 @@ export interface AnalyzeImageRequest {
 
 export interface AnalyzeImageResponse extends AnalysisResult {
   id: string;
-  analysisType: 'image_analysis';
-  timestamp: string;
-  sessionId: string | null;
+  image_name: string;
+  compliance_status: string;
+  issues_found: number;
+  created_at: string;
+  analysisType?: 'image_analysis';
+  timestamp?: string;
+  sessionId?: string | null;
+  show_category_selector?: boolean;
+  usage?: {
+    used: number;
+    limit: number;
+  };
   session?: {
     id: string;
     title: string | null;
