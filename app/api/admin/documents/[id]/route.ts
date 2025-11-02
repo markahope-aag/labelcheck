@@ -2,10 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { requireAdmin } from '@/lib/auth-helpers';
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     // Require admin access (throws if not admin)
     await requireAdmin();
@@ -47,10 +44,7 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     // Require admin access (throws if not admin)
     await requireAdmin();
@@ -58,10 +52,7 @@ export async function DELETE(
     const { id } = params;
 
     // Actually delete the document from the database
-    const { error } = await supabaseAdmin
-      .from('regulatory_documents')
-      .delete()
-      .eq('id', id);
+    const { error } = await supabaseAdmin.from('regulatory_documents').delete().eq('id', id);
 
     if (error) {
       console.error('Error deleting document:', error);

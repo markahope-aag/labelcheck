@@ -22,7 +22,7 @@ async function checkIngredients() {
     'Luo Han Guo',
     'Monk Fruit',
     'Natural Citrus Flavor',
-    'Citrus Flavor'
+    'Citrus Flavor',
   ];
 
   console.log('Checking old_dietary_ingredients database for these ingredients:\n');
@@ -41,7 +41,7 @@ async function checkIngredients() {
 
     if (data && data.length > 0) {
       console.log(`✅ Found matches for "${ingredient}":`);
-      data.forEach(item => {
+      data.forEach((item) => {
         console.log(`   - ${item.ingredient_name} (${item.source || 'N/A'})`);
       });
     } else {
@@ -59,10 +59,12 @@ async function checkIngredients() {
   }
 }
 
-checkIngredients().then(() => {
-  console.log('\nCheck complete!');
-  process.exit(0);
-}).catch(err => {
-  console.error('Error:', err);
-  process.exit(1);
-});
+checkIngredients()
+  .then(() => {
+    console.log('\nCheck complete!');
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.error('Error:', err);
+    process.exit(1);
+  });

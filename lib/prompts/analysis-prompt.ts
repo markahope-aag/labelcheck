@@ -28,7 +28,9 @@ This analysis follows one of three paths:
 
 **STEP 1: PRODUCT CATEGORY CLASSIFICATION & AMBIGUITY DETECTION**
 
-${forcedCategory ? `
+${
+  forcedCategory
+    ? `
 **USER-SELECTED CATEGORY (FORCED CLASSIFICATION):**
 
 The user has manually selected the product category as: **${forcedCategory}**
@@ -42,7 +44,8 @@ Set the following in your response:
 - is_ambiguous: false (user has made the choice)
 
 Proceed directly to **PATH A: DEEP SINGLE-CATEGORY ANALYSIS** using the **${forcedCategory}** category rules.
-` : `
+`
+    : `
 Before performing analysis, you MUST first determine if this is a CLEAR category or AMBIGUOUS.
 
 **🔍 QUICK CATEGORY CHECK:**
@@ -54,7 +57,8 @@ First, identify the basic category indicators:
 - If label has **"Nutrition Facts" panel** → NOT a supplement (classify as FOOD, BEVERAGE, or ALCOHOLIC_BEVERAGE)
 - **Panel type is the definitive regulatory indicator** - it overrides ingredients, claims, and marketing
 
-Classify the product into ONE of these four categories based on the following criteria:`}
+Classify the product into ONE of these four categories based on the following criteria:`
+}
 
 1. **DIETARY_SUPPLEMENT** - Select this ONLY if:
    - **REQUIRED:** Has a "Supplement Facts" panel (NOT "Nutrition Facts")
@@ -257,7 +261,9 @@ If the category is CLEAR (not ambiguous, high confidence), proceed with full det
 
 You are now analyzing a CLEAR, UNAMBIGUOUS product. Perform comprehensive regulatory analysis.
 
-${isPdf ? `IMPORTANT INSTRUCTIONS FOR READING THE PDF:
+${
+  isPdf
+    ? `IMPORTANT INSTRUCTIONS FOR READING THE PDF:
 This is a PDF of a label design mockup. READ THE TEXT from this PDF carefully and analyze it for compliance. The PDF may have complex design elements:
 - Text in various orientations (rotated, vertical, sideways, upside-down)
 - Small fonts (ingredient lists, fine print, legal text)
@@ -267,7 +273,8 @@ This is a PDF of a label design mockup. READ THE TEXT from this PDF carefully an
 - Text wrapping around design elements
 - Decorative fonts that may be harder to read
 
-Extract all visible text from the PDF and analyze for regulatory compliance. Take your time to examine every section of the label design thoroughly, including any rotated or vertically-oriented text.` : `IMPORTANT INSTRUCTIONS FOR READING THE IMAGE:
+Extract all visible text from the PDF and analyze for regulatory compliance. Take your time to examine every section of the label design thoroughly, including any rotated or vertically-oriented text.`
+    : `IMPORTANT INSTRUCTIONS FOR READING THE IMAGE:
 - The text on this label may be very small, difficult to read, or have poor contrast
 - Text may be oriented vertically, sideways, or even upside-down
 - If you encounter rotated text, mentally rotate the image to read it correctly
@@ -276,7 +283,8 @@ Extract all visible text from the PDF and analyze for regulatory compliance. Tak
 - Pay special attention to ingredient lists which are often in very small font
 - Some labels may have text on dark backgrounds or vice versa - adjust your reading accordingly
 - Take your time to examine every section of the label thoroughly
-- If certain information is genuinely illegible, note that in your analysis`}
+- If certain information is genuinely illegible, note that in your analysis`
+}
 
 ANALYSIS STRUCTURE REQUIREMENTS:
 

@@ -29,7 +29,9 @@ async function testGRAS() {
     console.log('   Please run the migration SQL in your Supabase dashboard:');
     console.log('   1. Go to https://supabase.com/dashboard/project/[your-project]/editor');
     console.log('   2. Click "SQL Editor"');
-    console.log('   3. Copy the contents of: supabase/migrations/20251022220000_create_gras_ingredients.sql');
+    console.log(
+      '   3. Copy the contents of: supabase/migrations/20251022220000_create_gras_ingredients.sql'
+    );
     console.log('   4. Paste and run the SQL\n');
     return;
   }
@@ -57,9 +59,9 @@ async function testGRAS() {
     'Salt',
     'Sugar',
     'Citric Acid',
-    'Vitamin C',  // Should match via synonym to Ascorbic Acid
-    'Sodium Chloride',  // Should match via synonym to Salt
-    'FakeIngredient123',  // Should NOT be found
+    'Vitamin C', // Should match via synonym to Ascorbic Acid
+    'Sodium Chloride', // Should match via synonym to Salt
+    'FakeIngredient123', // Should NOT be found
   ];
 
   for (const ingredient of testIngredients) {
@@ -111,7 +113,7 @@ async function testGRAS() {
 
     if (result.nonGRASIngredients.length > 0) {
       console.log(`\n   ⚠️  Non-GRAS ingredients:`);
-      result.nonGRASIngredients.forEach(ing => {
+      result.nonGRASIngredients.forEach((ing) => {
         console.log(`      - ${ing}`);
       });
     }

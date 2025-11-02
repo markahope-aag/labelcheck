@@ -7,7 +7,11 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
 (async () => {
   // Get total count
-  const { data: countData, error: countError, count } = await supabaseAdmin
+  const {
+    data: countData,
+    error: countError,
+    count,
+  } = await supabaseAdmin
     .from('old_dietary_ingredients')
     .select('*', { count: 'exact', head: true })
     .eq('is_active', true);
@@ -31,10 +35,10 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
     AHPA: 0,
     NPA: 0,
     UNPA: 0,
-    Multiple: 0
+    Multiple: 0,
   };
 
-  allIngredients?.forEach(ing => {
+  allIngredients?.forEach((ing) => {
     const source = ing.source || '';
 
     if (source.includes('CRN Grandfather List')) {

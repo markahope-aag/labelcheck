@@ -10,22 +10,17 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'LabelCheck - AI-Powered Label Analysis',
-  description: 'Analyze packaging labels for FDA and USDA regulatory compliance using advanced AI technology.',
+  description:
+    'Analyze packaging labels for FDA and USDA regulatory compliance using advanced AI technology.',
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <ClerkProvider>
       <html lang="en">
         <body className={`${inter.className} flex flex-col min-h-screen`}>
           <Navigation />
-          <main className="flex-1">
-            {children}
-          </main>
+          <main className="flex-1">{children}</main>
           <Footer />
           <Toaster />
         </body>

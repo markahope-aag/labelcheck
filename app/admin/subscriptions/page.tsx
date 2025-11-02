@@ -59,7 +59,9 @@ export default function AdminSubscriptionsPage() {
       case 'pro':
         return <Badge className="bg-blue-100 text-blue-700 border-blue-200">Pro</Badge>;
       case 'enterprise':
-        return <Badge className="bg-purple-100 text-purple-700 border-purple-200">Enterprise</Badge>;
+        return (
+          <Badge className="bg-purple-100 text-purple-700 border-purple-200">Enterprise</Badge>
+        );
       case 'basic':
         return <Badge className="bg-green-100 text-green-700 border-green-200">Basic</Badge>;
       default:
@@ -111,7 +113,9 @@ export default function AdminSubscriptionsPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Active Subscriptions</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-600">
+              Active Subscriptions
+            </CardTitle>
             <TrendingUp className="h-5 w-5 text-green-600" />
           </CardHeader>
           <CardContent>
@@ -150,7 +154,9 @@ export default function AdminSubscriptionsPage() {
             <div className="text-center py-12">
               <CreditCard className="h-12 w-12 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-600">No subscriptions found</p>
-              <p className="text-sm text-gray-500 mt-2">Subscriptions will appear here as users subscribe</p>
+              <p className="text-sm text-gray-500 mt-2">
+                Subscriptions will appear here as users subscribe
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -175,8 +181,12 @@ export default function AdminSubscriptionsPage() {
                             <Mail className="h-5 w-5 text-purple-600" />
                           </div>
                           <div>
-                            <p className="font-medium text-gray-900">{sub.users?.email || 'Unknown'}</p>
-                            <p className="text-xs text-gray-500">ID: {sub.user_id.slice(0, 8)}...</p>
+                            <p className="font-medium text-gray-900">
+                              {sub.users?.email || 'Unknown'}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              ID: {sub.user_id.slice(0, 8)}...
+                            </p>
                           </div>
                         </div>
                       </TableCell>

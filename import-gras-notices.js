@@ -37,7 +37,7 @@ async function importGRASNotices() {
 
     // Deduplicate by GRN number
     const uniqueMap = new Map();
-    allIngredients.forEach(ing => {
+    allIngredients.forEach((ing) => {
       const key = ing.gras_notice_number;
       if (!uniqueMap.has(key)) {
         uniqueMap.set(key, ing);
@@ -60,15 +60,15 @@ async function importGRASNotices() {
 
     const existingGRNs = new Set(
       (existing || [])
-        .filter(i => i.gras_notice_number)
-        .map(i => i.gras_notice_number.toUpperCase())
+        .filter((i) => i.gras_notice_number)
+        .map((i) => i.gras_notice_number.toUpperCase())
     );
 
     console.log(`   Found ${existingGRNs.size} existing GRAS notices in database\n`);
 
     // Filter out duplicates
     const newIngredients = ingredients.filter(
-      ing => !existingGRNs.has(ing.gras_notice_number.toUpperCase())
+      (ing) => !existingGRNs.has(ing.gras_notice_number.toUpperCase())
     );
 
     if (newIngredients.length === 0) {
@@ -90,10 +90,7 @@ async function importGRASNotices() {
       const batch = newIngredients.slice(i, i + BATCH_SIZE);
       const batchNum = Math.floor(i / BATCH_SIZE) + 1;
 
-      const { data, error } = await supabase
-        .from('gras_ingredients')
-        .insert(batch)
-        .select();
+      const { data, error } = await supabase.from('gras_ingredients').insert(batch).select();
 
       if (error) {
         console.error(`❌ Error importing batch ${batchNum}/${totalBatches}:`, error.message);
@@ -121,9 +118,7 @@ async function importGRASNotices() {
 
     // Show GRAS status breakdown
     console.log('\n📊 GRAS Status Breakdown:');
-    const { data: allIngredients2 } = await supabase
-      .from('gras_ingredients')
-      .select('gras_status');
+    const { data: allIngredients2 } = await supabase.from('gras_ingredients').select('gras_status');
 
     const statusCounts = (allIngredients2 || []).reduce((acc, item) => {
       acc[item.gras_status] = (acc[item.gras_status] || 0) + 1;
@@ -138,7 +133,6 @@ async function importGRASNotices() {
 
     console.log('\n✅ GRAS Notice import completed successfully!');
     console.log('\n🎯 Your database now includes comprehensive FDA GRAS Notice coverage!');
-
   } catch (error) {
     console.error('\n❌ Import failed:', error);
     process.exit(1);

@@ -44,7 +44,7 @@ console.log('- May be blocked by rate limiting');
 console.log('- May not capture all data fields\n');
 
 console.log('💡 Best Solution: Contact EPA CompTox');
-console.log('\nYou can request the data via EPA\'s API:');
+console.log("\nYou can request the data via EPA's API:");
 console.log('1. Email: ccte_api@epa.gov');
 console.log('2. Request: FDA Food Substances list (FDAFOODSUBS)');
 console.log('3. They provide free API access with higher rate limits\n');
@@ -59,11 +59,13 @@ console.log('   A) Try manual download again with different browser');
 console.log('   B) Use EPA CompTox dashboard for download');
 console.log('   C) Contact EPA for API access');
 console.log('   D) Keep current 186 ingredients (recommended for now)');
-console.log('   E) I\'ll create a web scraper (slow, may not work)\n');
+console.log("   E) I'll create a web scraper (slow, may not work)\n");
 
 // Save this information to a file
 const infoPath = path.join(__dirname, 'data', 'fda-download-options.txt');
-fs.writeFileSync(infoPath, `FDA Substances Download Options
+fs.writeFileSync(
+  infoPath,
+  `FDA Substances Download Options
 ================================
 
 OPTION 1: Manual Download from FDA (Primary)
@@ -113,6 +115,7 @@ RECOMMENDATION
 For a production SaaS application, the current 186 ingredients provides
 excellent coverage. Consider expanding later based on user feedback about
 missing ingredients.
-`);
+`
+);
 
 console.log(`✅ Saved download options to: ${infoPath}\n`);

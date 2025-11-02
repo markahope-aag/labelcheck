@@ -23,7 +23,7 @@ async function checkMissing() {
     const results = await searchIngredient(term);
     console.log(`\nSearching for '${term}':`);
     if (results.length > 0) {
-      results.forEach(r => console.log(`  - ${r.ingredient_name}`));
+      results.forEach((r) => console.log(`  - ${r.ingredient_name}`));
     } else {
       console.log(`  (none found)`);
     }

@@ -7,7 +7,9 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseServiceKey) {
   console.error('Error: Missing Supabase environment variables');
-  console.error('Make sure NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set in .env.local');
+  console.error(
+    'Make sure NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set in .env.local'
+  );
   process.exit(1);
 }
 
@@ -23,11 +25,11 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
     console.log(`Found ${ingredients.length} ingredients to import`);
 
     // Prepare data for insertion
-    const records = ingredients.map(name => ({
+    const records = ingredients.map((name) => ({
       ingredient_name: name,
       source: 'CRN Grandfather List (September 1998)',
       notes: 'Dietary ingredient marketed in the United States before October 15, 1994',
-      is_active: true
+      is_active: true,
     }));
 
     console.log('\nInserting ingredients into Supabase...');
@@ -45,12 +47,10 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
       console.log(`Processing batch ${batchNum}/${totalBatches} (${batch.length} ingredients)...`);
 
-      const { data, error } = await supabaseAdmin
-        .from('old_dietary_ingredients')
-        .upsert(batch, {
-          onConflict: 'ingredient_name',
-          ignoreDuplicates: false // Update existing records
-        });
+      const { data, error } = await supabaseAdmin.from('old_dietary_ingredients').upsert(batch, {
+        onConflict: 'ingredient_name',
+        ignoreDuplicates: false, // Update existing records
+      });
 
       if (error) {
         console.error(`Error in batch ${batchNum}:`, error.message);
@@ -75,7 +75,6 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
     if (!countError) {
       console.log(`\nTotal ingredients in database: ${count}`);
     }
-
   } catch (error) {
     console.error('Error:', error.message);
     console.error(error.stack);

@@ -28,22 +28,21 @@ export async function GET(req: NextRequest) {
     // Fetch all members for the organization
     const { data: members, error: membersError } = await supabaseAdmin
       .from('organization_members')
-      .select(`
+      .select(
+        `
         id,
         user_id,
         role,
         invited_at,
         joined_at,
         users!organization_members_user_id_fkey (email)
-      `)
+      `
+      )
       .eq('organization_id', membership.organization_id);
 
     if (membersError) {
       console.error('Error fetching members:', membersError);
-      return NextResponse.json(
-        { error: 'Failed to fetch members' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to fetch members' }, { status: 500 });
     }
 
     console.log('Members fetched:', { count: members?.length, members });
@@ -59,12 +58,18 @@ export async function GET(req: NextRequest) {
       console.error('Error fetching pending invitations:', invitationsError);
     }
 
-    console.log('Pending invitations fetched:', { count: pendingInvitations?.length, pendingInvitations });
+    console.log('Pending invitations fetched:', {
+      count: pendingInvitations?.length,
+      pendingInvitations,
+    });
 
-    return NextResponse.json({
-      members: members || [],
-      pendingInvitations: pendingInvitations || [],
-    }, { status: 200 });
+    return NextResponse.json(
+      {
+        members: members || [],
+        pendingInvitations: pendingInvitations || [],
+      },
+      { status: 200 }
+    );
   } catch (error: any) {
     console.error('Error fetching organization members:', error);
 
@@ -76,10 +81,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -123,10 +125,7 @@ export async function POST(req: NextRequest) {
 
     if (invitedUserError) {
       console.error('Error looking up invited user:', invitedUserError);
-      return NextResponse.json(
-        { error: 'Error looking up user' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Error looking up user' }, { status: 500 });
     }
 
     // Get organization details for email
@@ -172,10 +171,7 @@ export async function POST(req: NextRequest) {
 
       if (insertError) {
         console.error('Error adding member:', insertError);
-        return NextResponse.json(
-          { error: 'Failed to add member' },
-          { status: 500 }
-        );
+        return NextResponse.json({ error: 'Failed to add member' }, { status: 500 });
       }
 
       return NextResponse.json({ ...newMember, type: 'immediate' }, { status: 201 });
@@ -218,10 +214,7 @@ export async function POST(req: NextRequest) {
 
       if (invitationError) {
         console.error('Error creating pending invitation:', invitationError);
-        return NextResponse.json(
-          { error: 'Failed to create invitation' },
-          { status: 500 }
-        );
+        return NextResponse.json({ error: 'Failed to create invitation' }, { status: 500 });
       }
 
       // Send invitation email
@@ -269,9 +262,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
   }
 }

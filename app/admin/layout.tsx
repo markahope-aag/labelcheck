@@ -12,7 +12,7 @@ import {
   BarChart3,
   Settings,
   ChevronLeft,
-  Menu
+  Menu,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
@@ -116,7 +116,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <nav className="space-y-1">
               {adminNavItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = pathname === item.href ||
+                const isActive =
+                  pathname === item.href ||
                   (item.href !== '/admin' && pathname?.startsWith(item.href));
 
                 return (
@@ -126,9 +127,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     onClick={() => setSidebarOpen(false)}
                     className={`
                       flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
-                      ${isActive
-                        ? 'bg-blue-50 text-blue-600'
-                        : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                      ${
+                        isActive
+                          ? 'bg-blue-50 text-blue-600'
+                          : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                       }
                     `}
                   >
@@ -161,9 +163,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Main Content */}
         <main className={`flex-1 lg:ml-64 min-h-screen pt-4 lg:pt-0`}>
-          <div className="p-8">
-            {children}
-          </div>
+          <div className="p-8">{children}</div>
         </main>
       </div>
     </div>

@@ -57,10 +57,7 @@ async function testMigration() {
   console.log('\n4. Testing session creation...');
 
   // First, get a user ID
-  const { data: users, error: userError } = await supabase
-    .from('users')
-    .select('id')
-    .limit(1);
+  const { data: users, error: userError } = await supabase.from('users').select('id').limit(1);
 
   if (userError || !users || users.length === 0) {
     console.log('⚠️  No users found, skipping session creation test');
@@ -72,7 +69,7 @@ async function testMigration() {
       .insert({
         user_id: testUserId,
         title: 'Test Session',
-        status: 'in_progress'
+        status: 'in_progress',
       })
       .select()
       .single();
@@ -86,10 +83,7 @@ async function testMigration() {
     console.log('   Session ID:', testSession.id);
 
     // Clean up test session
-    await supabase
-      .from('analysis_sessions')
-      .delete()
-      .eq('id', testSession.id);
+    await supabase.from('analysis_sessions').delete().eq('id', testSession.id);
 
     console.log('✅ Test session cleaned up');
   }
@@ -105,7 +99,7 @@ async function testMigration() {
 }
 
 testMigration()
-  .then(success => {
+  .then((success) => {
     if (success) {
       console.log('\n🎉 Migration verified successfully! Ready to proceed with UI development.');
       process.exit(0);
@@ -114,7 +108,7 @@ testMigration()
       process.exit(1);
     }
   })
-  .catch(error => {
+  .catch((error) => {
     console.error('\n❌ Unexpected error:', error);
     process.exit(1);
   });

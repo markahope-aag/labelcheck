@@ -7,8 +7,8 @@ const supabaseAdmin = createClient(
   {
     auth: {
       autoRefreshToken: false,
-      persistSession: false
-    }
+      persistSession: false,
+    },
   }
 );
 
@@ -51,12 +51,12 @@ async function testGRASPagination() {
   console.log(`========================================\n`);
 
   // Count ingredients with synonyms
-  const withSynonyms = allIngredients.filter(ing => ing.synonyms && ing.synonyms.length > 0);
+  const withSynonyms = allIngredients.filter((ing) => ing.synonyms && ing.synonyms.length > 0);
   console.log(`Ingredients with synonyms: ${withSynonyms.length}`);
 
   // Calculate total entries (including synonyms)
   let totalEntries = allIngredients.length;
-  allIngredients.forEach(ing => {
+  allIngredients.forEach((ing) => {
     if (ing.synonyms && Array.isArray(ing.synonyms)) {
       totalEntries += ing.synonyms.length;
     }
@@ -73,15 +73,15 @@ async function testGRASPagination() {
     'vitamin c',
     'ascorbic acid',
     'citric acid',
-    'sodium benzoate'
+    'sodium benzoate',
   ];
 
   for (const testIng of testIngredients) {
     const normalized = testIng.toLowerCase().trim();
 
     // Try exact match
-    const exactMatch = allIngredients.find(ing =>
-      ing.ingredient_name.toLowerCase() === normalized
+    const exactMatch = allIngredients.find(
+      (ing) => ing.ingredient_name.toLowerCase() === normalized
     );
 
     if (exactMatch) {
@@ -90,8 +90,8 @@ async function testGRASPagination() {
     }
 
     // Try synonym match
-    const synonymMatch = allIngredients.find(ing =>
-      ing.synonyms && ing.synonyms.some(syn => syn.toLowerCase() === normalized)
+    const synonymMatch = allIngredients.find(
+      (ing) => ing.synonyms && ing.synonyms.some((syn) => syn.toLowerCase() === normalized)
     );
 
     if (synonymMatch) {

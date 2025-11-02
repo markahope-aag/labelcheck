@@ -54,10 +54,17 @@ export async function processGRASCompliance(analysisData: AnalysisData): Promise
     Array.isArray(analysisData.ingredient_labeling.ingredients_list) &&
     analysisData.ingredient_labeling.ingredients_list.length > 0
   ) {
-    console.log('Checking GRAS compliance for', analysisData.product_category, 'ingredients:', analysisData.ingredient_labeling.ingredients_list);
+    console.log(
+      'Checking GRAS compliance for',
+      analysisData.product_category,
+      'ingredients:',
+      analysisData.ingredient_labeling.ingredients_list
+    );
 
     try {
-      const grasCompliance = await checkGRASCompliance(analysisData.ingredient_labeling.ingredients_list);
+      const grasCompliance = await checkGRASCompliance(
+        analysisData.ingredient_labeling.ingredients_list
+      );
 
       console.log('GRAS compliance check complete:', {
         total: grasCompliance.totalIngredients,
@@ -147,7 +154,9 @@ export async function processGRASCompliance(analysisData: AnalysisData): Promise
       // Don't fail the analysis if GRAS check fails, just log the error
     }
   } else if (analysisData.product_category === 'DIETARY_SUPPLEMENT') {
-    console.log('Product is a dietary supplement - GRAS compliance not applicable (regulated under DSHEA, not 21 CFR 170.3)');
+    console.log(
+      'Product is a dietary supplement - GRAS compliance not applicable (regulated under DSHEA, not 21 CFR 170.3)'
+    );
   } else {
     console.log('No ingredients found in analysis - skipping GRAS check');
   }
@@ -164,10 +173,15 @@ export async function processNDICompliance(analysisData: AnalysisData): Promise<
     Array.isArray(analysisData.ingredient_labeling.ingredients_list) &&
     analysisData.ingredient_labeling.ingredients_list.length > 0
   ) {
-    console.log('Checking NDI compliance for dietary supplement ingredients:', analysisData.ingredient_labeling.ingredients_list);
+    console.log(
+      'Checking NDI compliance for dietary supplement ingredients:',
+      analysisData.ingredient_labeling.ingredients_list
+    );
 
     try {
-      const ndiCompliance = await checkNDICompliance(analysisData.ingredient_labeling.ingredients_list);
+      const ndiCompliance = await checkNDICompliance(
+        analysisData.ingredient_labeling.ingredients_list
+      );
 
       console.log('NDI compliance check complete:', {
         total: ndiCompliance.summary.totalChecked,
@@ -204,7 +218,9 @@ export async function processNDICompliance(analysisData: AnalysisData): Promise<
     analysisData.product_category === 'NON_ALCOHOLIC_BEVERAGE' ||
     analysisData.product_category === 'ALCOHOLIC_BEVERAGE'
   ) {
-    console.log('Product is a food/beverage - NDI compliance not applicable (only for dietary supplements)');
+    console.log(
+      'Product is a food/beverage - NDI compliance not applicable (only for dietary supplements)'
+    );
   } else {
     console.log('No ingredients found in analysis - skipping NDI check');
   }
@@ -219,10 +235,15 @@ export async function processAllergenCompliance(analysisData: AnalysisData): Pro
     Array.isArray(analysisData.ingredient_labeling.ingredients_list) &&
     analysisData.ingredient_labeling.ingredients_list.length > 0
   ) {
-    console.log('Checking ingredients for allergens:', analysisData.ingredient_labeling.ingredients_list);
+    console.log(
+      'Checking ingredients for allergens:',
+      analysisData.ingredient_labeling.ingredients_list
+    );
 
     try {
-      const allergenResults = await checkIngredientsForAllergens(analysisData.ingredient_labeling.ingredients_list);
+      const allergenResults = await checkIngredientsForAllergens(
+        analysisData.ingredient_labeling.ingredients_list
+      );
 
       console.log('Allergen database check complete:', {
         allergensDetected: allergenResults.allergensDetected.length,
@@ -241,9 +262,14 @@ export async function processAllergenCompliance(analysisData: AnalysisData): Pro
       const aiAllergenStatus = aiAllergenSection?.status;
 
       // Cross-reference database findings with AI analysis
-      if (aiAllergenStatus === 'potentially_non_compliant' || aiAllergenStatus === 'non_compliant') {
+      if (
+        aiAllergenStatus === 'potentially_non_compliant' ||
+        aiAllergenStatus === 'non_compliant'
+      ) {
         // AI detected missing allergen declarations - validate with database
-        const detectedAllergenNames = allergenResults.allergensDetected.map((a: any) => a.allergen_name);
+        const detectedAllergenNames = allergenResults.allergensDetected.map(
+          (a: any) => a.allergen_name
+        );
 
         if (!analysisData.recommendations) {
           analysisData.recommendations = [];
@@ -279,8 +305,14 @@ export async function processAllergenCompliance(analysisData: AnalysisData): Pro
  * Enforce consistent compliance status based on recommendation priorities
  */
 export function enforceStatusConsistency(analysisData: AnalysisData): void {
-  if (analysisData.recommendations && analysisData.recommendations.length > 0 && analysisData.overall_assessment) {
-    const criticalCount = analysisData.recommendations.filter((r) => r.priority === 'critical').length;
+  if (
+    analysisData.recommendations &&
+    analysisData.recommendations.length > 0 &&
+    analysisData.overall_assessment
+  ) {
+    const criticalCount = analysisData.recommendations.filter(
+      (r) => r.priority === 'critical'
+    ).length;
     const highCount = analysisData.recommendations.filter((r) => r.priority === 'high').length;
     const mediumCount = analysisData.recommendations.filter((r) => r.priority === 'medium').length;
     const lowCount = analysisData.recommendations.filter((r) => r.priority === 'low').length;
@@ -289,7 +321,9 @@ export function enforceStatusConsistency(analysisData: AnalysisData): void {
     if (criticalCount > 0 || highCount > 0) {
       // Blocking issues present → Must be non-compliant
       analysisData.overall_assessment.primary_compliance_status = 'non_compliant';
-      console.log(`Enforced non_compliant status due to ${criticalCount} critical and ${highCount} high priority issues`);
+      console.log(
+        `Enforced non_compliant status due to ${criticalCount} critical and ${highCount} high priority issues`
+      );
     } else if (mediumCount > 0) {
       // Only medium issues → Potentially non-compliant (requires verification)
       if (
@@ -297,7 +331,9 @@ export function enforceStatusConsistency(analysisData: AnalysisData): void {
         analysisData.overall_assessment.primary_compliance_status === 'likely_compliant'
       ) {
         analysisData.overall_assessment.primary_compliance_status = 'potentially_non_compliant';
-        console.log(`Enforced potentially_non_compliant status due to ${mediumCount} medium priority issues`);
+        console.log(
+          `Enforced potentially_non_compliant status due to ${mediumCount} medium priority issues`
+        );
       }
     } else if (lowCount > 0 && criticalCount + highCount + mediumCount === 0) {
       // Only low priority suggestions → Likely compliant
@@ -322,7 +358,8 @@ export function addMonitoringRecommendation(analysisData: AnalysisData): void {
 
   analysisData.recommendations.push({
     priority: 'low',
-    recommendation: 'Continue monitoring for compliance with any new regulations or labeling requirements. FDA regulations and guidance documents are updated periodically, and maintaining ongoing awareness of regulatory changes is essential for continued compliance.',
+    recommendation:
+      'Continue monitoring for compliance with any new regulations or labeling requirements. FDA regulations and guidance documents are updated periodically, and maintaining ongoing awareness of regulatory changes is essential for continued compliance.',
     regulation: 'General FDA guidelines for product labeling',
   });
 }

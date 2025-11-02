@@ -86,17 +86,19 @@ export default function AdminPricingPage() {
   const [saveMessage, setSaveMessage] = useState('');
 
   const handlePriceChange = (tier: string, newPrice: number) => {
-    setPlans(plans.map(plan =>
-      plan.tier === tier ? { ...plan, price: newPrice } : plan
-    ));
+    setPlans(plans.map((plan) => (plan.tier === tier ? { ...plan, price: newPrice } : plan)));
   };
 
-  const handleLimitChange = (tier: string, limitType: 'analyses' | 'teamMembers', value: number) => {
-    setPlans(plans.map(plan =>
-      plan.tier === tier
-        ? { ...plan, limits: { ...plan.limits, [limitType]: value } }
-        : plan
-    ));
+  const handleLimitChange = (
+    tier: string,
+    limitType: 'analyses' | 'teamMembers',
+    value: number
+  ) => {
+    setPlans(
+      plans.map((plan) =>
+        plan.tier === tier ? { ...plan, limits: { ...plan.limits, [limitType]: value } } : plan
+      )
+    );
   };
 
   const handleSave = async (tier: string) => {
@@ -123,7 +125,8 @@ export default function AdminPricingPage() {
       <Alert className="mb-6">
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          Changes to pricing require updating Stripe product configurations. Make sure to sync with your Stripe dashboard after making changes.
+          Changes to pricing require updating Stripe product configurations. Make sure to sync with
+          your Stripe dashboard after making changes.
         </AlertDescription>
       </Alert>
 
@@ -163,9 +166,7 @@ export default function AdminPricingPage() {
                     </div>
                   ) : (
                     <>
-                      <div className="text-5xl font-bold text-gray-900">
-                        ${plan.price}
-                      </div>
+                      <div className="text-5xl font-bold text-gray-900">${plan.price}</div>
                       <div className="text-sm text-gray-600 mt-1">per {plan.interval}</div>
                     </>
                   )}
@@ -180,7 +181,9 @@ export default function AdminPricingPage() {
                       <Input
                         type="number"
                         value={plan.limits.analyses}
-                        onChange={(e) => handleLimitChange(plan.tier, 'analyses', parseInt(e.target.value))}
+                        onChange={(e) =>
+                          handleLimitChange(plan.tier, 'analyses', parseInt(e.target.value))
+                        }
                         className="mt-1"
                         placeholder="-1 for unlimited"
                       />
@@ -191,7 +194,9 @@ export default function AdminPricingPage() {
                       <Input
                         type="number"
                         value={plan.limits.teamMembers}
-                        onChange={(e) => handleLimitChange(plan.tier, 'teamMembers', parseInt(e.target.value))}
+                        onChange={(e) =>
+                          handleLimitChange(plan.tier, 'teamMembers', parseInt(e.target.value))
+                        }
                         className="mt-1"
                         placeholder="-1 for unlimited"
                       />
@@ -212,10 +217,7 @@ export default function AdminPricingPage() {
                 <div className="space-y-2">
                   {isEditing ? (
                     <>
-                      <Button
-                        className="w-full"
-                        onClick={() => handleSave(plan.tier)}
-                      >
+                      <Button className="w-full" onClick={() => handleSave(plan.tier)}>
                         <Save className="h-4 w-4 mr-2" />
                         Save Changes
                       </Button>
@@ -239,13 +241,21 @@ export default function AdminPricingPage() {
                 </div>
 
                 <div className="mt-4 pt-4 border-t text-xs text-gray-500 space-y-1">
-                  <p>Tier: <span className="font-medium">{plan.tier}</span></p>
-                  <p>Analyses: <span className="font-medium">
-                    {plan.limits.analyses === -1 ? 'Unlimited' : plan.limits.analyses}
-                  </span></p>
-                  <p>Team Members: <span className="font-medium">
-                    {plan.limits.teamMembers === -1 ? 'Unlimited' : plan.limits.teamMembers}
-                  </span></p>
+                  <p>
+                    Tier: <span className="font-medium">{plan.tier}</span>
+                  </p>
+                  <p>
+                    Analyses:{' '}
+                    <span className="font-medium">
+                      {plan.limits.analyses === -1 ? 'Unlimited' : plan.limits.analyses}
+                    </span>
+                  </p>
+                  <p>
+                    Team Members:{' '}
+                    <span className="font-medium">
+                      {plan.limits.teamMembers === -1 ? 'Unlimited' : plan.limits.teamMembers}
+                    </span>
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -284,8 +294,8 @@ export default function AdminPricingPage() {
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                Price changes in this interface are for display purposes only. To update actual billing amounts,
-                create new prices in Stripe and update your environment variables.
+                Price changes in this interface are for display purposes only. To update actual
+                billing amounts, create new prices in Stripe and update your environment variables.
               </AlertDescription>
             </Alert>
           </div>

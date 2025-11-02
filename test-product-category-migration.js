@@ -16,8 +16,8 @@ if (!supabaseUrl || !supabaseServiceKey) {
 const supabase = createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
     autoRefreshToken: false,
-    persistSession: false
-  }
+    persistSession: false,
+  },
 });
 
 async function testMigration() {
@@ -46,7 +46,10 @@ async function testMigration() {
       .limit(1);
 
     if (columnError) {
-      if (columnError.message.includes('column') && columnError.message.includes('does not exist')) {
+      if (
+        columnError.message.includes('column') &&
+        columnError.message.includes('does not exist')
+      ) {
         console.log('  ℹ Column does not exist yet (expected - migration needed)\n');
         console.log('📝 TO APPLY MIGRATION:');
         console.log('   1. Open your Supabase dashboard at: https://supabase.com/dashboard');
@@ -58,7 +61,12 @@ async function testMigration() {
         console.log('   6. Click "Run" to execute the migration\n');
 
         // Show the SQL content
-        const migrationPath = path.join(__dirname, 'supabase', 'migrations', '20251023000000_add_product_category.sql');
+        const migrationPath = path.join(
+          __dirname,
+          'supabase',
+          'migrations',
+          '20251023000000_add_product_category.sql'
+        );
         const sql = fs.readFileSync(migrationPath, 'utf8');
         console.log('📄 Migration SQL Content:');
         console.log('─'.repeat(80));
@@ -80,12 +88,13 @@ async function testMigration() {
 
       if (sampleData && sampleData.length > 0) {
         console.log('📊 Sample data from analyses table:');
-        sampleData.forEach(row => {
-          console.log(`  - ${row.product_name || 'Unnamed'}: category=${row.product_category || 'NULL'}`);
+        sampleData.forEach((row) => {
+          console.log(
+            `  - ${row.product_name || 'Unnamed'}: category=${row.product_category || 'NULL'}`
+          );
         });
       }
     }
-
   } catch (error) {
     console.error('❌ Test failed:', error.message);
     process.exit(1);

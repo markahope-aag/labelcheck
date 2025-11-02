@@ -17,7 +17,11 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     // Check if 'ndi_ingredients' table exists (correct name)
     console.log('1. Checking for "ndi_ingredients" table (CORRECT name)...');
-    const { data: correctTable, error: correctError, count: correctCount } = await supabaseAdmin
+    const {
+      data: correctTable,
+      error: correctError,
+      count: correctCount,
+    } = await supabaseAdmin
       .from('ndi_ingredients')
       .select('*', { count: 'exact', head: false })
       .limit(5);
@@ -30,12 +34,14 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
       console.log(`   Total rows: ${correctCount}`);
       if (correctTable && correctTable.length > 0) {
         console.log('\n   Columns found:');
-        Object.keys(correctTable[0]).forEach(col => {
+        Object.keys(correctTable[0]).forEach((col) => {
           console.log(`     - ${col}`);
         });
         console.log('\n   Sample data (first 3 rows):');
         correctTable.slice(0, 3).forEach((row, i) => {
-          console.log(`     ${i + 1}. ${row.ingredient_name} (Notification #${row.notification_number})`);
+          console.log(
+            `     ${i + 1}. ${row.ingredient_name} (Notification #${row.notification_number})`
+          );
         });
       }
     }
@@ -46,7 +52,7 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
       'ndi_ingredient', // singular
       'new_dietary_ingredients',
       'dietary_ingredients',
-      'ndiingredients'
+      'ndiingredients',
     ];
 
     for (const tableName of alternateNames) {
@@ -63,7 +69,6 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
     console.log('\n=== EXPECTED TABLE NAME ===');
     console.log('The code expects the table to be named: "ndi_ingredients"');
     console.log('Location: lib/ndi-helpers.ts line 150');
-
   } catch (error) {
     console.error('\n❌ Error:', error.message);
     process.exit(1);

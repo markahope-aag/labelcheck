@@ -3,7 +3,7 @@ const fs = require('fs');
 
 // Load .env.local manually
 const envContent = fs.readFileSync('.env.local', 'utf8');
-envContent.split('\n').forEach(line => {
+envContent.split('\n').forEach((line) => {
   const match = line.match(/^([^=]+)=(.*)$/);
   if (match) {
     process.env[match[1]] = match[2];
@@ -20,14 +20,16 @@ async function check() {
 
   const { data, error } = await supabase
     .from('subscriptions')
-    .select(`
+    .select(
+      `
       *,
       users (
         id,
         email,
         clerk_user_id
       )
-    `)
+    `
+    )
     .order('created_at', { ascending: false });
 
   if (error) {

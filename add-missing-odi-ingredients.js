@@ -7,8 +7,8 @@ const supabaseAdmin = createClient(
   {
     auth: {
       autoRefreshToken: false,
-      persistSession: false
-    }
+      persistSession: false,
+    },
   }
 );
 
@@ -18,25 +18,25 @@ const missingIngredients = [
     ingredient_name: '5-HTP',
     synonyms: ['5-hydroxytryptophan', '5-hydroxy-L-tryptophan', 'hydroxytryptophan'],
     source: 'Manual Addition - Common Pre-1994 Ingredient',
-    notes: 'Dietary supplement ingredient marketed in the United States before October 15, 1994'
+    notes: 'Dietary supplement ingredient marketed in the United States before October 15, 1994',
   },
   {
     ingredient_name: 'noni',
     synonyms: ['noni fruit', 'morinda citrifolia', 'indian mulberry'],
     source: 'Manual Addition - Common Pre-1994 Ingredient',
-    notes: 'Dietary supplement ingredient marketed in the United States before October 15, 1994'
+    notes: 'Dietary supplement ingredient marketed in the United States before October 15, 1994',
   },
   {
     ingredient_name: 'cellulose',
     synonyms: ['microcrystalline cellulose', 'powdered cellulose'],
     source: 'Manual Addition - Common Pre-1994 Ingredient',
-    notes: 'Common excipient used in dietary supplements before October 15, 1994'
+    notes: 'Common excipient used in dietary supplements before October 15, 1994',
   },
   {
     ingredient_name: 'green tea extract',
     synonyms: ['green tea leaf extract', 'camellia sinensis extract'],
     source: 'Manual Addition - Common Pre-1994 Ingredient',
-    notes: 'Dietary supplement ingredient marketed in the United States before October 15, 1994'
+    notes: 'Dietary supplement ingredient marketed in the United States before October 15, 1994',
   },
 ];
 
@@ -64,14 +64,16 @@ async function addIngredients() {
         synonyms: ingredient.synonyms,
         source: ingredient.source,
         notes: ingredient.notes,
-        is_active: true
+        is_active: true,
       })
       .select();
 
     if (error) {
       console.error(`✗ Error adding "${ingredient.ingredient_name}":`, error.message);
     } else {
-      console.log(`✓ Added "${ingredient.ingredient_name}" with ${ingredient.synonyms.length} synonyms`);
+      console.log(
+        `✓ Added "${ingredient.ingredient_name}" with ${ingredient.synonyms.length} synonyms`
+      );
     }
   }
 

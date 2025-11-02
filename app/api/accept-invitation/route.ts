@@ -42,7 +42,8 @@ export async function POST(req: NextRequest) {
     // Find the pending invitation
     const { data: invitation, error: invitationError } = await supabaseAdmin
       .from('pending_invitations')
-      .select(`
+      .select(
+        `
         id,
         organization_id,
         email,
@@ -55,7 +56,8 @@ export async function POST(req: NextRequest) {
           id,
           name
         )
-      `)
+      `
+      )
       .eq('invitation_token', token)
       .maybeSingle();
 
@@ -70,10 +72,7 @@ export async function POST(req: NextRequest) {
 
     // Check if invitation has already been accepted
     if (invitation.accepted_at) {
-      return NextResponse.json(
-        { error: 'This invitation has already been used' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'This invitation has already been used' }, { status: 400 });
     }
 
     // Check if invitation has expired
@@ -90,7 +89,7 @@ export async function POST(req: NextRequest) {
     console.log('Email comparison:', {
       invitationEmail: invitation.email,
       clerkEmail: userEmail,
-      match: invitation.email.toLowerCase() === userEmail.toLowerCase()
+      match: invitation.email.toLowerCase() === userEmail.toLowerCase(),
     });
 
     // Check if user is already a member
@@ -141,10 +140,7 @@ export async function POST(req: NextRequest) {
 
     if (memberError) {
       console.error('Error adding member:', memberError);
-      return NextResponse.json(
-        { error: 'Failed to add you to the organization' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to add you to the organization' }, { status: 500 });
     }
 
     // Mark invitation as accepted

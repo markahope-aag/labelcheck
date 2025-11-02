@@ -49,16 +49,18 @@ async function testAnalysisSession() {
     if (recentAnalyses && recentAnalyses.length > 0) {
       console.log('\nRecent analyses:');
       recentAnalyses.forEach((analysis, idx) => {
-        console.log(`  ${idx + 1}. ${analysis.image_name} - Session ID: ${analysis.session_id || 'NULL'}`);
+        console.log(
+          `  ${idx + 1}. ${analysis.image_name} - Session ID: ${analysis.session_id || 'NULL'}`
+        );
       });
     }
 
     // Step 3: Check if any analyses have session_id
-    const analysesWithSessions = recentAnalyses?.filter(a => a.session_id !== null) || [];
+    const analysesWithSessions = recentAnalyses?.filter((a) => a.session_id !== null) || [];
 
     if (analysesWithSessions.length === 0) {
       console.log('\n⚠️  No analyses with sessions found yet.');
-      console.log('   This is expected if you haven\'t run an analysis since updating the code.');
+      console.log("   This is expected if you haven't run an analysis since updating the code.");
       console.log('\n💡 Next step: Upload a label image via the UI to test session creation.');
       return true;
     }
@@ -108,10 +110,11 @@ async function testAnalysisSession() {
     console.log('\n📊 Summary:');
     console.log(`   - Total analyses checked: ${recentAnalyses?.length || 0}`);
     console.log(`   - Analyses with sessions: ${analysesWithSessions.length}`);
-    console.log(`   - Session creation: ${analysesWithSessions.length > 0 ? '✅ Working' : '⚠️  Not tested yet'}`);
+    console.log(
+      `   - Session creation: ${analysesWithSessions.length > 0 ? '✅ Working' : '⚠️  Not tested yet'}`
+    );
 
     return true;
-
   } catch (error) {
     console.error('\n❌ Unexpected error:', error);
     return false;
@@ -119,7 +122,7 @@ async function testAnalysisSession() {
 }
 
 testAnalysisSession()
-  .then(success => {
+  .then((success) => {
     if (success) {
       console.log('\n🎉 Test completed successfully!');
       process.exit(0);
@@ -128,7 +131,7 @@ testAnalysisSession()
       process.exit(1);
     }
   })
-  .catch(error => {
+  .catch((error) => {
     console.error('\n❌ Unexpected error:', error);
     process.exit(1);
   });

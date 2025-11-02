@@ -48,10 +48,7 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Error updating category selection:', error);
-      return NextResponse.json(
-        { error: 'Failed to save category selection' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to save category selection' }, { status: 500 });
     }
 
     return NextResponse.json({
@@ -60,9 +57,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: any) {
     console.error('Error in select-category endpoint:', error);
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
   }
 }

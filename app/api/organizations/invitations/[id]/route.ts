@@ -2,10 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
 
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { userId } = await auth();
     if (!userId) {
@@ -22,10 +19,7 @@ export async function DELETE(
       .single();
 
     if (currentUserError || !currentUser) {
-      return NextResponse.json(
-        { error: 'Current user not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Current user not found' }, { status: 404 });
     }
 
     // Get the invitation to verify user has permission
@@ -36,10 +30,7 @@ export async function DELETE(
       .single();
 
     if (invitationError || !invitation) {
-      return NextResponse.json(
-        { error: 'Invitation not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Invitation not found' }, { status: 404 });
     }
 
     // Check if current user is an owner or admin of the organization
@@ -65,18 +56,12 @@ export async function DELETE(
 
     if (deleteError) {
       console.error('Error deleting invitation:', deleteError);
-      return NextResponse.json(
-        { error: 'Failed to delete invitation' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to delete invitation' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
     console.error('Error in invitation deletion:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

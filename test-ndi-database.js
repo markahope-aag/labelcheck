@@ -26,7 +26,7 @@ const testIngredients = [
   'POTASSIUM IODIDE 1%',
   'SODIUM (VI) SELENATE (1% SE)',
   'CHOLECALCIFEROL',
-  'METHYLCOBALAMIN 1%'
+  'METHYLCOBALAMIN 1%',
 ];
 
 async function testNDIDatabase() {
@@ -34,9 +34,11 @@ async function testNDIDatabase() {
 
   // Step 1: Check old_dietary_ingredients table
   console.log('Step 1: Checking old_dietary_ingredients table...');
-  const { data: oldIngredients, error: oldError, count } = await supabase
-    .from('old_dietary_ingredients')
-    .select('*', { count: 'exact', head: true });
+  const {
+    data: oldIngredients,
+    error: oldError,
+    count,
+  } = await supabase.from('old_dietary_ingredients').select('*', { count: 'exact', head: true });
 
   if (oldError) {
     console.error('❌ Error accessing old_dietary_ingredients:', oldError.message);
@@ -98,7 +100,7 @@ async function testNDIDatabase() {
     'coffee',
     'caffeine',
     'arabica',
-    'robusta'
+    'robusta',
   ];
 
   for (const ingredient of expectedIngredients) {
@@ -119,7 +121,7 @@ async function testNDIDatabase() {
   console.log('\n=== TEST COMPLETE ===');
 }
 
-testNDIDatabase().catch(error => {
+testNDIDatabase().catch((error) => {
   console.error('Error:', error.message);
   process.exit(1);
 });

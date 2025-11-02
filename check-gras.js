@@ -21,7 +21,7 @@ const vitaminsToCheck = [
   'METHYLCOBALAMIN',
   'VITAMIN B12',
   'COFFEE',
-  'GREEN TEA'
+  'GREEN TEA',
 ];
 
 (async () => {
@@ -36,7 +36,9 @@ const vitaminsToCheck = [
       console.log(`Error searching for ${vitamin}:`, error.message);
     } else if (data && data.length > 0) {
       console.log(`\n✅ FOUND "${vitamin}":`);
-      data.forEach(d => console.log(`   - ${d.ingredient_name} (${d.gras_notice_number || 'N/A'})`));
+      data.forEach((d) =>
+        console.log(`   - ${d.ingredient_name} (${d.gras_notice_number || 'N/A'})`)
+      );
     } else {
       console.log(`\n❌ NOT FOUND: "${vitamin}"`);
     }

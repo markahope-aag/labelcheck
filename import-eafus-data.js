@@ -46,14 +46,12 @@ async function importEAFUSData() {
       throw checkError;
     }
 
-    const existingNames = new Set(
-      (existing || []).map(i => i.ingredient_name.toLowerCase())
-    );
+    const existingNames = new Set((existing || []).map((i) => i.ingredient_name.toLowerCase()));
     console.log(`   Found ${existingNames.size} existing ingredients in database\n`);
 
     // Filter out duplicates
     const newIngredients = ingredients.filter(
-      ing => !existingNames.has(ing.ingredient_name.toLowerCase())
+      (ing) => !existingNames.has(ing.ingredient_name.toLowerCase())
     );
 
     if (newIngredients.length === 0) {
@@ -75,10 +73,7 @@ async function importEAFUSData() {
       const batch = newIngredients.slice(i, i + BATCH_SIZE);
       const batchNum = Math.floor(i / BATCH_SIZE) + 1;
 
-      const { data, error } = await supabase
-        .from('gras_ingredients')
-        .insert(batch)
-        .select();
+      const { data, error } = await supabase.from('gras_ingredients').insert(batch).select();
 
       if (error) {
         console.error(`❌ Error importing batch ${batchNum}/${totalBatches}:`, error.message);
@@ -106,9 +101,7 @@ async function importEAFUSData() {
 
     // Show category breakdown
     console.log('\n📊 Category Breakdown:');
-    const { data: allIngredients } = await supabase
-      .from('gras_ingredients')
-      .select('category');
+    const { data: allIngredients } = await supabase.from('gras_ingredients').select('category');
 
     const categoryCounts = (allIngredients || []).reduce((acc, item) => {
       acc[item.category] = (acc[item.category] || 0) + 1;
@@ -124,7 +117,6 @@ async function importEAFUSData() {
 
     console.log('\n✅ EAFUS import completed successfully!');
     console.log('\n🎯 Your GRAS database now has comprehensive FDA coverage!');
-
   } catch (error) {
     console.error('\n❌ Import failed:', error);
     process.exit(1);

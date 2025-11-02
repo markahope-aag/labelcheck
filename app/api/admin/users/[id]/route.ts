@@ -29,25 +29,13 @@ export async function DELETE(
 
     // Delete from Supabase (cascading deletes will handle related records)
     // Delete in order: analyses, usage_tracking, subscriptions, user_settings, then user
-    await supabaseAdmin
-      .from('analyses')
-      .delete()
-      .eq('user_id', userIdToDelete);
+    await supabaseAdmin.from('analyses').delete().eq('user_id', userIdToDelete);
 
-    await supabaseAdmin
-      .from('usage_tracking')
-      .delete()
-      .eq('user_id', userIdToDelete);
+    await supabaseAdmin.from('usage_tracking').delete().eq('user_id', userIdToDelete);
 
-    await supabaseAdmin
-      .from('subscriptions')
-      .delete()
-      .eq('user_id', userIdToDelete);
+    await supabaseAdmin.from('subscriptions').delete().eq('user_id', userIdToDelete);
 
-    await supabaseAdmin
-      .from('user_settings')
-      .delete()
-      .eq('user_id', userIdToDelete);
+    await supabaseAdmin.from('user_settings').delete().eq('user_id', userIdToDelete);
 
     const { error: deleteError } = await supabaseAdmin
       .from('users')
@@ -56,10 +44,7 @@ export async function DELETE(
 
     if (deleteError) {
       console.error('Error deleting user from Supabase:', deleteError);
-      return NextResponse.json(
-        { error: 'Failed to delete user from database' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to delete user from database' }, { status: 500 });
     }
 
     // Delete from Clerk

@@ -66,6 +66,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ shareToken, shareUrl });
   } catch (error: any) {
     console.error('Error generating share link:', error);
-    return NextResponse.json({ error: error.message || 'Failed to generate share link' }, { status: 500 });
+    return NextResponse.json(
+      { error: error.message || 'Failed to generate share link' },
+      { status: 500 }
+    );
   }
 }

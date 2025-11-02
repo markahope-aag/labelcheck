@@ -30,7 +30,7 @@ const missingIngredients = [
   'Silicon Dioxide',
   'Croscarmellose Sodium',
   'Magnesium Stearate',
-  'Ethyl Cellulose'
+  'Ethyl Cellulose',
 ];
 
 async function checkIngredients() {
@@ -80,7 +80,7 @@ async function checkIngredients() {
 
     if (partialMatch && partialMatch.length > 0) {
       console.log(`  Found:`);
-      partialMatch.slice(0, 3).forEach(row => {
+      partialMatch.slice(0, 3).forEach((row) => {
         console.log(`    - ${row.ingredient_name} (source: ${row.source})`);
       });
     }

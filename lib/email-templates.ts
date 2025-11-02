@@ -17,14 +17,18 @@ interface InvitationEmailData {
 
 export function generateAnalysisResultEmail(data: AnalysisEmailData): string {
   const statusColor =
-    data.complianceStatus === 'compliant' ? '#10b981' :
-    data.complianceStatus === 'minor_issues' ? '#f59e0b' :
-    '#ef4444';
+    data.complianceStatus === 'compliant'
+      ? '#10b981'
+      : data.complianceStatus === 'minor_issues'
+        ? '#f59e0b'
+        : '#ef4444';
 
   const statusText =
-    data.complianceStatus === 'compliant' ? 'Compliant' :
-    data.complianceStatus === 'minor_issues' ? 'Minor Issues Found' :
-    'Major Violations Detected';
+    data.complianceStatus === 'compliant'
+      ? 'Compliant'
+      : data.complianceStatus === 'minor_issues'
+        ? 'Minor Issues Found'
+        : 'Major Violations Detected';
 
   return `
 <!DOCTYPE html>
@@ -67,16 +71,20 @@ export function generateAnalysisResultEmail(data: AnalysisEmailData): string {
                 </div>
               </div>
 
-              ${data.recommendations.length > 0 ? `
+              ${
+                data.recommendations.length > 0
+                  ? `
               <div style="margin-bottom: 32px;">
                 <h3 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 600; color: #111827;">
                   Recommendations
                 </h3>
                 <ul style="margin: 0; padding-left: 24px; color: #4b5563; font-size: 15px; line-height: 1.8;">
-                  ${data.recommendations.map(rec => `<li style="margin-bottom: 8px;">${rec}</li>`).join('')}
+                  ${data.recommendations.map((rec) => `<li style="margin-bottom: 8px;">${rec}</li>`).join('')}
                 </ul>
               </div>
-              ` : ''}
+              `
+                  : ''
+              }
 
               <div style="border-top: 1px solid #e5e7eb; padding-top: 24px; text-align: center;">
                 <p style="margin: 0 0 16px 0; font-size: 14px; color: #6b7280;">
@@ -85,7 +93,7 @@ export function generateAnalysisResultEmail(data: AnalysisEmailData): string {
                     month: 'long',
                     day: 'numeric',
                     hour: '2-digit',
-                    minute: '2-digit'
+                    minute: '2-digit',
                   })}
                 </p>
                 <a href="${process.env.NEXT_PUBLIC_APP_URL}/history" style="display: inline-block; background-color: #2563eb; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 6px; font-size: 15px; font-weight: 600; margin-bottom: 16px;">

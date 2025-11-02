@@ -61,7 +61,9 @@
       "Bash(git config:*)",
       "Bash(npm run status:*)",
       "Bash(git push:*)",
-      "Bash(npm run pre-switch:*)"
+      "Bash(npm run pre-switch:*)",
+      "Bash(npx husky init)",
+      "Bash(npm run format:*)"
     ],
     "deny": [],
     "ask": []

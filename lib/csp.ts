@@ -43,7 +43,7 @@ export function buildCSP(nonce: string): string {
     // Frame ancestors: Only allow same origin
     "frame-ancestors 'self'",
     // Upgrade insecure requests
-    "upgrade-insecure-requests",
+    'upgrade-insecure-requests',
   ];
 
   return directives.join('; ');

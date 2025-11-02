@@ -13,8 +13,8 @@ const supabaseAdmin = createClient(
   {
     auth: {
       autoRefreshToken: false,
-      persistSession: false
-    }
+      persistSession: false,
+    },
   }
 );
 
@@ -76,10 +76,16 @@ async function testBothClients() {
   console.log(`✓ Total unique names (including synonyms): ${ingredientSet.size}`);
 
   // Test some specific matches
-  const testIngredients = ['calcium', 'royal jelly', 'coenzyme q10', 'caffeine', 'green tea extract powder'];
+  const testIngredients = [
+    'calcium',
+    'royal jelly',
+    'coenzyme q10',
+    'caffeine',
+    'green tea extract powder',
+  ];
 
   console.log('\nTesting specific ingredient matches:');
-  testIngredients.forEach(ing => {
+  testIngredients.forEach((ing) => {
     const found = ingredientSet.has(ing.toLowerCase());
     console.log(`  ${ing}: ${found ? '✓ FOUND' : '✗ NOT FOUND'}`);
   });

@@ -6,9 +6,9 @@ export default function SignInPage() {
       <SignIn
         appearance={{
           elements: {
-            rootBox: "mx-auto",
-            card: "shadow-lg"
-          }
+            rootBox: 'mx-auto',
+            card: 'shadow-lg',
+          },
         }}
       />
     </div>

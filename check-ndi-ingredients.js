@@ -12,7 +12,7 @@ async function checkIngredients() {
     'Fenugreek Seed Extract',
     'Siberian Ginseng Extract',
     'Guarana Extract',
-    'Maca Extract'
+    'Maca Extract',
   ];
 
   console.log('=== CHECKING OLD DIETARY INGREDIENTS DATABASE ===\n');
@@ -24,14 +24,16 @@ async function checkIngredients() {
     const { data: oldDI, error: oldError } = await supabase
       .from('old_dietary_ingredients')
       .select('ingredient_name, source')
-      .or(`ingredient_name.ilike.%${ingredient}%,ingredient_name.ilike.%${ingredient.replace(' Extract', '')}%`)
+      .or(
+        `ingredient_name.ilike.%${ingredient}%,ingredient_name.ilike.%${ingredient.replace(' Extract', '')}%`
+      )
       .limit(5);
 
     if (oldError) {
       console.error('Error:', oldError);
     } else if (oldDI && oldDI.length > 0) {
       console.log(`✅ FOUND in old_dietary_ingredients:`);
-      oldDI.forEach(item => {
+      oldDI.forEach((item) => {
         console.log(`   - ${item.ingredient_name} (${item.source})`);
       });
     } else {
@@ -42,14 +44,16 @@ async function checkIngredients() {
     const { data: ndiData, error: ndiError } = await supabase
       .from('ndi_ingredients')
       .select('ingredient_name, ndi_number')
-      .or(`ingredient_name.ilike.%${ingredient}%,ingredient_name.ilike.%${ingredient.replace(' Extract', '')}%`)
+      .or(
+        `ingredient_name.ilike.%${ingredient}%,ingredient_name.ilike.%${ingredient.replace(' Extract', '')}%`
+      )
       .limit(5);
 
     if (ndiError) {
       console.error('Error:', ndiError);
     } else if (ndiData && ndiData.length > 0) {
       console.log(`✅ FOUND in ndi_ingredients:`);
-      ndiData.forEach(item => {
+      ndiData.forEach((item) => {
         console.log(`   - ${item.ingredient_name} (NDI #${item.ndi_number})`);
       });
     } else {
@@ -71,7 +75,9 @@ async function checkIngredients() {
   console.log(`NDI Ingredients: ${ndiCount}`);
 }
 
-checkIngredients().then(() => process.exit(0)).catch(err => {
-  console.error(err);
-  process.exit(1);
-});
+checkIngredients()
+  .then(() => process.exit(0))
+  .catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });

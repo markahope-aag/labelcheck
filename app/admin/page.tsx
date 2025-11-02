@@ -39,40 +39,42 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const statCards = stats ? [
-    {
-      title: 'Total Users',
-      value: stats.totalUsers.toLocaleString(),
-      description: `+${stats.newUsersThisMonth} this month`,
-      icon: Users,
-      iconColor: 'text-blue-600',
-      bgColor: 'bg-blue-50',
-    },
-    {
-      title: 'Active Subscriptions',
-      value: stats.activeSubscriptions.toLocaleString(),
-      description: 'Paying customers',
-      icon: CreditCard,
-      iconColor: 'text-green-600',
-      bgColor: 'bg-green-50',
-    },
-    {
-      title: 'Total Analyses',
-      value: stats.totalAnalyses.toLocaleString(),
-      description: `${stats.analysesThisMonth} this month`,
-      icon: FileText,
-      iconColor: 'text-purple-600',
-      bgColor: 'bg-purple-50',
-    },
-    {
-      title: 'Monthly Revenue',
-      value: `$${stats.monthlyRevenue.toLocaleString()}`,
-      description: 'Current month',
-      icon: DollarSign,
-      iconColor: 'text-emerald-600',
-      bgColor: 'bg-emerald-50',
-    },
-  ] : [];
+  const statCards = stats
+    ? [
+        {
+          title: 'Total Users',
+          value: stats.totalUsers.toLocaleString(),
+          description: `+${stats.newUsersThisMonth} this month`,
+          icon: Users,
+          iconColor: 'text-blue-600',
+          bgColor: 'bg-blue-50',
+        },
+        {
+          title: 'Active Subscriptions',
+          value: stats.activeSubscriptions.toLocaleString(),
+          description: 'Paying customers',
+          icon: CreditCard,
+          iconColor: 'text-green-600',
+          bgColor: 'bg-green-50',
+        },
+        {
+          title: 'Total Analyses',
+          value: stats.totalAnalyses.toLocaleString(),
+          description: `${stats.analysesThisMonth} this month`,
+          icon: FileText,
+          iconColor: 'text-purple-600',
+          bgColor: 'bg-purple-50',
+        },
+        {
+          title: 'Monthly Revenue',
+          value: `$${stats.monthlyRevenue.toLocaleString()}`,
+          description: 'Current month',
+          icon: DollarSign,
+          iconColor: 'text-emerald-600',
+          bgColor: 'bg-emerald-50',
+        },
+      ]
+    : [];
 
   return (
     <div>

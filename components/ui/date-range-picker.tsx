@@ -8,11 +8,7 @@ import { format, subDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -42,11 +38,7 @@ interface DateRangePickerProps {
   className?: string;
 }
 
-export function DateRangePicker({
-  value,
-  onChange,
-  className,
-}: DateRangePickerProps) {
+export function DateRangePicker({ value, onChange, className }: DateRangePickerProps) {
   const [selectedPreset, setSelectedPreset] = React.useState<string>('all');
   const [isOpen, setIsOpen] = React.useState(false);
 
@@ -126,8 +118,7 @@ export function DateRangePicker({
               {value?.from ? (
                 value.to ? (
                   <>
-                    {format(value.from, 'LLL dd, y')} -{' '}
-                    {format(value.to, 'LLL dd, y')}
+                    {format(value.from, 'LLL dd, y')} - {format(value.to, 'LLL dd, y')}
                   </>
                 ) : (
                   format(value.from, 'LLL dd, y')

@@ -56,8 +56,8 @@ async function applyMigration(migrationFileName) {
         // Split SQL into individual statements
         const statements = sql
           .split(';')
-          .map(s => s.trim())
-          .filter(s => s.length > 0 && !s.startsWith('--'));
+          .map((s) => s.trim())
+          .filter((s) => s.length > 0 && !s.startsWith('--'));
 
         for (const statement of statements) {
           // Skip comments
@@ -68,7 +68,7 @@ async function applyMigration(migrationFileName) {
           console.log(`  ➤ Executing statement: ${statement.substring(0, 80)}...`);
 
           const { error: stmtError } = await supabase.rpc('exec', {
-            query: statement
+            query: statement,
           });
 
           if (stmtError) {
@@ -89,7 +89,6 @@ async function applyMigration(migrationFileName) {
     if (data) {
       console.log('📊 Result:', data);
     }
-
   } catch (err) {
     console.error('❌ Failed to apply migration:', err);
     console.error('\n⚠️  Manual application required. Please run this SQL in Supabase Dashboard:');
@@ -103,15 +102,19 @@ const migrationFile = process.argv[2];
 
 if (!migrationFile) {
   console.error('❌ Usage: node scripts/apply-migration.js <migration-file-name>');
-  console.error('   Example: node scripts/apply-migration.js 20251031000000_fix_public_share_security.sql');
+  console.error(
+    '   Example: node scripts/apply-migration.js 20251031000000_fix_public_share_security.sql'
+  );
   process.exit(1);
 }
 
 // Run migration
-applyMigration(migrationFile).then(() => {
-  console.log('🎉 Done!');
-  process.exit(0);
-}).catch(err => {
-  console.error('💥 Unexpected error:', err);
-  process.exit(1);
-});
+applyMigration(migrationFile)
+  .then(() => {
+    console.log('🎉 Done!');
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.error('💥 Unexpected error:', err);
+    process.exit(1);
+  });

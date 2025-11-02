@@ -22,7 +22,13 @@ interface AnalysisChatProps {
   analysisData?: any;
 }
 
-export function AnalysisChat({ sessionId, isOpen, onClose, initialMessages = [], analysisData }: AnalysisChatProps) {
+export function AnalysisChat({
+  sessionId,
+  isOpen,
+  onClose,
+  initialMessages = [],
+  analysisData,
+}: AnalysisChatProps) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -135,99 +141,100 @@ export function AnalysisChat({ sessionId, isOpen, onClose, initialMessages = [],
       </CardHeader>
 
       <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
-          {messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-center">
-              <div className="p-4 bg-blue-100 rounded-full mb-4">
-                <MessageCircle className="h-8 w-8 text-blue-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-slate-900 mb-2">Start a Conversation</h3>
-              <p className="text-sm text-slate-600 max-w-md mb-4">
-                Ask questions about your analysis results, compliance requirements, or how to fix specific issues.
-              </p>
-              <div className="grid grid-cols-1 gap-2 w-full max-w-md text-left">
-                <button
-                  onClick={() => setInputMessage('What allergen format is required?')}
-                  className="p-3 text-sm bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 text-left transition-colors"
-                >
-                  "What allergen format is required?"
-                </button>
-                <button
-                  onClick={() => setInputMessage('How should I word the net weight declaration?')}
-                  className="p-3 text-sm bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 text-left transition-colors"
-                >
-                  "How should I word the net weight declaration?"
-                </button>
-                <button
-                  onClick={() => setInputMessage('Can you explain the ingredient order requirement?')}
-                  className="p-3 text-sm bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 text-left transition-colors"
-                >
-                  "Can you explain the ingredient order requirement?"
-                </button>
-              </div>
+        {messages.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-center">
+            <div className="p-4 bg-blue-100 rounded-full mb-4">
+              <MessageCircle className="h-8 w-8 text-blue-600" />
             </div>
-          ) : (
-            <>
-              {messages.map((message, index) => (
+            <h3 className="text-lg font-semibold text-slate-900 mb-2">Start a Conversation</h3>
+            <p className="text-sm text-slate-600 max-w-md mb-4">
+              Ask questions about your analysis results, compliance requirements, or how to fix
+              specific issues.
+            </p>
+            <div className="grid grid-cols-1 gap-2 w-full max-w-md text-left">
+              <button
+                onClick={() => setInputMessage('What allergen format is required?')}
+                className="p-3 text-sm bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 text-left transition-colors"
+              >
+                "What allergen format is required?"
+              </button>
+              <button
+                onClick={() => setInputMessage('How should I word the net weight declaration?')}
+                className="p-3 text-sm bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 text-left transition-colors"
+              >
+                "How should I word the net weight declaration?"
+              </button>
+              <button
+                onClick={() => setInputMessage('Can you explain the ingredient order requirement?')}
+                className="p-3 text-sm bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 text-left transition-colors"
+              >
+                "Can you explain the ingredient order requirement?"
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            {messages.map((message, index) => (
+              <div
+                key={index}
+                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
                 <div
-                  key={index}
-                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  className={`max-w-[80%] rounded-lg p-4 ${
+                    message.role === 'user'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-slate-100 text-slate-900'
+                  }`}
                 >
-                  <div
-                    className={`max-w-[80%] rounded-lg p-4 ${
-                      message.role === 'user'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-slate-100 text-slate-900'
+                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                  <p
+                    className={`text-xs mt-2 ${
+                      message.role === 'user' ? 'text-blue-100' : 'text-slate-500'
                     }`}
                   >
-                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                    <p
-                      className={`text-xs mt-2 ${
-                        message.role === 'user' ? 'text-blue-100' : 'text-slate-500'
-                      }`}
-                    >
-                      {new Date(message.timestamp).toLocaleTimeString()}
-                    </p>
-                  </div>
+                    {new Date(message.timestamp).toLocaleTimeString()}
+                  </p>
                 </div>
-              ))}
-              {isLoading && (
-                <div className="flex justify-start">
-                  <div className="bg-slate-100 rounded-lg p-4 flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin text-slate-600" />
-                    <p className="text-sm text-slate-600">AI is thinking...</p>
-                  </div>
+              </div>
+            ))}
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="bg-slate-100 rounded-lg p-4 flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin text-slate-600" />
+                  <p className="text-sm text-slate-600">AI is thinking...</p>
                 </div>
-              )}
-              <div ref={messagesEndRef} />
-            </>
-          )}
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </>
+        )}
       </CardContent>
 
       <div className="border-t p-4">
-          <div className="flex gap-2">
-            <Input
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Ask a question about your analysis..."
-              disabled={isLoading}
-              className="flex-1"
-            />
-            <Button
-              onClick={handleSendMessage}
-              disabled={!inputMessage.trim() || isLoading}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <>
-                  <Send className="h-4 w-4 mr-2" />
-                  Send
-                </>
-              )}
-            </Button>
-          </div>
+        <div className="flex gap-2">
+          <Input
+            value={inputMessage}
+            onChange={(e) => setInputMessage(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Ask a question about your analysis..."
+            disabled={isLoading}
+            className="flex-1"
+          />
+          <Button
+            onClick={handleSendMessage}
+            disabled={!inputMessage.trim() || isLoading}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <>
+                <Send className="h-4 w-4 mr-2" />
+                Send
+              </>
+            )}
+          </Button>
+        </div>
         <p className="text-xs text-slate-500 mt-2">
           Press Enter to send • The AI has context of your analysis results
         </p>

@@ -16,17 +16,15 @@ async function cleanupDuplicateGRNs() {
 
   try {
     // Get all ingredients
-    const { data: allIngredients, error } = await supabase
-      .from('gras_ingredients')
-      .select('*');
+    const { data: allIngredients, error } = await supabase.from('gras_ingredients').select('*');
 
     if (error) throw error;
 
     // Find duplicate GRNs
     const grnMap = new Map();
     allIngredients
-      .filter(ing => ing.gras_notice_number)
-      .forEach(ing => {
+      .filter((ing) => ing.gras_notice_number)
+      .forEach((ing) => {
         const grn = ing.gras_notice_number.toUpperCase().trim();
         if (!grnMap.has(grn)) {
           grnMap.set(grn, []);
@@ -34,8 +32,7 @@ async function cleanupDuplicateGRNs() {
         grnMap.get(grn).push(ing);
       });
 
-    const duplicateGRNs = Array.from(grnMap.entries())
-      .filter(([grn, ings]) => ings.length > 1);
+    const duplicateGRNs = Array.from(grnMap.entries()).filter(([grn, ings]) => ings.length > 1);
 
     console.log(`Found ${duplicateGRNs.length} GRN numbers with duplicates\n`);
 
@@ -96,7 +93,6 @@ async function cleanupDuplicateGRNs() {
     console.log(`\n\n📊 Cleanup Summary:`);
     console.log(`   ✅ Updated ${updated} ingredients (cleared conflicting GRNs)`);
     console.log(`   🔍 Re-run audit to verify cleanup\n`);
-
   } catch (error) {
     console.error('❌ Cleanup failed:', error);
     process.exit(1);

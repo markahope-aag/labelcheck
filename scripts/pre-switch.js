@@ -53,7 +53,7 @@ if (stashed) {
   console.log('\nConsider:');
   console.log('  git stash pop   (to restore changes)');
   console.log('  git stash clear (to discard all stashes)');
-  console.log('\nNote: Stashes are local-only and won\'t transfer to other computers!\n');
+  console.log("\nNote: Stashes are local-only and won't transfer to other computers!\n");
 }
 
 // Check if local is behind remote

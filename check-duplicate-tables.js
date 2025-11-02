@@ -15,7 +15,7 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
       'ndi_ingredient',
       'new_dietary_ingredients',
       'dietary_ingredients',
-      'ndiingredients'
+      'ndiingredients',
     ];
 
     for (const tableName of tablesToCheck) {
@@ -29,7 +29,8 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
       if (error) {
         console.log(`  ❌ Not found or error: ${error.message}\n`);
       } else {
-        const isCorrect = tableName === 'ndi_ingredients' ? ' ✅ CORRECT TABLE' : ' ⚠️  POSSIBLE DUPLICATE';
+        const isCorrect =
+          tableName === 'ndi_ingredients' ? ' ✅ CORRECT TABLE' : ' ⚠️  POSSIBLE DUPLICATE';
         console.log(`  ${isCorrect}`);
         console.log(`  Total rows: ${count}`);
 
@@ -47,7 +48,6 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
     console.log('1. Verify they are not referenced in your code');
     console.log('2. Delete them from Supabase Dashboard > Table Editor');
     console.log('3. This will prevent confusion and data inconsistency');
-
   } catch (error) {
     console.error('Error:', error.message);
   }

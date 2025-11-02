@@ -16,7 +16,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
   console.log('');
 
   let totalChars = 0;
-  data?.forEach(doc => {
+  data?.forEach((doc) => {
     const len = doc.content?.length || 0;
     totalChars += len;
     console.log(`- ${doc.title}: ${len.toLocaleString()} chars`);
@@ -28,5 +28,5 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
   console.log(`Estimated: ~${estimatedTokens.toLocaleString()} tokens`);
   console.log('');
   console.log('Claude 3.5 Sonnet context window: 200,000 tokens');
-  console.log(`Current usage: ${((estimatedTokens/200000)*100).toFixed(1)}% of context window`);
+  console.log(`Current usage: ${((estimatedTokens / 200000) * 100).toFixed(1)}% of context window`);
 })();

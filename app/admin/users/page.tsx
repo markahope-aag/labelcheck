@@ -123,7 +123,7 @@ export default function AdminUsersPage() {
       }
 
       // Remove user from local state
-      setUsers(users.filter(u => u.id !== userToDelete.id));
+      setUsers(users.filter((u) => u.id !== userToDelete.id));
       setDeleteDialogOpen(false);
       setUserToDelete(null);
     } catch (err: any) {
@@ -133,9 +133,10 @@ export default function AdminUsersPage() {
     }
   };
 
-  const filteredUsers = users.filter((user) =>
-    user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.id?.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredUsers = users.filter(
+    (user) =>
+      user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.id?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const getPlanBadge = (planTier?: string) => {
@@ -143,7 +144,9 @@ export default function AdminUsersPage() {
       case 'pro':
         return <Badge className="bg-blue-100 text-blue-700 border-blue-200">Pro</Badge>;
       case 'enterprise':
-        return <Badge className="bg-purple-100 text-purple-700 border-purple-200">Enterprise</Badge>;
+        return (
+          <Badge className="bg-purple-100 text-purple-700 border-purple-200">Enterprise</Badge>
+        );
       case 'basic':
         return <Badge className="bg-green-100 text-green-700 border-green-200">Basic</Badge>;
       default:
@@ -263,7 +266,7 @@ export default function AdminUsersPage() {
                             View
                           </Button>
                           <Button
-                            variant={user.is_system_admin ? "secondary" : "default"}
+                            variant={user.is_system_admin ? 'secondary' : 'default'}
                             size="sm"
                             onClick={() => handleToggleAdmin(user)}
                           >
@@ -292,9 +295,7 @@ export default function AdminUsersPage() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>User Details</DialogTitle>
-            <DialogDescription>
-              Detailed information about this user account
-            </DialogDescription>
+            <DialogDescription>Detailed information about this user account</DialogDescription>
           </DialogHeader>
           {selectedUser && (
             <div className="space-y-6">
@@ -309,7 +310,9 @@ export default function AdminUsersPage() {
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-700">Clerk User ID</Label>
-                  <p className="mt-1 text-sm text-gray-900 font-mono">{selectedUser.clerk_user_id}</p>
+                  <p className="mt-1 text-sm text-gray-900 font-mono">
+                    {selectedUser.clerk_user_id}
+                  </p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-700">Stripe Customer ID</Label>
@@ -401,9 +404,7 @@ export default function AdminUsersPage() {
                 <li>Usage tracking data</li>
                 <li>User settings</li>
               </ul>
-              <p className="mt-3 text-red-600 font-semibold">
-                This action cannot be undone.
-              </p>
+              <p className="mt-3 text-red-600 font-semibold">This action cannot be undone.</p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -73,7 +73,8 @@ export async function analyzeImageQuality(
       severity: 'critical',
       type: 'resolution',
       message: `Image resolution is too low (${width}x${height}, ${megapixels.toFixed(2)}MP)`,
-      suggestion: 'Use a higher resolution camera or take the photo closer to the label. Minimum recommended: 1MP (1280x720)',
+      suggestion:
+        'Use a higher resolution camera or take the photo closer to the label. Minimum recommended: 1MP (1280x720)',
     });
   } else if (megapixels < 1.0) {
     issues.push({
@@ -91,7 +92,8 @@ export async function analyzeImageQuality(
         severity: 'critical',
         type: 'blur',
         message: `Image is very blurry (blur score: ${blurScore.toFixed(0)}/100)`,
-        suggestion: 'Hold the camera steady, ensure good focus, and avoid movement. Use your phone\'s camera auto-focus feature.',
+        suggestion:
+          "Hold the camera steady, ensure good focus, and avoid movement. Use your phone's camera auto-focus feature.",
       });
     } else {
       issues.push({
@@ -109,14 +111,16 @@ export async function analyzeImageQuality(
       severity: 'critical',
       type: 'brightness',
       message: `Image is too dark (brightness: ${brightness.toFixed(0)}/255)`,
-      suggestion: 'Take the photo in better lighting or increase exposure. Avoid shadows on the label.',
+      suggestion:
+        'Take the photo in better lighting or increase exposure. Avoid shadows on the label.',
     });
   } else if (brightness > 215) {
     issues.push({
       severity: 'critical',
       type: 'brightness',
       message: `Image is overexposed (brightness: ${brightness.toFixed(0)}/255)`,
-      suggestion: 'Reduce exposure or avoid direct harsh lighting. The label text should be clearly visible.',
+      suggestion:
+        'Reduce exposure or avoid direct harsh lighting. The label text should be clearly visible.',
     });
   } else if (brightness < 70 || brightness > 185) {
     issues.push({
@@ -133,7 +137,8 @@ export async function analyzeImageQuality(
       severity: 'warning',
       type: 'contrast',
       message: `Image has low contrast (${contrast.toFixed(0)}/100)`,
-      suggestion: 'Ensure good lighting with minimal glare. The label text should stand out clearly from the background.',
+      suggestion:
+        'Ensure good lighting with minimal glare. The label text should stand out clearly from the background.',
     });
   }
 

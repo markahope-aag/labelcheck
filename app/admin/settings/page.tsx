@@ -20,7 +20,7 @@ import {
   Globe,
   Bell,
   Shield,
-  Zap
+  Zap,
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 
@@ -198,7 +198,9 @@ export default function AdminSettingsPage() {
                 <Switch
                   id="emailNotifications"
                   checked={settings.email.enableNotifications}
-                  onCheckedChange={(checked) => updateSetting('email', 'enableNotifications', checked)}
+                  onCheckedChange={(checked) =>
+                    updateSetting('email', 'enableNotifications', checked)
+                  }
                 />
               </div>
             </div>
@@ -222,7 +224,8 @@ export default function AdminSettingsPage() {
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                Changes to AI settings will affect all future analyses. Test thoroughly before applying.
+                Changes to AI settings will affect all future analyses. Test thoroughly before
+                applying.
               </AlertDescription>
             </Alert>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -317,7 +320,8 @@ export default function AdminSettingsPage() {
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                Stripe configuration is managed via environment variables. Update your .env.local file to change these settings.
+                Stripe configuration is managed via environment variables. Update your .env.local
+                file to change these settings.
               </AlertDescription>
             </Alert>
           </CardContent>
@@ -350,11 +354,7 @@ export default function AdminSettingsPage() {
                   </Label>
                   <p className="text-xs text-gray-500 mt-1">Required for data isolation</p>
                 </div>
-                <Switch
-                  id="rlsEnabled"
-                  checked={settings.database.rlsEnabled}
-                  disabled
-                />
+                <Switch id="rlsEnabled" checked={settings.database.rlsEnabled} disabled />
               </div>
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div>
@@ -366,7 +366,9 @@ export default function AdminSettingsPage() {
                 <Switch
                   id="backupsEnabled"
                   checked={settings.database.backupsEnabled}
-                  onCheckedChange={(checked) => updateSetting('database', 'backupsEnabled', checked)}
+                  onCheckedChange={(checked) =>
+                    updateSetting('database', 'backupsEnabled', checked)
+                  }
                 />
               </div>
             </div>
@@ -420,7 +422,9 @@ export default function AdminSettingsPage() {
                 <Switch
                   id="enableApiAccess"
                   checked={settings.features.enableApiAccess}
-                  onCheckedChange={(checked) => updateSetting('features', 'enableApiAccess', checked)}
+                  onCheckedChange={(checked) =>
+                    updateSetting('features', 'enableApiAccess', checked)
+                  }
                 />
               </div>
               <div className="flex items-center justify-between p-4 border rounded-lg">
@@ -433,7 +437,9 @@ export default function AdminSettingsPage() {
                 <Switch
                   id="enableCustomBranding"
                   checked={settings.features.enableCustomBranding}
-                  onCheckedChange={(checked) => updateSetting('features', 'enableCustomBranding', checked)}
+                  onCheckedChange={(checked) =>
+                    updateSetting('features', 'enableCustomBranding', checked)
+                  }
                 />
               </div>
             </div>
@@ -456,13 +462,25 @@ export default function AdminSettingsPage() {
           <CardContent>
             <div className="space-y-2">
               {[
-                { name: 'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY', status: !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY },
+                {
+                  name: 'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY',
+                  status: !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+                },
                 { name: 'ANTHROPIC_API_KEY', status: !!process.env.ANTHROPIC_API_KEY },
-                { name: 'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY', status: !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY },
-                { name: 'NEXT_PUBLIC_SUPABASE_URL', status: !!process.env.NEXT_PUBLIC_SUPABASE_URL },
+                {
+                  name: 'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY',
+                  status: !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+                },
+                {
+                  name: 'NEXT_PUBLIC_SUPABASE_URL',
+                  status: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+                },
                 { name: 'RESEND_API_KEY', status: !!process.env.RESEND_API_KEY },
               ].map((env) => (
-                <div key={env.name} className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                <div
+                  key={env.name}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded"
+                >
                   <code className="text-xs">{env.name}</code>
                   <Badge variant={env.status ? 'default' : 'destructive'}>
                     {env.status ? 'Configured' : 'Missing'}

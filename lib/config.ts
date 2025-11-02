@@ -65,8 +65,8 @@ export function validateEnv(): void {
 
   if (missing.length > 0) {
     throw new Error(
-      `Missing required environment variables:\n${missing.map(v => `  - ${v}`).join('\n')}\n\n` +
-      `Please check your .env file and ensure all required variables are set.`
+      `Missing required environment variables:\n${missing.map((v) => `  - ${v}`).join('\n')}\n\n` +
+        `Please check your .env file and ensure all required variables are set.`
     );
   }
 
@@ -89,7 +89,7 @@ export function validateEnv(): void {
   if (missingOptional.length > 0 && process.env.NODE_ENV !== 'production') {
     console.warn(
       '⚠️  Optional environment variables not set:\n' +
-      missingOptional.map(v => `  - ${v}`).join('\n')
+        missingOptional.map((v) => `  - ${v}`).join('\n')
     );
   }
 }

@@ -49,7 +49,7 @@ export async function extractPDFMetadata(buffer: Buffer): Promise<{
  */
 export function isValidPDF(buffer: Buffer): boolean {
   // PDF files start with %PDF-
-  const pdfSignature = Buffer.from([0x25, 0x50, 0x44, 0x46, 0x2D]); // %PDF-
+  const pdfSignature = Buffer.from([0x25, 0x50, 0x44, 0x46, 0x2d]); // %PDF-
   return buffer.slice(0, 5).equals(pdfSignature);
 }
 
@@ -65,13 +65,13 @@ export function cleanExtractedText(text: string): string {
     .replace(/[^\x00-\x7F]/g, (char) => {
       // Replace common special characters
       const replacements: Record<string, string> = {
-        'ǥ': 'o',
-        'ö': 'o',
-        'ä': 'a',
-        'ü': 'u',
-        'Ö': 'O',
-        'Ä': 'A',
-        'Ü': 'U',
+        ǥ: 'o',
+        ö: 'o',
+        ä: 'a',
+        ü: 'u',
+        Ö: 'O',
+        Ä: 'A',
+        Ü: 'U',
         '€': 'EUR',
         '©': '(c)',
         '®': '(R)',
@@ -129,9 +129,7 @@ export async function convertPdfToJpgViaCloudConvert(buffer: Buffer): Promise<Bu
     const completedJob = await cloudConvert.jobs.wait(job.id);
 
     // Download the converted JPG
-    const exportTask = completedJob.tasks.filter(
-      (task: any) => task.name === 'export-jpg'
-    )[0];
+    const exportTask = completedJob.tasks.filter((task: any) => task.name === 'export-jpg')[0];
     const file = exportTask.result.files[0];
 
     // CloudConvert v3 API: use axios to download the file URL

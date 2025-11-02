@@ -3,16 +3,41 @@
 import { useState, useEffect } from 'react';
 import { useAuth, useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import { Plus, Edit, Trash2, Search, Filter, FileText, Calendar, CheckCircle, XCircle, Upload, Eye } from 'lucide-react';
+import {
+  Plus,
+  Edit,
+  Trash2,
+  Search,
+  Filter,
+  FileText,
+  Calendar,
+  CheckCircle,
+  XCircle,
+  Upload,
+  Eye,
+} from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { RegulatoryDocument, ProductCategory } from '@/lib/supabase';
 
 export default function AdminDocumentsPage() {
@@ -45,7 +70,9 @@ export default function AdminDocumentsPage() {
   const [pdfError, setPdfError] = useState('');
 
   const [showCategories, setShowCategories] = useState(false);
-  const [documentCategories, setDocumentCategories] = useState<Map<string, { categories: ProductCategory[], isCore: boolean }>>(new Map());
+  const [documentCategories, setDocumentCategories] = useState<
+    Map<string, { categories: ProductCategory[]; isCore: boolean }>
+  >(new Map());
   const [loadingCategories, setLoadingCategories] = useState(false);
 
   const isAdmin = user?.publicMetadata?.role === 'admin';
@@ -152,7 +179,10 @@ export default function AdminDocumentsPage() {
   };
 
   const handleDeactivate = async (id: string) => {
-    if (!confirm('Are you sure you want to permanently delete this document? This cannot be undone.')) return;
+    if (
+      !confirm('Are you sure you want to permanently delete this document? This cannot be undone.')
+    )
+      return;
 
     try {
       const response = await fetch(`/api/admin/documents/${id}`, {
@@ -195,7 +225,8 @@ export default function AdminDocumentsPage() {
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) { // 10MB limit
+    if (file.size > 10 * 1024 * 1024) {
+      // 10MB limit
       setPdfError('PDF file must be less than 10MB');
       return;
     }
@@ -268,201 +299,219 @@ export default function AdminDocumentsPage() {
                 className="border-blue-300 text-blue-600 hover:bg-blue-50"
               >
                 <Eye className="h-4 w-4 mr-2" />
-                {loadingCategories ? 'Loading...' : showCategories ? 'Hide Categories' : 'Preview RAG Categories'}
+                {loadingCategories
+                  ? 'Loading...'
+                  : showCategories
+                    ? 'Hide Categories'
+                    : 'Preview RAG Categories'}
               </Button>
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  onClick={() => {
-                    setEditingDoc(null);
-                    resetForm();
-                  }}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Document
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>{editingDoc ? 'Edit Document' : 'Add New Document'}</DialogTitle>
-                  <DialogDescription>
-                    {editingDoc ? 'Update regulatory document' : 'Add a new regulatory document'}
-                  </DialogDescription>
-                </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <Label htmlFor="title">Title *</Label>
-                    <Input
-                      id="title"
-                      value={formData.title}
-                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="description">Description</Label>
-                    <Input
-                      id="description"
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      placeholder="Brief description of this regulation"
-                    />
-                  </div>
+                <DialogTrigger asChild>
+                  <Button
+                    onClick={() => {
+                      setEditingDoc(null);
+                      resetForm();
+                    }}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Document
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>{editingDoc ? 'Edit Document' : 'Add New Document'}</DialogTitle>
+                    <DialogDescription>
+                      {editingDoc ? 'Update regulatory document' : 'Add a new regulatory document'}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                      <Label htmlFor="title">Title *</Label>
+                      <Input
+                        id="title"
+                        value={formData.title}
+                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="description">Description</Label>
+                      <Input
+                        id="description"
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        placeholder="Brief description of this regulation"
+                      />
+                    </div>
 
-                  <div className="border-t border-b border-slate-200 py-4 my-4">
-                    <Label htmlFor="pdf-upload" className="text-base font-semibold mb-2 block">
-                      Upload PDF (Optional)
-                    </Label>
-                    <p className="text-sm text-slate-600 mb-3">
-                      Upload a PDF to automatically extract the regulatory text, or manually enter content below.
-                    </p>
-                    <div className="flex items-center gap-3">
+                    <div className="border-t border-b border-slate-200 py-4 my-4">
+                      <Label htmlFor="pdf-upload" className="text-base font-semibold mb-2 block">
+                        Upload PDF (Optional)
+                      </Label>
+                      <p className="text-sm text-slate-600 mb-3">
+                        Upload a PDF to automatically extract the regulatory text, or manually enter
+                        content below.
+                      </p>
+                      <div className="flex items-center gap-3">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="relative"
+                          disabled={isProcessingPDF}
+                        >
+                          <Upload className="h-4 w-4 mr-2" />
+                          {isProcessingPDF
+                            ? 'Processing...'
+                            : pdfFile
+                              ? 'Change PDF'
+                              : 'Choose PDF'}
+                          <input
+                            id="pdf-upload"
+                            type="file"
+                            accept="application/pdf"
+                            onChange={handlePDFUpload}
+                            className="absolute inset-0 opacity-0 cursor-pointer"
+                            disabled={isProcessingPDF}
+                          />
+                        </Button>
+                        {pdfFile && (
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-blue-600" />
+                            <span className="text-sm text-slate-700">{pdfFile.name}</span>
+                          </div>
+                        )}
+                      </div>
+                      {pdfError && <p className="text-sm text-red-600 mt-2">{pdfError}</p>}
+                    </div>
+
+                    <div>
+                      <Label htmlFor="content">Content *</Label>
+                      <p className="text-sm text-slate-600 mb-2">
+                        {pdfFile
+                          ? 'Review and edit the extracted text below:'
+                          : 'Enter regulatory text manually:'}
+                      </p>
+                      <Textarea
+                        id="content"
+                        value={formData.content}
+                        onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                        rows={8}
+                        required
+                        className="font-mono text-sm"
+                        placeholder="Paste or type regulatory requirements here..."
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="document_type">Document Type</Label>
+                        <Select
+                          value={formData.document_type}
+                          onValueChange={(value) =>
+                            setFormData({ ...formData, document_type: value })
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="federal_law">Federal Law</SelectItem>
+                            <SelectItem value="state_regulation">State Regulation</SelectItem>
+                            <SelectItem value="guideline">Guideline</SelectItem>
+                            <SelectItem value="standard">Standard</SelectItem>
+                            <SelectItem value="policy">Policy</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="jurisdiction">Jurisdiction</Label>
+                        <Input
+                          id="jurisdiction"
+                          value={formData.jurisdiction}
+                          onChange={(e) =>
+                            setFormData({ ...formData, jurisdiction: e.target.value })
+                          }
+                          placeholder="e.g., United States, California"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="source">Source</Label>
+                        <Input
+                          id="source"
+                          value={formData.source}
+                          onChange={(e) => setFormData({ ...formData, source: e.target.value })}
+                          placeholder="e.g., FDA 21 CFR 101.9"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="version">Version</Label>
+                        <Input
+                          id="version"
+                          value={formData.version}
+                          onChange={(e) => setFormData({ ...formData, version: e.target.value })}
+                          placeholder="e.g., 2024.1"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="effective_date">Effective Date</Label>
+                        <Input
+                          id="effective_date"
+                          type="date"
+                          value={formData.effective_date}
+                          onChange={(e) =>
+                            setFormData({ ...formData, effective_date: e.target.value })
+                          }
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="source_url">Source URL (Optional)</Label>
+                        <Input
+                          id="source_url"
+                          value={formData.source_url}
+                          onChange={(e) => setFormData({ ...formData, source_url: e.target.value })}
+                          placeholder="e.g., https://www.fda.gov/..."
+                          type="url"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="is_active"
+                        checked={formData.is_active}
+                        onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                        className="rounded"
+                      />
+                      <Label htmlFor="is_active">Active (used in analysis)</Label>
+                    </div>
+                    <div className="flex gap-4 pt-4">
+                      <Button
+                        type="submit"
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        {editingDoc ? 'Update Document' : 'Create Document'}
+                      </Button>
                       <Button
                         type="button"
                         variant="outline"
-                        className="relative"
-                        disabled={isProcessingPDF}
+                        onClick={() => {
+                          setIsDialogOpen(false);
+                          setEditingDoc(null);
+                          resetForm();
+                        }}
+                        className="flex-1"
                       >
-                        <Upload className="h-4 w-4 mr-2" />
-                        {isProcessingPDF ? 'Processing...' : pdfFile ? 'Change PDF' : 'Choose PDF'}
-                        <input
-                          id="pdf-upload"
-                          type="file"
-                          accept="application/pdf"
-                          onChange={handlePDFUpload}
-                          className="absolute inset-0 opacity-0 cursor-pointer"
-                          disabled={isProcessingPDF}
-                        />
+                        Cancel
                       </Button>
-                      {pdfFile && (
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-blue-600" />
-                          <span className="text-sm text-slate-700">{pdfFile.name}</span>
-                        </div>
-                      )}
                     </div>
-                    {pdfError && (
-                      <p className="text-sm text-red-600 mt-2">{pdfError}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <Label htmlFor="content">Content *</Label>
-                    <p className="text-sm text-slate-600 mb-2">
-                      {pdfFile ? 'Review and edit the extracted text below:' : 'Enter regulatory text manually:'}
-                    </p>
-                    <Textarea
-                      id="content"
-                      value={formData.content}
-                      onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                      rows={8}
-                      required
-                      className="font-mono text-sm"
-                      placeholder="Paste or type regulatory requirements here..."
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="document_type">Document Type</Label>
-                      <Select
-                        value={formData.document_type}
-                        onValueChange={(value) => setFormData({ ...formData, document_type: value })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="federal_law">Federal Law</SelectItem>
-                          <SelectItem value="state_regulation">State Regulation</SelectItem>
-                          <SelectItem value="guideline">Guideline</SelectItem>
-                          <SelectItem value="standard">Standard</SelectItem>
-                          <SelectItem value="policy">Policy</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="jurisdiction">Jurisdiction</Label>
-                      <Input
-                        id="jurisdiction"
-                        value={formData.jurisdiction}
-                        onChange={(e) => setFormData({ ...formData, jurisdiction: e.target.value })}
-                        placeholder="e.g., United States, California"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="source">Source</Label>
-                      <Input
-                        id="source"
-                        value={formData.source}
-                        onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-                        placeholder="e.g., FDA 21 CFR 101.9"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="version">Version</Label>
-                      <Input
-                        id="version"
-                        value={formData.version}
-                        onChange={(e) => setFormData({ ...formData, version: e.target.value })}
-                        placeholder="e.g., 2024.1"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="effective_date">Effective Date</Label>
-                      <Input
-                        id="effective_date"
-                        type="date"
-                        value={formData.effective_date}
-                        onChange={(e) => setFormData({ ...formData, effective_date: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="source_url">Source URL (Optional)</Label>
-                      <Input
-                        id="source_url"
-                        value={formData.source_url}
-                        onChange={(e) => setFormData({ ...formData, source_url: e.target.value })}
-                        placeholder="e.g., https://www.fda.gov/..."
-                        type="url"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="is_active"
-                      checked={formData.is_active}
-                      onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                      className="rounded"
-                    />
-                    <Label htmlFor="is_active">Active (used in analysis)</Label>
-                  </div>
-                  <div className="flex gap-4 pt-4">
-                    <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white">
-                      {editingDoc ? 'Update Document' : 'Create Document'}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setIsDialogOpen(false);
-                        setEditingDoc(null);
-                        resetForm();
-                      }}
-                      className="flex-1"
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </form>
-              </DialogContent>
-            </Dialog>
+                  </form>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
 
@@ -505,7 +554,9 @@ export default function AdminDocumentsPage() {
 
           {isLoading ? (
             <Card className="border-slate-200">
-              <CardContent className="py-12 text-center text-slate-600">Loading documents...</CardContent>
+              <CardContent className="py-12 text-center text-slate-600">
+                Loading documents...
+              </CardContent>
             </Card>
           ) : filteredDocuments.length === 0 ? (
             <Card className="border-slate-200">
@@ -522,7 +573,9 @@ export default function AdminDocumentsPage() {
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <CardTitle className="text-xl font-semibold text-slate-900">{doc.title}</CardTitle>
+                          <CardTitle className="text-xl font-semibold text-slate-900">
+                            {doc.title}
+                          </CardTitle>
                           {doc.is_active ? (
                             <Badge className="bg-green-100 text-green-700 border-green-200">
                               <CheckCircle className="h-3 w-3 mr-1" />
@@ -544,19 +597,26 @@ export default function AdminDocumentsPage() {
                             <div className="text-sm font-semibold text-blue-900 mb-2">
                               📚 RAG Lite Categories
                               {documentCategories.get(doc.id)?.isCore && (
-                                <span className="ml-2 text-xs font-normal text-blue-700">(Core document - applies to all categories)</span>
+                                <span className="ml-2 text-xs font-normal text-blue-700">
+                                  (Core document - applies to all categories)
+                                </span>
                               )}
                             </div>
                             <div className="flex flex-wrap gap-2">
                               {documentCategories.get(doc.id)?.categories.map((category) => {
                                 const categoryColors: Record<ProductCategory, string> = {
                                   CONVENTIONAL_FOOD: 'bg-amber-100 text-amber-800 border-amber-300',
-                                  DIETARY_SUPPLEMENT: 'bg-purple-100 text-purple-800 border-purple-300',
+                                  DIETARY_SUPPLEMENT:
+                                    'bg-purple-100 text-purple-800 border-purple-300',
                                   ALCOHOLIC_BEVERAGE: 'bg-rose-100 text-rose-800 border-rose-300',
-                                  NON_ALCOHOLIC_BEVERAGE: 'bg-cyan-100 text-cyan-800 border-cyan-300',
+                                  NON_ALCOHOLIC_BEVERAGE:
+                                    'bg-cyan-100 text-cyan-800 border-cyan-300',
                                 };
                                 return (
-                                  <Badge key={category} className={`${categoryColors[category]} text-xs`}>
+                                  <Badge
+                                    key={category}
+                                    className={`${categoryColors[category]} text-xs`}
+                                  >
                                     {category.replace(/_/g, ' ')}
                                   </Badge>
                                 );

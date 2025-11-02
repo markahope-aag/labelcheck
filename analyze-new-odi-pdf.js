@@ -42,7 +42,6 @@ const pdfPath = 'G:\\My Drive\\Downloads\\FDA-2011-D-0376-1627_attachment_1.pdf'
     // Save full text for analysis
     fs.writeFileSync('new-odi-pdf-raw.txt', text, 'utf8');
     console.log('\nFull text saved to: new-odi-pdf-raw.txt');
-
   } catch (error) {
     console.error('Error:', error.message);
     console.error(error.stack);

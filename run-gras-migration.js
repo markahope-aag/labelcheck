@@ -18,7 +18,12 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 async function runMigration() {
   try {
     console.log('Reading migration file...');
-    const migrationPath = path.join(__dirname, 'supabase', 'migrations', '20251022220000_create_gras_ingredients.sql');
+    const migrationPath = path.join(
+      __dirname,
+      'supabase',
+      'migrations',
+      '20251022220000_create_gras_ingredients.sql'
+    );
     const sql = fs.readFileSync(migrationPath, 'utf8');
 
     console.log('Running GRAS ingredients migration...');
@@ -27,8 +32,8 @@ async function runMigration() {
     // This is a simple split - for production you might want a more sophisticated SQL parser
     const statements = sql
       .split(';')
-      .map(s => s.trim())
-      .filter(s => s.length > 0 && !s.startsWith('--'));
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0 && !s.startsWith('--'));
 
     for (const statement of statements) {
       if (statement.trim()) {
@@ -51,10 +56,7 @@ async function runMigration() {
     console.log('\n✅ Migration completed successfully!');
 
     // Verify the table was created
-    const { data, error } = await supabase
-      .from('gras_ingredients')
-      .select('count')
-      .limit(1);
+    const { data, error } = await supabase.from('gras_ingredients').select('count').limit(1);
 
     if (error) {
       console.error('Error verifying table:', error);
@@ -68,7 +70,6 @@ async function runMigration() {
 
       console.log(`✅ Seed data loaded: ${count} ingredients`);
     }
-
   } catch (error) {
     console.error('Migration failed:', error);
     process.exit(1);

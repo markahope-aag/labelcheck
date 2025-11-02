@@ -128,7 +128,9 @@ async function importNDIDatabase() {
 
       // Skip duplicate notification numbers (keep first occurrence)
       if (seenNotificationNumbers.has(notificationNumber)) {
-        console.log(`   ⚠️  Skipping duplicate notification #${notificationNumber}: ${ingredientName}`);
+        console.log(
+          `   ⚠️  Skipping duplicate notification #${notificationNumber}: ${ingredientName}`
+        );
         duplicates++;
         continue;
       }
@@ -145,7 +147,9 @@ async function importNDIDatabase() {
       });
     }
 
-    console.log(`📊 Processing ${ndiIngredients.length} NDI entries (skipped ${skipped} invalid rows, ${duplicates} duplicates)`);
+    console.log(
+      `📊 Processing ${ndiIngredients.length} NDI entries (skipped ${skipped} invalid rows, ${duplicates} duplicates)`
+    );
 
     // Insert in batches of 100
     const batchSize = 100;
@@ -154,9 +158,7 @@ async function importNDIDatabase() {
     for (let i = 0; i < ndiIngredients.length; i += batchSize) {
       const batch = ndiIngredients.slice(i, i + batchSize);
 
-      const { error: insertError } = await supabase
-        .from('ndi_ingredients')
-        .insert(batch);
+      const { error: insertError } = await supabase.from('ndi_ingredients').insert(batch);
 
       if (insertError) {
         console.error(`❌ Error inserting batch ${i / batchSize + 1}:`, insertError);
@@ -164,7 +166,9 @@ async function importNDIDatabase() {
       }
 
       inserted += batch.length;
-      console.log(`   ✅ Inserted batch ${Math.floor(i / batchSize) + 1} (${inserted}/${ndiIngredients.length})`);
+      console.log(
+        `   ✅ Inserted batch ${Math.floor(i / batchSize) + 1} (${inserted}/${ndiIngredients.length})`
+      );
     }
 
     console.log(`\n✅ Successfully imported ${inserted} NDI ingredients!`);
@@ -184,10 +188,11 @@ async function importNDIDatabase() {
       .limit(5);
 
     console.log('\n📋 Sample entries:');
-    samples?.forEach(s => {
-      console.log(`   #${s.notification_number}: ${s.ingredient_name} (${s.firm || 'Unknown firm'})`);
+    samples?.forEach((s) => {
+      console.log(
+        `   #${s.notification_number}: ${s.ingredient_name} (${s.firm || 'Unknown firm'})`
+      );
     });
-
   } catch (error) {
     console.error('\n❌ Import failed:', error);
     process.exit(1);

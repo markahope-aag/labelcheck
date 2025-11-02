@@ -22,14 +22,14 @@ async function debugAllergenMatch() {
 
   // Group by category
   const byCategory = {};
-  allAllergens?.forEach(a => {
+  allAllergens?.forEach((a) => {
     if (!byCategory[a.allergen_category]) {
       byCategory[a.allergen_category] = [];
     }
     byCategory[a.allergen_category].push(a);
   });
 
-  Object.keys(byCategory).forEach(category => {
+  Object.keys(byCategory).forEach((category) => {
     console.log(`${category}: ${byCategory[category].length} allergens`);
   });
 
@@ -47,7 +47,7 @@ async function debugAllergenMatch() {
 
   console.log('\n=== SHELLFISH ALLERGENS ===\n');
 
-  allergens.forEach(allergen => {
+  allergens.forEach((allergen) => {
     console.log(`Allergen: ${allergen.allergen_name}`);
     console.log(`Derivatives (${allergen.derivatives?.length || 0}):`, allergen.derivatives);
     console.log('---');
@@ -61,29 +61,31 @@ async function debugAllergenMatch() {
     // Real allergens that SHOULD match:
     'shrimp extract',
     'contains shellfish extract',
-    'glucosamine sulfate'
+    'glucosamine sulfate',
   ];
 
   console.log('\n=== TESTING FUZZY MATCHING ===\n');
 
   for (const ingredient of testIngredients) {
     const normalized = ingredient.toLowerCase().trim();
-    const searchTerms = normalized.split(' ').filter(word => word.length > 3);
+    const searchTerms = normalized.split(' ').filter((word) => word.length > 3);
 
     console.log(`Ingredient: ${ingredient}`);
     console.log(`Search terms: ${searchTerms.join(', ')}`);
 
     // NEW LOGIC: Check if ingredient CONTAINS derivative (not if derivative contains word)
     for (const allergen of allergens) {
-      const fuzzyMatch = allergen.derivatives?.some(derivative =>
+      const fuzzyMatch = allergen.derivatives?.some((derivative) =>
         normalized.includes(derivative.toLowerCase())
       );
 
       if (fuzzyMatch) {
-        const matchingDerivatives = allergen.derivatives.filter(d =>
+        const matchingDerivatives = allergen.derivatives.filter((d) =>
           normalized.includes(d.toLowerCase())
         );
-        console.log(`  ❌ MATCH: "${normalized}" contains derivative from allergen "${allergen.allergen_name}"`);
+        console.log(
+          `  ❌ MATCH: "${normalized}" contains derivative from allergen "${allergen.allergen_name}"`
+        );
         console.log(`     Matching derivatives: ${matchingDerivatives.join(', ')}`);
       } else {
         console.log(`  ✅ NO MATCH: "${normalized}" does not contain any shellfish derivatives`);
@@ -93,7 +95,9 @@ async function debugAllergenMatch() {
   }
 }
 
-debugAllergenMatch().then(() => process.exit(0)).catch(err => {
-  console.error(err);
-  process.exit(1);
-});
+debugAllergenMatch()
+  .then(() => process.exit(0))
+  .catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });

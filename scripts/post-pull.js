@@ -12,7 +12,7 @@ function exec(command, silent = false) {
   try {
     const output = execSync(command, {
       encoding: 'utf-8',
-      stdio: silent ? 'pipe' : 'inherit'
+      stdio: silent ? 'pipe' : 'inherit',
     });
     return silent ? output.trim() : '';
   } catch (error) {
@@ -31,7 +31,9 @@ exec('git pull origin main');
 console.log('');
 
 // Check if package-lock.json changed
-const packageLockChanged = exec('git diff HEAD@{1} HEAD --name-only', true).includes('package-lock.json');
+const packageLockChanged = exec('git diff HEAD@{1} HEAD --name-only', true).includes(
+  'package-lock.json'
+);
 
 if (packageLockChanged) {
   console.log('📦 Dependencies updated - installing...');
@@ -56,7 +58,7 @@ if (!fs.existsSync(envPath)) {
   console.log('Action required:');
   console.log('  1. Copy .env.example to .env.local');
   console.log('  2. Fill in your environment-specific values');
-  console.log('  3. Never commit .env.local (it\'s in .gitignore)\n');
+  console.log("  3. Never commit .env.local (it's in .gitignore)\n");
 }
 
 // Show current status

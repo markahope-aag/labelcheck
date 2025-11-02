@@ -79,28 +79,20 @@ export function Navigation() {
             {isSignedIn ? (
               <>
                 <Button variant="ghost" size="sm" asChild>
-                  <Link href="/settings">
-                    Settings
-                  </Link>
+                  <Link href="/settings">Settings</Link>
                 </Button>
                 <Button variant="ghost" size="sm" asChild>
-                  <Link href="/billing">
-                    Billing
-                  </Link>
+                  <Link href="/billing">Billing</Link>
                 </Button>
                 <UserButton afterSignOutUrl="/" />
               </>
             ) : (
               <>
                 <Button variant="ghost" size="sm" asChild>
-                  <Link href="/sign-in">
-                    Sign In
-                  </Link>
+                  <Link href="/sign-in">Sign In</Link>
                 </Button>
                 <Button size="sm" asChild>
-                  <Link href="/sign-up">
-                    Get Started
-                  </Link>
+                  <Link href="/sign-up">Get Started</Link>
                 </Button>
               </>
             )}

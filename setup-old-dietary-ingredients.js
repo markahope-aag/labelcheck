@@ -7,7 +7,9 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseServiceKey) {
   console.error('Error: Missing Supabase environment variables');
-  console.error('Make sure NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set in .env.local');
+  console.error(
+    'Make sure NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set in .env.local'
+  );
   process.exit(1);
 }
 
@@ -21,11 +23,14 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
     // Step 1: Create table if it doesn't exist
     console.log('Step 1: Checking if old_dietary_ingredients table exists...');
 
-    const migrationSQL = fs.readFileSync('supabase/migrations/20251024050000_create_old_dietary_ingredients.sql', 'utf8');
+    const migrationSQL = fs.readFileSync(
+      'supabase/migrations/20251024050000_create_old_dietary_ingredients.sql',
+      'utf8'
+    );
 
     console.log('Running migration SQL...');
     const { error: migrationError } = await supabaseAdmin.rpc('exec_sql', {
-      sql_query: migrationSQL
+      sql_query: migrationSQL,
     });
 
     // If exec_sql RPC doesn't exist, we'll try a different approach
@@ -60,11 +65,11 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     // Step 3: Prepare data for insertion
     console.log('\nStep 3: Preparing data...');
-    const records = ingredients.map(name => ({
+    const records = ingredients.map((name) => ({
       ingredient_name: name,
       source: 'CRN Grandfather List (September 1998)',
       notes: 'Dietary ingredient marketed in the United States before October 15, 1994',
-      is_active: true
+      is_active: true,
     }));
     console.log(`✓ Prepared ${records.length} records`);
 
@@ -81,12 +86,10 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
       process.stdout.write(`  Batch ${batchNum}/${totalBatches} (${batch.length} ingredients)... `);
 
-      const { data, error } = await supabaseAdmin
-        .from('old_dietary_ingredients')
-        .upsert(batch, {
-          onConflict: 'ingredient_name',
-          ignoreDuplicates: false // Update existing records
-        });
+      const { data, error } = await supabaseAdmin.from('old_dietary_ingredients').upsert(batch, {
+        onConflict: 'ingredient_name',
+        ignoreDuplicates: false, // Update existing records
+      });
 
       if (error) {
         console.log('❌ ERROR');
@@ -130,7 +133,6 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
     }
 
     console.log('\n✅ Setup complete!');
-
   } catch (error) {
     console.error('\n❌ Error:', error.message);
     console.error(error.stack);

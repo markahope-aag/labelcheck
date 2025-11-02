@@ -38,19 +38,21 @@ for (const line of ingredientLines) {
   const trimmed = line.trim();
 
   // Skip empty lines, copyright lines, headers
-  if (!trimmed ||
-      trimmed.includes('©') ||
-      trimmed.includes('UNITED') ||
-      trimmed.includes('NATURAL') ||
-      trimmed.includes('PRODUCTS') ||
-      trimmed.includes('ALLIANCE') ||
-      trimmed.includes('OLDDIETARYINGREDIENTLIST') ||
-      trimmed.includes('AHPA') ||
-      trimmed.includes('CRN') ||
-      trimmed.includes('NNFA') ||
-      trimmed.includes('NPA') ||
-      trimmed.includes('UNPA') ||
-      trimmed.length < 3) {
+  if (
+    !trimmed ||
+    trimmed.includes('©') ||
+    trimmed.includes('UNITED') ||
+    trimmed.includes('NATURAL') ||
+    trimmed.includes('PRODUCTS') ||
+    trimmed.includes('ALLIANCE') ||
+    trimmed.includes('OLDDIETARYINGREDIENTLIST') ||
+    trimmed.includes('AHPA') ||
+    trimmed.includes('CRN') ||
+    trimmed.includes('NNFA') ||
+    trimmed.includes('NPA') ||
+    trimmed.includes('UNPA') ||
+    trimmed.length < 3
+  ) {
     continue;
   }
 
@@ -66,7 +68,7 @@ for (const line of ingredientLines) {
   // Clean up formatting
   ingredient = ingredient
     .replace(/\s+/g, ' ')
-    .replace(/\([^)]*\)/g, match => match.toLowerCase())
+    .replace(/\([^)]*\)/g, (match) => match.toLowerCase())
     .trim();
 
   // Skip if starts with a number
@@ -99,7 +101,7 @@ console.log(`\n=== EXTRACTED ${ingredientsMap.size} UNIQUE INGREDIENTS WITH SOUR
       return;
     }
 
-    const currentSet = new Set(currentIngredients.map(i => i.ingredient_name.toLowerCase()));
+    const currentSet = new Set(currentIngredients.map((i) => i.ingredient_name.toLowerCase()));
     console.log(`Current database: ${currentSet.size} ingredients\n`);
 
     // Filter to only new ingredients
@@ -137,11 +139,11 @@ console.log(`\n=== EXTRACTED ${ingredientsMap.size} UNIQUE INGREDIENTS WITH SOUR
     }
 
     // Prepare records for database insertion
-    const records = newIngredients.map(item => ({
+    const records = newIngredients.map((item) => ({
       ingredient_name: item.ingredient_name,
       source: `UNPA Consolidated ODI List (1999) - ${item.sources.join(', ')}`,
       notes: `Dietary ingredient marketed before October 15, 1994. From: ${item.sources.join(', ')}`,
-      is_active: true
+      is_active: true,
     }));
 
     console.log('=== SAMPLE OF INGREDIENTS TO ADD (first 20) ===\n');
@@ -163,12 +165,10 @@ console.log(`\n=== EXTRACTED ${ingredientsMap.size} UNIQUE INGREDIENTS WITH SOUR
 
       console.log(`Processing batch ${batchNum}/${totalBatches} (${batch.length} ingredients)...`);
 
-      const { data, error } = await supabaseAdmin
-        .from('old_dietary_ingredients')
-        .upsert(batch, {
-          onConflict: 'ingredient_name',
-          ignoreDuplicates: false
-        });
+      const { data, error } = await supabaseAdmin.from('old_dietary_ingredients').upsert(batch, {
+        onConflict: 'ingredient_name',
+        ignoreDuplicates: false,
+      });
 
       if (error) {
         console.error(`❌ Error inserting batch ${batchNum}:`, error.message);
@@ -193,7 +193,6 @@ console.log(`\n=== EXTRACTED ${ingredientsMap.size} UNIQUE INGREDIENTS WITH SOUR
     }
 
     console.log('\n✓ UNPA ingredients successfully added to database');
-
   } catch (error) {
     console.error('Error:', error.message);
     console.error(error.stack);

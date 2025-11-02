@@ -18,7 +18,12 @@ async function runMigration() {
 
   try {
     // Read the migration file
-    const migrationPath = path.join(__dirname, 'supabase', 'migrations', '20251024000000_add_ndi_ingredients.sql');
+    const migrationPath = path.join(
+      __dirname,
+      'supabase',
+      'migrations',
+      '20251024000000_add_ndi_ingredients.sql'
+    );
     const migrationSQL = fs.readFileSync(migrationPath, 'utf-8');
 
     console.log('📄 Executing migration SQL...');
@@ -29,8 +34,8 @@ async function runMigration() {
 
     const queries = migrationSQL
       .split(';')
-      .map(q => q.trim())
-      .filter(q => q.length > 0 && !q.startsWith('--') && !q.startsWith('COMMENT'));
+      .map((q) => q.trim())
+      .filter((q) => q.length > 0 && !q.startsWith('--') && !q.startsWith('COMMENT'));
 
     for (const query of queries) {
       if (query.trim()) {
@@ -50,10 +55,7 @@ async function runMigration() {
     console.log('✅ Migration completed!\n');
 
     // Verify table exists
-    const { data, error } = await supabase
-      .from('ndi_ingredients')
-      .select('count')
-      .limit(1);
+    const { data, error } = await supabase.from('ndi_ingredients').select('count').limit(1);
 
     if (error) {
       if (error.message.includes('does not exist')) {
@@ -70,11 +72,13 @@ async function runMigration() {
     } else {
       console.log('✅ Table ndi_ingredients exists and is accessible');
     }
-
   } catch (error) {
     console.error('\n❌ Migration failed:', error);
     console.log('\n💡 Alternative: Apply migration through Supabase Dashboard SQL Editor');
-    console.log('   File location:', path.join(__dirname, 'supabase', 'migrations', '20251024000000_add_ndi_ingredients.sql'));
+    console.log(
+      '   File location:',
+      path.join(__dirname, 'supabase', 'migrations', '20251024000000_add_ndi_ingredients.sql')
+    );
     process.exit(1);
   }
 }

@@ -135,10 +135,7 @@ export async function updateSessionStatus(
 ): Promise<{ error: any }> {
   const client = useAdmin ? supabaseAdmin : supabase;
 
-  const { error } = await client
-    .from('analysis_sessions')
-    .update({ status })
-    .eq('id', sessionId);
+  const { error } = await client.from('analysis_sessions').update({ status }).eq('id', sessionId);
 
   return { error };
 }
@@ -153,10 +150,7 @@ export async function updateSessionTitle(
 ): Promise<{ error: any }> {
   const client = useAdmin ? supabaseAdmin : supabase;
 
-  const { error } = await client
-    .from('analysis_sessions')
-    .update({ title })
-    .eq('id', sessionId);
+  const { error } = await client.from('analysis_sessions').update({ title }).eq('id', sessionId);
 
   return { error };
 }
@@ -291,10 +285,7 @@ export async function deleteSession(
   const client = useAdmin ? supabaseAdmin : supabase;
 
   // Cascade delete will handle iterations
-  const { error } = await client
-    .from('analysis_sessions')
-    .delete()
-    .eq('id', sessionId);
+  const { error } = await client.from('analysis_sessions').delete().eq('id', sessionId);
 
   return { error };
 }

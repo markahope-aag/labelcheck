@@ -31,7 +31,7 @@ export function PrintReadyCertification({
   lowCount,
   analysisDate,
   criticalIssues = [],
-  highIssues = []
+  highIssues = [],
 }: PrintReadyCertificationProps) {
   const [showFullDisclaimer, setShowFullDisclaimer] = useState(false);
   const [showOptionalImprovements, setShowOptionalImprovements] = useState(false);
@@ -55,7 +55,8 @@ export function PrintReadyCertification({
                   Label is Print-Ready
                 </CardTitle>
                 <p className="text-green-800 text-lg">
-                  No blocking compliance issues detected. All CRITICAL and HIGH priority items have been resolved.
+                  No blocking compliance issues detected. All CRITICAL and HIGH priority items have
+                  been resolved.
                 </p>
               </div>
             </div>
@@ -64,8 +65,8 @@ export function PrintReadyCertification({
             <Alert className="bg-amber-50 border-amber-300">
               <Info className="h-4 w-4 text-amber-600" />
               <AlertDescription className="text-amber-900">
-                <strong>IMPORTANT DISCLAIMER:</strong> This analysis is based on visible label elements only as of {new Date(analysisDate).toLocaleDateString()}.
-                {' '}
+                <strong>IMPORTANT DISCLAIMER:</strong> This analysis is based on visible label
+                elements only as of {new Date(analysisDate).toLocaleDateString()}.{' '}
                 <button
                   onClick={() => setShowFullDisclaimer(!showFullDisclaimer)}
                   className="underline hover:text-amber-700"
@@ -85,7 +86,9 @@ export function PrintReadyCertification({
                   <li>Does NOT replace consultation with qualified regulatory experts</li>
                 </ul>
 
-                <p className="font-semibold mt-3">The manufacturer/brand owner remains solely responsible for:</p>
+                <p className="font-semibold mt-3">
+                  The manufacturer/brand owner remains solely responsible for:
+                </p>
                 <ul className="list-disc pl-5 space-y-1">
                   <li>Accuracy of all claims and declarations</li>
                   <li>Product formula compliance with applicable regulations</li>
@@ -96,8 +99,9 @@ export function PrintReadyCertification({
                 </ul>
 
                 <p className="mt-3 font-semibold">
-                  Use of this service does not create an attorney-client or consultant-client relationship.
-                  For final approval, consult a qualified food regulatory expert or attorney.
+                  Use of this service does not create an attorney-client or consultant-client
+                  relationship. For final approval, consult a qualified food regulatory expert or
+                  attorney.
                 </p>
               </div>
             )}
@@ -128,8 +132,8 @@ export function PrintReadyCertification({
             {showOptionalImprovements && (
               <CardContent className="pt-0">
                 <p className="text-slate-600 mb-4">
-                  These items are for your review and may require professional judgment or verification.
-                  They do not block print-ready status.
+                  These items are for your review and may require professional judgment or
+                  verification. They do not block print-ready status.
                 </p>
                 <div className="space-y-2">
                   {mediumCount > 0 && (
@@ -138,7 +142,8 @@ export function PrintReadyCertification({
                         MEDIUM
                       </span>
                       <span className="text-slate-700">
-                        {mediumCount} {mediumCount === 1 ? 'item' : 'items'} requiring judgment or verification
+                        {mediumCount} {mediumCount === 1 ? 'item' : 'items'} requiring judgment or
+                        verification
                       </span>
                     </div>
                   )}
@@ -171,10 +176,12 @@ export function PrintReadyCertification({
           </div>
           <div className="flex-1">
             <CardTitle className="text-2xl font-bold text-orange-900 mb-2">
-              {blockingCount} Blocking {blockingCount === 1 ? 'Issue' : 'Issues'} {blockingCount === 1 ? 'Remains' : 'Remain'}
+              {blockingCount} Blocking {blockingCount === 1 ? 'Issue' : 'Issues'}{' '}
+              {blockingCount === 1 ? 'Remains' : 'Remain'}
             </CardTitle>
             <p className="text-orange-800 text-lg">
-              Your label has compliance issues that must be fixed before printing to avoid FDA/TTB enforcement risk.
+              Your label has compliance issues that must be fixed before printing to avoid FDA/TTB
+              enforcement risk.
             </p>
           </div>
         </div>
@@ -193,20 +200,20 @@ export function PrintReadyCertification({
             </div>
             <div className="space-y-3">
               {criticalIssues.slice(0, 3).map((issue, index) => (
-                <div key={index} className="bg-white border-l-4 border-red-600 rounded-r-lg p-4 shadow-sm">
-                  <p className="text-slate-900 font-medium mb-1">
-                    {issue.recommendation}
-                  </p>
+                <div
+                  key={index}
+                  className="bg-white border-l-4 border-red-600 rounded-r-lg p-4 shadow-sm"
+                >
+                  <p className="text-slate-900 font-medium mb-1">{issue.recommendation}</p>
                   {issue.regulation && (
-                    <p className="text-sm text-slate-600">
-                      Regulation: {issue.regulation}
-                    </p>
+                    <p className="text-sm text-slate-600">Regulation: {issue.regulation}</p>
                   )}
                 </div>
               ))}
               {criticalCount > 3 && (
                 <p className="text-sm text-slate-600 italic">
-                  + {criticalCount - 3} more critical {criticalCount - 3 === 1 ? 'issue' : 'issues'} (see full recommendations below)
+                  + {criticalCount - 3} more critical {criticalCount - 3 === 1 ? 'issue' : 'issues'}{' '}
+                  (see full recommendations below)
                 </p>
               )}
             </div>
@@ -220,26 +227,24 @@ export function PrintReadyCertification({
               <span className="px-3 py-1.5 bg-orange-600 text-white rounded-lg font-bold text-sm">
                 HIGH ({highCount})
               </span>
-              <span className="text-sm text-orange-900 font-medium">
-                Regulatory requirements
-              </span>
+              <span className="text-sm text-orange-900 font-medium">Regulatory requirements</span>
             </div>
             <div className="space-y-3">
               {highIssues.slice(0, 2).map((issue, index) => (
-                <div key={index} className="bg-white border-l-4 border-orange-600 rounded-r-lg p-4 shadow-sm">
-                  <p className="text-slate-900 font-medium mb-1">
-                    {issue.recommendation}
-                  </p>
+                <div
+                  key={index}
+                  className="bg-white border-l-4 border-orange-600 rounded-r-lg p-4 shadow-sm"
+                >
+                  <p className="text-slate-900 font-medium mb-1">{issue.recommendation}</p>
                   {issue.regulation && (
-                    <p className="text-sm text-slate-600">
-                      Regulation: {issue.regulation}
-                    </p>
+                    <p className="text-sm text-slate-600">Regulation: {issue.regulation}</p>
                   )}
                 </div>
               ))}
               {highCount > 2 && (
                 <p className="text-sm text-slate-600 italic">
-                  + {highCount - 2} more high priority {highCount - 2 === 1 ? 'issue' : 'issues'} (see full recommendations below)
+                  + {highCount - 2} more high priority {highCount - 2 === 1 ? 'issue' : 'issues'}{' '}
+                  (see full recommendations below)
                 </p>
               )}
             </div>

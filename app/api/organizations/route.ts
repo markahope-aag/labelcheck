@@ -41,10 +41,7 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
 
     if (existingOrg) {
-      return NextResponse.json(
-        { error: 'Organization slug is already taken' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Organization slug is already taken' }, { status: 400 });
     }
 
     // Create organization
@@ -61,34 +58,23 @@ export async function POST(req: NextRequest) {
 
     if (orgError) {
       console.error('Error creating organization:', orgError);
-      return NextResponse.json(
-        { error: 'Failed to create organization' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to create organization' }, { status: 500 });
     }
 
     // Add user as organization owner
-    const { error: memberError } = await supabaseAdmin
-      .from('organization_members')
-      .insert({
-        organization_id: newOrg.id,
-        user_id: userData.id,
-        role: 'owner',
-        joined_at: new Date().toISOString(),
-      });
+    const { error: memberError } = await supabaseAdmin.from('organization_members').insert({
+      organization_id: newOrg.id,
+      user_id: userData.id,
+      role: 'owner',
+      joined_at: new Date().toISOString(),
+    });
 
     if (memberError) {
       console.error('Error adding organization member:', memberError);
       // Rollback organization creation
-      await supabaseAdmin
-        .from('organizations')
-        .delete()
-        .eq('id', newOrg.id);
+      await supabaseAdmin.from('organizations').delete().eq('id', newOrg.id);
 
-      return NextResponse.json(
-        { error: 'Failed to add user to organization' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to add user to organization' }, { status: 500 });
     }
 
     return NextResponse.json(newOrg, { status: 201 });
@@ -103,9 +89,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
   }
 }

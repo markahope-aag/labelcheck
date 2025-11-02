@@ -109,20 +109,27 @@ export function detectDocumentCategories(doc: RegulatoryDocument): ProductCatego
   const applicableCategories: ProductCategory[] = [];
 
   // Check if document is a core document (applies to all categories)
-  const isCore = CORE_DOCUMENT_KEYWORDS.some(keyword => searchText.includes(keyword.toLowerCase()));
+  const isCore = CORE_DOCUMENT_KEYWORDS.some((keyword) =>
+    searchText.includes(keyword.toLowerCase())
+  );
   if (isCore) {
-    return ['CONVENTIONAL_FOOD', 'DIETARY_SUPPLEMENT', 'ALCOHOLIC_BEVERAGE', 'NON_ALCOHOLIC_BEVERAGE'];
+    return [
+      'CONVENTIONAL_FOOD',
+      'DIETARY_SUPPLEMENT',
+      'ALCOHOLIC_BEVERAGE',
+      'NON_ALCOHOLIC_BEVERAGE',
+    ];
   }
 
   // Check each category's keywords
   for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
-    const matchCount = keywords.filter(keyword =>
+    const matchCount = keywords.filter((keyword) =>
       searchText.includes(keyword.toLowerCase())
     ).length;
 
     // If at least 2 keywords match, or 1 highly specific keyword (like CFR section)
-    const hasStrongMatch = keywords.some(kw =>
-      kw.match(/^\d+\.\d+$/) && searchText.includes(kw) // CFR section number
+    const hasStrongMatch = keywords.some(
+      (kw) => kw.match(/^\d+\.\d+$/) && searchText.includes(kw) // CFR section number
     );
 
     if (matchCount >= 2 || (matchCount >= 1 && hasStrongMatch)) {
@@ -132,7 +139,12 @@ export function detectDocumentCategories(doc: RegulatoryDocument): ProductCatego
 
   // If no specific matches found, it might be a general document - include for all categories
   if (applicableCategories.length === 0) {
-    return ['CONVENTIONAL_FOOD', 'DIETARY_SUPPLEMENT', 'ALCOHOLIC_BEVERAGE', 'NON_ALCOHOLIC_BEVERAGE'];
+    return [
+      'CONVENTIONAL_FOOD',
+      'DIETARY_SUPPLEMENT',
+      'ALCOHOLIC_BEVERAGE',
+      'NON_ALCOHOLIC_BEVERAGE',
+    ];
   }
 
   return applicableCategories;
@@ -154,12 +166,14 @@ export async function getRegulatoryDocumentsByCategory(
   const allDocs = await getActiveRegulatoryDocuments();
 
   // Filter documents that apply to this product category
-  const filteredDocs = allDocs.filter(doc => {
+  const filteredDocs = allDocs.filter((doc) => {
     const applicableCategories = detectDocumentCategories(doc);
     return applicableCategories.includes(productCategory);
   });
 
-  console.log(`📚 RAG Lite: Filtered ${filteredDocs.length} of ${allDocs.length} documents for ${productCategory}`);
+  console.log(
+    `📚 RAG Lite: Filtered ${filteredDocs.length} of ${allDocs.length} documents for ${productCategory}`
+  );
 
   return filteredDocs;
 }
@@ -167,14 +181,16 @@ export async function getRegulatoryDocumentsByCategory(
 /**
  * Get all documents with their detected categories (for admin preview)
  */
-export async function getDocumentsWithCategories(): Promise<Array<{
-  document: RegulatoryDocument;
-  categories: ProductCategory[];
-  isCore: boolean;
-}>> {
+export async function getDocumentsWithCategories(): Promise<
+  Array<{
+    document: RegulatoryDocument;
+    categories: ProductCategory[];
+    isCore: boolean;
+  }>
+> {
   const allDocs = await getActiveRegulatoryDocuments();
 
-  return allDocs.map(doc => {
+  return allDocs.map((doc) => {
     const categories = detectDocumentCategories(doc);
     const isCore = categories.length === 4; // Core docs apply to all 4 categories
 
@@ -210,18 +226,42 @@ export function preClassifyProductCategory(extractedText: string): ProductCatego
     return 'ALCOHOLIC_BEVERAGE';
   }
 
-  if (text.includes('dshea') || text.includes('dietary ingredient') || text.includes('ndi notification')) {
+  if (
+    text.includes('dshea') ||
+    text.includes('dietary ingredient') ||
+    text.includes('ndi notification')
+  ) {
     return 'DIETARY_SUPPLEMENT';
   }
 
   // PRIORITY 3: Product type keywords (weaker signals)
-  const supplementKeywords = ['supplement', 'capsule', 'tablet', 'softgel', 'dietary', 'vitamin', 'probiotic', 'herbal'];
+  const supplementKeywords = [
+    'supplement',
+    'capsule',
+    'tablet',
+    'softgel',
+    'dietary',
+    'vitamin',
+    'probiotic',
+    'herbal',
+  ];
   const beverageKeywords = ['beverage', 'drink', 'juice', 'soda', 'energy drink', 'sports drink'];
-  const alcoholKeywords = ['beer', 'wine', 'spirits', 'vodka', 'whiskey', 'rum', 'gin', 'liquor', 'ale', 'lager'];
+  const alcoholKeywords = [
+    'beer',
+    'wine',
+    'spirits',
+    'vodka',
+    'whiskey',
+    'rum',
+    'gin',
+    'liquor',
+    'ale',
+    'lager',
+  ];
 
-  const supplementMatches = supplementKeywords.filter(kw => text.includes(kw)).length;
-  const beverageMatches = beverageKeywords.filter(kw => text.includes(kw)).length;
-  const alcoholMatches = alcoholKeywords.filter(kw => text.includes(kw)).length;
+  const supplementMatches = supplementKeywords.filter((kw) => text.includes(kw)).length;
+  const beverageMatches = beverageKeywords.filter((kw) => text.includes(kw)).length;
+  const alcoholMatches = alcoholKeywords.filter((kw) => text.includes(kw)).length;
 
   // Check for Nutrition Facts + beverage keywords
   if (text.includes('nutrition facts')) {
@@ -258,7 +298,9 @@ export async function getRecommendedDocuments(extractedText: string): Promise<{
     const filteredDocs = await getRegulatoryDocumentsByCategory(preClassifiedCategory);
     const allDocs = await getActiveRegulatoryDocuments();
 
-    console.log(`🎯 Pre-classified as ${preClassifiedCategory}, loading ${filteredDocs.length}/${allDocs.length} documents`);
+    console.log(
+      `🎯 Pre-classified as ${preClassifiedCategory}, loading ${filteredDocs.length}/${allDocs.length} documents`
+    );
 
     return {
       documents: filteredDocs,
@@ -281,10 +323,7 @@ export async function getRecommendedDocuments(extractedText: string): Promise<{
 }
 
 export async function getDocumentCategories(): Promise<DocumentCategory[]> {
-  const { data, error } = await supabase
-    .from('document_categories')
-    .select('*')
-    .order('name');
+  const { data, error } = await supabase.from('document_categories').select('*').order('name');
 
   if (error) {
     console.error('Error fetching categories:', error);

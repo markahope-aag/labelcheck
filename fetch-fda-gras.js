@@ -10,14 +10,18 @@ const path = require('path');
 console.log('📥 Fetching FDA GRAS databases...\n');
 
 // URLs for FDA GRAS databases
-const GRAS_NOTICE_URL = 'https://hfpappexternal.fda.gov/scripts/fdcc/index.cfm?set=GRASNotices&sort=GRN_No&order=DESC&showAll=true&type=basic&search=';
-const SCOGS_URL = 'https://hfpappexternal.fda.gov/scripts/fdcc/index.cfm?set=SCOGS&sort=GRAS_Substance&order=ASC&showAll=true&type=basic&search=';
+const GRAS_NOTICE_URL =
+  'https://hfpappexternal.fda.gov/scripts/fdcc/index.cfm?set=GRASNotices&sort=GRN_No&order=DESC&showAll=true&type=basic&search=';
+const SCOGS_URL =
+  'https://hfpappexternal.fda.gov/scripts/fdcc/index.cfm?set=SCOGS&sort=GRAS_Substance&order=ASC&showAll=true&type=basic&search=';
 
 console.log('⚠️  IMPORTANT: The FDA databases are available as Excel downloads.');
 console.log('Please manually download the following files:\n');
 
 console.log('1. GRAS Notice Inventory (1,279 substances):');
-console.log('   - Go to: https://www.fda.gov/food/generally-recognized-safe-gras/gras-notice-inventory');
+console.log(
+  '   - Go to: https://www.fda.gov/food/generally-recognized-safe-gras/gras-notice-inventory'
+);
 console.log('   - Look for "GRAS Notice Inventory" download link');
 console.log('   - Save as: data/gras-notice-inventory.xlsx\n');
 
@@ -31,7 +35,7 @@ console.log('We can create a comprehensive JSON file with the most common GRAS i
 
 console.log('🎯 Recommended Approach:');
 console.log('Since the FDA files are in Excel format and require manual download,');
-console.log('I\'ll create a comprehensive curated dataset with 200+ common ingredients.');
+console.log("I'll create a comprehensive curated dataset with 200+ common ingredients.");
 console.log('This will cover ~95% of real-world food products.\n');
 
 console.log('Would you like me to:');
@@ -60,9 +64,9 @@ const comprehensiveIngredients = {
     'Acidulants',
     'Flavor enhancers',
     'Leavening agents',
-    'Processing aids'
+    'Processing aids',
   ],
-  note: 'This dataset focuses on ingredients most commonly found in commercial food products. For regulatory submissions requiring exhaustive GRAS verification, consult the official FDA databases.'
+  note: 'This dataset focuses on ingredients most commonly found in commercial food products. For regulatory submissions requiring exhaustive GRAS verification, consult the official FDA databases.',
 };
 
 // Create data directory if it doesn't exist

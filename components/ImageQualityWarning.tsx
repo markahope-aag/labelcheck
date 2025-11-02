@@ -3,7 +3,14 @@
 import { AlertTriangle, CheckCircle, Info, XCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import type { ImageQualityMetrics, ImageQualityIssue } from '@/lib/image-quality';
 
 interface ImageQualityWarningProps {
@@ -13,14 +20,39 @@ interface ImageQualityWarningProps {
 }
 
 export function ImageQualityWarning({ metrics, onProceed, onReupload }: ImageQualityWarningProps) {
-  const { recommendation, qualityScore, issues, width, height, megapixels, blurScore, brightness, contrast } = metrics;
+  const {
+    recommendation,
+    qualityScore,
+    issues,
+    width,
+    height,
+    megapixels,
+    blurScore,
+    brightness,
+    contrast,
+  } = metrics;
 
   // Color scheme based on recommendation
   const colors = {
-    excellent: { bg: 'bg-green-50', border: 'border-green-300', text: 'text-green-900', icon: CheckCircle },
+    excellent: {
+      bg: 'bg-green-50',
+      border: 'border-green-300',
+      text: 'text-green-900',
+      icon: CheckCircle,
+    },
     good: { bg: 'bg-blue-50', border: 'border-blue-300', text: 'text-blue-900', icon: CheckCircle },
-    acceptable: { bg: 'bg-yellow-50', border: 'border-yellow-300', text: 'text-yellow-900', icon: AlertTriangle },
-    poor: { bg: 'bg-orange-50', border: 'border-orange-300', text: 'text-orange-900', icon: XCircle },
+    acceptable: {
+      bg: 'bg-yellow-50',
+      border: 'border-yellow-300',
+      text: 'text-yellow-900',
+      icon: AlertTriangle,
+    },
+    poor: {
+      bg: 'bg-orange-50',
+      border: 'border-orange-300',
+      text: 'text-orange-900',
+      icon: XCircle,
+    },
     unusable: { bg: 'bg-red-50', border: 'border-red-300', text: 'text-red-900', icon: XCircle },
   };
 
@@ -72,7 +104,9 @@ export function ImageQualityWarning({ metrics, onProceed, onReupload }: ImageQua
           </div>
           <div className="bg-white/50 p-2 rounded">
             <div className="font-medium">Sharpness</div>
-            <div className={theme.text}>{blurScore.toFixed(0)}/100 {blurScore < 30 && '⚠️ Blurry'}</div>
+            <div className={theme.text}>
+              {blurScore.toFixed(0)}/100 {blurScore < 30 && '⚠️ Blurry'}
+            </div>
           </div>
           <div className="bg-white/50 p-2 rounded">
             <div className="font-medium">Brightness</div>
@@ -124,7 +158,9 @@ export function ImageQualityWarning({ metrics, onProceed, onReupload }: ImageQua
           variant={recommendation === 'unusable' ? 'destructive' : 'default'}
           className="flex-1"
         >
-          {recommendation === 'unusable' ? 'Proceed Anyway (Not Recommended)' : 'Proceed with Analysis'}
+          {recommendation === 'unusable'
+            ? 'Proceed Anyway (Not Recommended)'
+            : 'Proceed with Analysis'}
         </Button>
       </CardFooter>
     </Card>

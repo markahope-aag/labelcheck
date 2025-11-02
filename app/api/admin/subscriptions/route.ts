@@ -26,14 +26,16 @@ export async function GET(request: NextRequest) {
     // Get all subscriptions with user details
     const { data: subscriptions, error } = await supabaseAdmin
       .from('subscriptions')
-      .select(`
+      .select(
+        `
         *,
         users (
           id,
           email,
           clerk_user_id
         )
-      `)
+      `
+      )
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -43,8 +45,8 @@ export async function GET(request: NextRequest) {
 
     // Calculate stats
     const stats = {
-      active: subscriptions?.filter(s => s.status === 'active').length || 0,
-      canceled: subscriptions?.filter(s => s.status === 'canceled').length || 0,
+      active: subscriptions?.filter((s) => s.status === 'active').length || 0,
+      canceled: subscriptions?.filter((s) => s.status === 'canceled').length || 0,
       total: subscriptions?.length || 0,
     };
 

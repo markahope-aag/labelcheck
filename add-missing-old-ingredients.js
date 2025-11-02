@@ -12,7 +12,7 @@ async function addMissingIngredients() {
       ingredient_name: 'cordyceps',
       synonyms: ['cordyceps extract', 'cordyceps sinensis', 'cordyceps militaris'],
       source: 'Traditional Chinese Medicine - Pre-1994',
-      is_active: true
+      is_active: true,
     },
   ];
 
@@ -77,7 +77,9 @@ async function addMissingIngredients() {
   console.log('\n=== COMPLETE ===');
 }
 
-addMissingIngredients().then(() => process.exit(0)).catch(err => {
-  console.error(err);
-  process.exit(1);
-});
+addMissingIngredients()
+  .then(() => process.exit(0))
+  .catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });

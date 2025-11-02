@@ -12,13 +12,15 @@ export async function GET(request: NextRequest) {
     // Get all users with their subscriptions using a single query
     const { data: users, error: usersError } = await supabaseAdmin
       .from('users')
-      .select(`
+      .select(
+        `
         *,
         subscriptions (
           plan_tier,
           status
         )
-      `)
+      `
+      )
       .order('created_at', { ascending: false });
 
     if (usersError) {
@@ -38,17 +40,18 @@ export async function GET(request: NextRequest) {
 
     // Build a map of user_id -> count for O(1) lookup
     const countMap = new Map<string, number>();
-    analysisCounts?.forEach(analysis => {
+    analysisCounts?.forEach((analysis) => {
       const currentCount = countMap.get(analysis.user_id) || 0;
       countMap.set(analysis.user_id, currentCount + 1);
     });
 
     // Combine users with their analysis counts
-    const usersWithCounts = users?.map(user => ({
-      ...user,
-      subscription: user.subscriptions?.[0] || null,
-      analyses_count: countMap.get(user.id) || 0,
-    })) || [];
+    const usersWithCounts =
+      users?.map((user) => ({
+        ...user,
+        subscription: user.subscriptions?.[0] || null,
+        analyses_count: countMap.get(user.id) || 0,
+      })) || [];
 
     return NextResponse.json(usersWithCounts);
   } catch (error: any) {

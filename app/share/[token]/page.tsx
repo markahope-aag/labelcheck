@@ -95,7 +95,9 @@ export default function SharePage() {
                   <AlertCircle className="h-8 w-8" />
                   <div>
                     <h3 className="text-lg font-semibold mb-1">Unable to Load Analysis</h3>
-                    <p className="text-sm text-red-700">{error || 'This analysis could not be found.'}</p>
+                    <p className="text-sm text-red-700">
+                      {error || 'This analysis could not be found.'}
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -123,9 +125,15 @@ export default function SharePage() {
                   <CardTitle className="text-xl font-semibold text-slate-900">
                     {result.product_name || 'Analysis Results'}
                   </CardTitle>
-                  <CardDescription>{result.product_type || 'Regulatory Compliance Analysis'}</CardDescription>
+                  <CardDescription>
+                    {result.product_type || 'Regulatory Compliance Analysis'}
+                  </CardDescription>
                 </div>
-                <Button onClick={handleDownloadPDF} variant="outline" className="border-slate-300 hover:bg-slate-50 gap-2">
+                <Button
+                  onClick={handleDownloadPDF}
+                  variant="outline"
+                  className="border-slate-300 hover:bg-slate-50 gap-2"
+                >
                   <Download className="h-4 w-4" />
                   Download PDF
                 </Button>
@@ -138,31 +146,49 @@ export default function SharePage() {
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
                     <div className="flex items-start gap-4">
                       <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-blue-900 mb-2">Overall Compliance Status</h3>
+                        <h3 className="text-lg font-semibold text-blue-900 mb-2">
+                          Overall Compliance Status
+                        </h3>
                         <div className="mb-3">
-                          <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${
-                            result.overall_assessment.primary_compliance_status === 'compliant' ? 'bg-green-100 text-green-800' :
-                            result.overall_assessment.primary_compliance_status === 'likely_compliant' ? 'bg-green-50 text-green-700' :
-                            result.overall_assessment.primary_compliance_status === 'potentially_non_compliant' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
-                            {result.overall_assessment.primary_compliance_status?.replace('_', ' ').toUpperCase()}
+                          <span
+                            className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${
+                              result.overall_assessment.primary_compliance_status === 'compliant'
+                                ? 'bg-green-100 text-green-800'
+                                : result.overall_assessment.primary_compliance_status ===
+                                    'likely_compliant'
+                                  ? 'bg-green-50 text-green-700'
+                                  : result.overall_assessment.primary_compliance_status ===
+                                      'potentially_non_compliant'
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : 'bg-red-100 text-red-800'
+                            }`}
+                          >
+                            {result.overall_assessment.primary_compliance_status
+                              ?.replace('_', ' ')
+                              .toUpperCase()}
                           </span>
                           <span className="ml-3 text-sm text-blue-700">
                             Confidence: {result.overall_assessment.confidence_level}
                           </span>
                         </div>
-                        <p className="text-blue-800 leading-relaxed mb-3">{result.overall_assessment.summary}</p>
-                        {result.overall_assessment.key_findings && result.overall_assessment.key_findings.length > 0 && (
-                          <div>
-                            <h4 className="font-semibold text-blue-900 mb-2">Key Findings:</h4>
-                            <ul className="space-y-1">
-                              {result.overall_assessment.key_findings.map((finding: string, idx: number) => (
-                                <li key={idx} className="text-sm text-blue-800">• {finding}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
+                        <p className="text-blue-800 leading-relaxed mb-3">
+                          {result.overall_assessment.summary}
+                        </p>
+                        {result.overall_assessment.key_findings &&
+                          result.overall_assessment.key_findings.length > 0 && (
+                            <div>
+                              <h4 className="font-semibold text-blue-900 mb-2">Key Findings:</h4>
+                              <ul className="space-y-1">
+                                {result.overall_assessment.key_findings.map(
+                                  (finding: string, idx: number) => (
+                                    <li key={idx} className="text-sm text-blue-800">
+                                      • {finding}
+                                    </li>
+                                  )
+                                )}
+                              </ul>
+                            </div>
+                          )}
                       </div>
                     </div>
                   </div>
@@ -178,26 +204,41 @@ export default function SharePage() {
                       <table className="w-full border-collapse">
                         <thead>
                           <tr className="bg-slate-100">
-                            <th className="border border-slate-300 px-4 py-2 text-left text-sm font-semibold text-slate-900">Labeling Element</th>
-                            <th className="border border-slate-300 px-4 py-2 text-left text-sm font-semibold text-slate-900">Compliance Status</th>
-                            <th className="border border-slate-300 px-4 py-2 text-left text-sm font-semibold text-slate-900">Rationale</th>
+                            <th className="border border-slate-300 px-4 py-2 text-left text-sm font-semibold text-slate-900">
+                              Labeling Element
+                            </th>
+                            <th className="border border-slate-300 px-4 py-2 text-left text-sm font-semibold text-slate-900">
+                              Compliance Status
+                            </th>
+                            <th className="border border-slate-300 px-4 py-2 text-left text-sm font-semibold text-slate-900">
+                              Rationale
+                            </th>
                           </tr>
                         </thead>
                         <tbody>
                           {result.compliance_table.map((row: any, idx: number) => (
                             <tr key={idx} className="hover:bg-slate-50">
-                              <td className="border border-slate-300 px-4 py-2 text-sm text-slate-900">{row.element}</td>
+                              <td className="border border-slate-300 px-4 py-2 text-sm text-slate-900">
+                                {row.element}
+                              </td>
                               <td className="border border-slate-300 px-4 py-2 text-sm">
-                                <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                                  row.status === 'Compliant' || row.status === 'Likely Compliant' ? 'bg-green-100 text-green-800' :
-                                  row.status === 'Potentially Non-compliant' ? 'bg-yellow-100 text-yellow-800' :
-                                  row.status === 'Non-compliant' ? 'bg-red-100 text-red-800' :
-                                  'bg-gray-100 text-gray-800'
-                                }`}>
+                                <span
+                                  className={`px-2 py-1 rounded text-xs font-semibold ${
+                                    row.status === 'Compliant' || row.status === 'Likely Compliant'
+                                      ? 'bg-green-100 text-green-800'
+                                      : row.status === 'Potentially Non-compliant'
+                                        ? 'bg-yellow-100 text-yellow-800'
+                                        : row.status === 'Non-compliant'
+                                          ? 'bg-red-100 text-red-800'
+                                          : 'bg-gray-100 text-gray-800'
+                                  }`}
+                                >
                                   {row.status}
                                 </span>
                               </td>
-                              <td className="border border-slate-300 px-4 py-2 text-sm text-slate-700">{row.rationale}</td>
+                              <td className="border border-slate-300 px-4 py-2 text-sm text-slate-700">
+                                {row.rationale}
+                              </td>
                             </tr>
                           ))}
                         </tbody>
@@ -214,19 +255,30 @@ export default function SharePage() {
                     </h3>
                     <div className="space-y-3">
                       {result.recommendations.map((rec: any, index: number) => (
-                        <div key={index} className={`rounded-lg p-4 border-l-4 ${
-                          rec.priority === 'critical' ? 'bg-red-50 border-red-500' :
-                          rec.priority === 'high' ? 'bg-orange-50 border-orange-500' :
-                          rec.priority === 'medium' ? 'bg-yellow-50 border-yellow-500' :
-                          'bg-blue-50 border-blue-500'
-                        }`}>
+                        <div
+                          key={index}
+                          className={`rounded-lg p-4 border-l-4 ${
+                            rec.priority === 'critical'
+                              ? 'bg-red-50 border-red-500'
+                              : rec.priority === 'high'
+                                ? 'bg-orange-50 border-orange-500'
+                                : rec.priority === 'medium'
+                                  ? 'bg-yellow-50 border-yellow-500'
+                                  : 'bg-blue-50 border-blue-500'
+                          }`}
+                        >
                           <div className="flex items-start gap-3">
-                            <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${
-                              rec.priority === 'critical' ? 'bg-red-200 text-red-900' :
-                              rec.priority === 'high' ? 'bg-orange-200 text-orange-900' :
-                              rec.priority === 'medium' ? 'bg-yellow-200 text-yellow-900' :
-                              'bg-blue-200 text-blue-900'
-                            }`}>
+                            <span
+                              className={`px-2 py-1 rounded text-xs font-bold uppercase ${
+                                rec.priority === 'critical'
+                                  ? 'bg-red-200 text-red-900'
+                                  : rec.priority === 'high'
+                                    ? 'bg-orange-200 text-orange-900'
+                                    : rec.priority === 'medium'
+                                      ? 'bg-yellow-200 text-yellow-900'
+                                      : 'bg-blue-200 text-blue-900'
+                              }`}
+                            >
                               {rec.priority}
                             </span>
                             <div className="flex-1">

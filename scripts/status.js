@@ -38,7 +38,7 @@ console.log(`   ${lastCommit}\n`);
 console.log('📝 Uncommitted Changes:');
 if (hasOutput('git status --porcelain')) {
   const changes = exec('git status --short');
-  changes.split('\n').forEach(line => console.log(`   ${line}`));
+  changes.split('\n').forEach((line) => console.log(`   ${line}`));
 } else {
   console.log('   (none)');
 }
@@ -48,7 +48,7 @@ console.log('');
 console.log('⬆️  Unpushed Commits:');
 const unpushed = exec('git log origin/main..HEAD --oneline');
 if (unpushed) {
-  unpushed.split('\n').forEach(line => console.log(`   ${line}`));
+  unpushed.split('\n').forEach((line) => console.log(`   ${line}`));
 } else {
   console.log('   (none)');
 }
@@ -58,7 +58,7 @@ console.log('');
 console.log('💾 Stashed Changes:');
 const stashed = exec('git stash list');
 if (stashed) {
-  stashed.split('\n').forEach(line => console.log(`   ${line}`));
+  stashed.split('\n').forEach((line) => console.log(`   ${line}`));
 } else {
   console.log('   (none)');
 }

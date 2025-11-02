@@ -60,7 +60,7 @@ export async function checkIngredientForAllergens(
 
   // Known false positives - ingredients that are NOT allergens but might fuzzy-match
   const FALSE_POSITIVES = [
-    'royal jelly',  // Bee product, not a tree nut despite containing "jelly"
+    'royal jelly', // Bee product, not a tree nut despite containing "jelly"
     'royal gel',
     'bee jelly',
   ];
@@ -144,7 +144,9 @@ export async function checkIngredientForAllergens(
             return false;
           }
           // Use word boundary regex for more accurate matching
-          const wordBoundaryRegex = new RegExp(`\\b${derivativeLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`);
+          const wordBoundaryRegex = new RegExp(
+            `\\b${derivativeLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`
+          );
           return wordBoundaryRegex.test(normalized);
         });
 
@@ -169,9 +171,7 @@ export async function checkIngredientForAllergens(
  * Check multiple ingredients for allergens
  * Returns a summary of all detected allergens
  */
-export async function checkIngredientsForAllergens(
-  ingredients: string[]
-): Promise<{
+export async function checkIngredientsForAllergens(ingredients: string[]): Promise<{
   allergensDetected: MajorAllergen[];
   ingredientsWithAllergens: {
     ingredient: string;
@@ -276,8 +276,8 @@ export function formatAllergenResults(results: AllergenCheckResult[]): string {
         result.matchType === 'exact'
           ? 'exact match'
           : result.matchType === 'derivative'
-          ? 'derivative'
-          : 'fuzzy match';
+            ? 'derivative'
+            : 'fuzzy match';
 
       return `${confidence} ${allergenName} (${matchInfo})`;
     })

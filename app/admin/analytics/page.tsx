@@ -11,7 +11,7 @@ import {
   DollarSign,
   Activity,
   Calendar,
-  BarChart3
+  BarChart3,
 } from 'lucide-react';
 import {
   Table,
@@ -64,11 +64,36 @@ export default function AdminAnalyticsPage() {
       { email: 'user5@example.com', analyses_count: 143, plan_tier: 'basic' },
     ],
     recentActivity: [
-      { id: '1', type: 'new_user', description: 'New user registration', timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString() },
-      { id: '2', type: 'subscription', description: 'New Pro subscription', timestamp: new Date(Date.now() - 1000 * 60 * 23).toISOString() },
-      { id: '3', type: 'analysis', description: '50 analyses completed', timestamp: new Date(Date.now() - 1000 * 60 * 45).toISOString() },
-      { id: '4', type: 'upgrade', description: 'Basic to Pro upgrade', timestamp: new Date(Date.now() - 1000 * 60 * 67).toISOString() },
-      { id: '5', type: 'churn', description: 'Subscription canceled', timestamp: new Date(Date.now() - 1000 * 60 * 120).toISOString() },
+      {
+        id: '1',
+        type: 'new_user',
+        description: 'New user registration',
+        timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
+      },
+      {
+        id: '2',
+        type: 'subscription',
+        description: 'New Pro subscription',
+        timestamp: new Date(Date.now() - 1000 * 60 * 23).toISOString(),
+      },
+      {
+        id: '3',
+        type: 'analysis',
+        description: '50 analyses completed',
+        timestamp: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
+      },
+      {
+        id: '4',
+        type: 'upgrade',
+        description: 'Basic to Pro upgrade',
+        timestamp: new Date(Date.now() - 1000 * 60 * 67).toISOString(),
+      },
+      {
+        id: '5',
+        type: 'churn',
+        description: 'Subscription canceled',
+        timestamp: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
+      },
     ],
   });
 
@@ -93,7 +118,9 @@ export default function AdminAnalyticsPage() {
       case 'pro':
         return <Badge className="bg-blue-100 text-blue-700 border-blue-200">Pro</Badge>;
       case 'enterprise':
-        return <Badge className="bg-purple-100 text-purple-700 border-purple-200">Enterprise</Badge>;
+        return (
+          <Badge className="bg-purple-100 text-purple-700 border-purple-200">Enterprise</Badge>
+        );
       case 'basic':
         return <Badge className="bg-green-100 text-green-700 border-green-200">Basic</Badge>;
       default:
@@ -184,7 +211,9 @@ export default function AdminAnalyticsPage() {
                 <Users className="h-5 w-5 text-blue-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-gray-900">{analytics.growth.users.current}</div>
+                <div className="text-3xl font-bold text-gray-900">
+                  {analytics.growth.users.current}
+                </div>
                 <div className="flex items-center gap-2 mt-1">
                   {getGrowthIndicator(analytics.growth.users.percentage)}
                   <span className="text-xs text-gray-500">from last period</span>
@@ -230,7 +259,9 @@ export default function AdminAnalyticsPage() {
                 <TrendingUp className="h-5 w-5 text-emerald-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-gray-900">{analytics.growth.subscriptions.current}</div>
+                <div className="text-3xl font-bold text-gray-900">
+                  {analytics.growth.subscriptions.current}
+                </div>
                 <div className="flex items-center gap-2 mt-1">
                   {getGrowthIndicator(analytics.growth.subscriptions.percentage)}
                   <span className="text-xs text-gray-500">from last period</span>
@@ -285,7 +316,9 @@ export default function AdminAnalyticsPage() {
                       </div>
                       <div className="flex-1">
                         <p className="text-sm font-medium text-gray-900">{activity.description}</p>
-                        <p className="text-xs text-gray-500">{formatTimestamp(activity.timestamp)}</p>
+                        <p className="text-xs text-gray-500">
+                          {formatTimestamp(activity.timestamp)}
+                        </p>
                       </div>
                     </div>
                   ))}

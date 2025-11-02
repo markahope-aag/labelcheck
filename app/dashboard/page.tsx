@@ -22,17 +22,25 @@ export default async function DashboardPage() {
 
   // If user doesn't exist in database yet, show empty dashboard
   // (The Clerk webhook should create them soon)
-  const analyses = user ? (await supabase
-    .from('analyses')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(3)).data : null;
+  const analyses = user
+    ? (
+        await supabase
+          .from('analyses')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(3)
+      ).data
+    : null;
 
-  const totalAnalyses = user ? (await supabase
-    .from('analyses')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', user.id)).count : 0;
+  const totalAnalyses = user
+    ? (
+        await supabase
+          .from('analyses')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+      ).count
+    : 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
@@ -97,7 +105,9 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <Card className="border-slate-200">
             <CardHeader>
-              <CardTitle className="text-xl font-semibold text-slate-900">Recent Analyses</CardTitle>
+              <CardTitle className="text-xl font-semibold text-slate-900">
+                Recent Analyses
+              </CardTitle>
               <CardDescription>Your latest label scans</CardDescription>
             </CardHeader>
             <CardContent>
@@ -105,18 +115,31 @@ export default async function DashboardPage() {
                 <div className="space-y-4">
                   {analyses.map((analysis) => {
                     const result = analysis.analysis_result || {};
-                    const productName = result.product_name || analysis.image_name || 'Unnamed Product';
-                    const summary = result.overall_assessment?.summary || result.summary || 'No summary available';
+                    const productName =
+                      result.product_name || analysis.image_name || 'Unnamed Product';
+                    const summary =
+                      result.overall_assessment?.summary ||
+                      result.summary ||
+                      'No summary available';
 
                     return (
-                      <div key={analysis.id} className="flex items-start justify-between p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+                      <div
+                        key={analysis.id}
+                        className="flex items-start justify-between p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+                      >
                         <div className="flex-1">
                           <h3 className="font-semibold text-slate-900 mb-1">{productName}</h3>
                           <p className="text-sm text-slate-600 line-clamp-2">{summary}</p>
-                          <p className="text-xs text-slate-500 mt-2">{new Date(analysis.created_at).toLocaleDateString()}</p>
+                          <p className="text-xs text-slate-500 mt-2">
+                            {new Date(analysis.created_at).toLocaleDateString()}
+                          </p>
                         </div>
                         <Link href={`/history?id=${analysis.id}`}>
-                          <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-blue-600 hover:text-blue-700"
+                          >
                             View
                           </Button>
                         </Link>
@@ -157,7 +180,9 @@ export default async function DashboardPage() {
                   </div>
                   <div className="flex-1">
                     <h4 className="font-semibold text-slate-900 mb-1">Upload a Label</h4>
-                    <p className="text-sm text-slate-600">Take a photo or upload an image of any label to get started</p>
+                    <p className="text-sm text-slate-600">
+                      Take a photo or upload an image of any label to get started
+                    </p>
                   </div>
                 </div>
 
@@ -167,7 +192,9 @@ export default async function DashboardPage() {
                   </div>
                   <div className="flex-1">
                     <h4 className="font-semibold text-slate-900 mb-1">Get Instant Analysis</h4>
-                    <p className="text-sm text-slate-600">Receive detailed nutritional insights and health recommendations</p>
+                    <p className="text-sm text-slate-600">
+                      Receive detailed nutritional insights and health recommendations
+                    </p>
                   </div>
                 </div>
 
@@ -177,7 +204,9 @@ export default async function DashboardPage() {
                   </div>
                   <div className="flex-1">
                     <h4 className="font-semibold text-slate-900 mb-1">Track Your Progress</h4>
-                    <p className="text-sm text-slate-600">Review past analyses and make informed dietary choices</p>
+                    <p className="text-sm text-slate-600">
+                      Review past analyses and make informed dietary choices
+                    </p>
                   </div>
                 </div>
               </div>

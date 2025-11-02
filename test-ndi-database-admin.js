@@ -25,7 +25,7 @@ const testIngredients = [
   'thiamine mononitrate',
   'potassium iodide',
   'cholecalciferol',
-  'methylcobalamin'
+  'methylcobalamin',
 ];
 
 async function testNDIDatabase() {
@@ -33,7 +33,11 @@ async function testNDIDatabase() {
 
   // Step 1: Check old_dietary_ingredients table
   console.log('Step 1: Checking old_dietary_ingredients table...');
-  const { data: allIngredients, error: allError, count } = await supabaseAdmin
+  const {
+    data: allIngredients,
+    error: allError,
+    count,
+  } = await supabaseAdmin
     .from('old_dietary_ingredients')
     .select('*', { count: 'exact', head: true });
 
@@ -79,7 +83,7 @@ async function testNDIDatabase() {
   console.log('\n=== TEST COMPLETE ===');
 }
 
-testNDIDatabase().catch(error => {
+testNDIDatabase().catch((error) => {
   console.error('Error:', error.message);
   console.error(error.stack);
   process.exit(1);

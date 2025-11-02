@@ -16,7 +16,7 @@ require('dotenv').config({ path: '.env.local' });
     'Taurine',
     'Caffeine',
     'Panax Ginseng Root Extract',
-    'Guarana Seed Extract'
+    'Guarana Seed Extract',
   ];
 
   console.log('Testing GRAS compliance for energy drink ingredients...\n');
@@ -32,7 +32,9 @@ require('dotenv').config({ path: '.env.local' });
 
   for (const r of result.detailedResults) {
     if (r.isGRAS) {
-      console.log(`✓ ${r.ingredient} - GRAS (${r.matchType} match: ${r.matchedEntry?.ingredient_name})`);
+      console.log(
+        `✓ ${r.ingredient} - GRAS (${r.matchType} match: ${r.matchedEntry?.ingredient_name})`
+      );
     } else {
       console.log(`✗ ${r.ingredient} - NOT GRAS`);
     }
@@ -40,7 +42,7 @@ require('dotenv').config({ path: '.env.local' });
 
   if (result.nonGRASIngredients.length > 0) {
     console.log(`\n⚠️  Non-GRAS Ingredients:`);
-    result.nonGRASIngredients.forEach(ing => console.log(`  - ${ing}`));
+    result.nonGRASIngredients.forEach((ing) => console.log(`  - ${ing}`));
   } else {
     console.log('\n🎉 All ingredients are GRAS-compliant!');
   }

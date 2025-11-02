@@ -12,14 +12,18 @@ export const supabaseAdmin = supabaseServiceKey
   ? createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
         autoRefreshToken: false,
-        persistSession: false
-      }
+        persistSession: false,
+      },
     })
   : supabase; // Fallback to regular client if service key not available
 
 export type PlanTier = 'starter' | 'professional' | 'business';
 export type SubscriptionStatus = 'active' | 'canceled' | 'past_due' | 'trialing';
-export type ProductCategory = 'CONVENTIONAL_FOOD' | 'DIETARY_SUPPLEMENT' | 'ALCOHOLIC_BEVERAGE' | 'NON_ALCOHOLIC_BEVERAGE';
+export type ProductCategory =
+  | 'CONVENTIONAL_FOOD'
+  | 'DIETARY_SUPPLEMENT'
+  | 'ALCOHOLIC_BEVERAGE'
+  | 'NON_ALCOHOLIC_BEVERAGE';
 
 export interface User {
   id: string;

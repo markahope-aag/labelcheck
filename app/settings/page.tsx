@@ -6,7 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import { Bell, Download, Palette, Clock } from 'lucide-react';
@@ -146,9 +152,7 @@ export default function SettingsPage() {
                 <Bell className="h-5 w-5" />
                 <CardTitle>Notifications</CardTitle>
               </div>
-              <CardDescription>
-                Manage your email notification preferences
-              </CardDescription>
+              <CardDescription>Manage your email notification preferences</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex items-center justify-between">
@@ -261,9 +265,7 @@ export default function SettingsPage() {
                 <Palette className="h-5 w-5" />
                 <CardTitle>Appearance</CardTitle>
               </div>
-              <CardDescription>
-                Customize how the application looks
-              </CardDescription>
+              <CardDescription>Customize how the application looks</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
@@ -283,9 +285,7 @@ export default function SettingsPage() {
                     <SelectItem value="system">System</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-sm text-muted-foreground">
-                  Choose your preferred color scheme
-                </p>
+                <p className="text-sm text-muted-foreground">Choose your preferred color scheme</p>
               </div>
             </CardContent>
           </Card>
@@ -305,9 +305,7 @@ export default function SettingsPage() {
                 <Label htmlFor="timezone">Timezone</Label>
                 <Select
                   value={settings.timezone}
-                  onValueChange={(value) =>
-                    setSettings({ ...settings, timezone: value })
-                  }
+                  onValueChange={(value) => setSettings({ ...settings, timezone: value })}
                 >
                   <SelectTrigger id="timezone">
                     <SelectValue />

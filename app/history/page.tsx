@@ -3,13 +3,29 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Search, Calendar, Download, Eye, FileText, Filter, X, Loader2, Trash2 } from 'lucide-react';
+import {
+  Search,
+  Calendar,
+  Download,
+  Eye,
+  FileText,
+  Filter,
+  X,
+  Loader2,
+  Trash2,
+} from 'lucide-react';
 import { DateRange } from 'react-day-picker';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import {
   AlertDialog,
@@ -31,7 +47,11 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination';
 import { supabase } from '@/lib/supabase';
-import { exportAnalysesAsCSV, exportAnalysesAsJSON, exportAnalysesAsPDF } from '@/lib/export-helpers';
+import {
+  exportAnalysesAsCSV,
+  exportAnalysesAsJSON,
+  exportAnalysesAsPDF,
+} from '@/lib/export-helpers';
 import { useToast } from '@/hooks/use-toast';
 
 const PAGE_SIZE = 50;
@@ -79,10 +99,7 @@ function HistoryContent() {
   // Save filters to localStorage when they change
   useEffect(() => {
     try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({ statusFilter, sortBy })
-      );
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ statusFilter, sortBy }));
     } catch (error) {
       console.error('Error saving filters:', error);
     }
@@ -137,9 +154,13 @@ function HistoryContent() {
       if (statusFilter !== 'all') {
         if (statusFilter === 'compliant') {
           // Match both compliance_status field and nested status
-          query = query.or('compliance_status.eq.compliant,analysis_result->overall_assessment->>primary_compliance_status.eq.compliant,analysis_result->overall_assessment->>primary_compliance_status.eq.likely_compliant');
+          query = query.or(
+            'compliance_status.eq.compliant,analysis_result->overall_assessment->>primary_compliance_status.eq.compliant,analysis_result->overall_assessment->>primary_compliance_status.eq.likely_compliant'
+          );
         } else if (statusFilter === 'non-compliant') {
-          query = query.or('compliance_status.eq.major_violations,analysis_result->overall_assessment->>primary_compliance_status.eq.non_compliant,analysis_result->overall_assessment->>primary_compliance_status.eq.potentially_non_compliant');
+          query = query.or(
+            'compliance_status.eq.major_violations,analysis_result->overall_assessment->>primary_compliance_status.eq.non_compliant,analysis_result->overall_assessment->>primary_compliance_status.eq.potentially_non_compliant'
+          );
         } else {
           query = query.eq('compliance_status', statusFilter);
         }
@@ -154,8 +175,10 @@ function HistoryContent() {
       // Note: Name sorting will be done client-side for now as it requires accessing JSON field
 
       // Apply pagination
-      const { data, error, count } = await query
-        .range(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE - 1);
+      const { data, error, count } = await query.range(
+        currentPage * PAGE_SIZE,
+        (currentPage + 1) * PAGE_SIZE - 1
+      );
 
       if (error) throw error;
 
@@ -169,12 +192,18 @@ function HistoryContent() {
           const labelName = (analysis.label_name || '').toLowerCase();
           const productName = (result.product_name || '').toLowerCase();
           const productType = (result.product_type || '').toLowerCase();
-          const summary = (result.overall_assessment?.summary || result.summary || '').toLowerCase();
+          const summary = (
+            result.overall_assessment?.summary ||
+            result.summary ||
+            ''
+          ).toLowerCase();
 
-          return labelName.includes(query) ||
-                 productName.includes(query) ||
-                 productType.includes(query) ||
-                 summary.includes(query);
+          return (
+            labelName.includes(query) ||
+            productName.includes(query) ||
+            productType.includes(query) ||
+            summary.includes(query)
+          );
         });
       }
 
@@ -224,10 +253,7 @@ function HistoryContent() {
     if (!analysisToDelete) return;
 
     try {
-      const { error } = await supabase
-        .from('analyses')
-        .delete()
-        .eq('id', analysisToDelete.id);
+      const { error } = await supabase.from('analyses').delete().eq('id', analysisToDelete.id);
 
       if (error) throw error;
 
@@ -313,7 +339,10 @@ function HistoryContent() {
             </div>
             {!loading && totalCount > 0 && (
               <div className="flex items-center gap-3">
-                <Select value={exportFormat} onValueChange={(value: 'pdf' | 'csv' | 'json') => setExportFormat(value)}>
+                <Select
+                  value={exportFormat}
+                  onValueChange={(value: 'pdf' | 'csv' | 'json') => setExportFormat(value)}
+                >
                   <SelectTrigger className="w-32">
                     <SelectValue />
                   </SelectTrigger>
@@ -361,10 +390,13 @@ function HistoryContent() {
                         )}
                       </div>
 
-                      <Select value={statusFilter} onValueChange={(value) => {
-                        setStatusFilter(value);
-                        setCurrentPage(0);
-                      }}>
+                      <Select
+                        value={statusFilter}
+                        onValueChange={(value) => {
+                          setStatusFilter(value);
+                          setCurrentPage(0);
+                        }}
+                      >
                         <SelectTrigger className="w-full lg:w-48">
                           <Filter className="h-4 w-4 mr-2" />
                           <SelectValue />
@@ -377,10 +409,13 @@ function HistoryContent() {
                         </SelectContent>
                       </Select>
 
-                      <Select value={sortBy} onValueChange={(value: any) => {
-                        setSortBy(value);
-                        setCurrentPage(0);
-                      }}>
+                      <Select
+                        value={sortBy}
+                        onValueChange={(value: any) => {
+                          setSortBy(value);
+                          setCurrentPage(0);
+                        }}
+                      >
                         <SelectTrigger className="w-full lg:w-48">
                           <SelectValue />
                         </SelectTrigger>
@@ -403,11 +438,7 @@ function HistoryContent() {
                           }}
                         />
                       </div>
-                      <Button
-                        variant="outline"
-                        onClick={clearFilters}
-                        className="gap-2"
-                      >
+                      <Button variant="outline" onClick={clearFilters} className="gap-2">
                         <X className="h-4 w-4" />
                         Clear Filters
                       </Button>
@@ -426,7 +457,16 @@ function HistoryContent() {
                     </span>
                   ) : (
                     <>
-                      Showing <span className="font-semibold text-slate-900">{currentPage * PAGE_SIZE + 1}</span>-<span className="font-semibold text-slate-900">{Math.min((currentPage + 1) * PAGE_SIZE, totalCount)}</span> of <span className="font-semibold text-slate-900">{totalCount}</span> analysis{totalCount !== 1 ? 'es' : ''}
+                      Showing{' '}
+                      <span className="font-semibold text-slate-900">
+                        {currentPage * PAGE_SIZE + 1}
+                      </span>
+                      -
+                      <span className="font-semibold text-slate-900">
+                        {Math.min((currentPage + 1) * PAGE_SIZE, totalCount)}
+                      </span>{' '}
+                      of <span className="font-semibold text-slate-900">{totalCount}</span> analysis
+                      {totalCount !== 1 ? 'es' : ''}
                     </>
                   )}
                 </p>
@@ -436,18 +476,23 @@ function HistoryContent() {
                 {analyses.map((analysis) => {
                   const result = analysis.analysis_result || {};
                   return (
-                    <Card key={analysis.id} className="border-slate-200 hover:shadow-lg transition-shadow">
+                    <Card
+                      key={analysis.id}
+                      className="border-slate-200 hover:shadow-lg transition-shadow"
+                    >
                       <CardHeader>
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <CardTitle className="text-xl font-semibold text-slate-900 mb-2">
                               {analysis.label_name || result.product_name || 'Unnamed Product'}
                             </CardTitle>
-                            {analysis.label_name && result.product_name && analysis.label_name !== result.product_name && (
-                              <p className="text-sm text-slate-500 mb-2">
-                                Product: {result.product_name}
-                              </p>
-                            )}
+                            {analysis.label_name &&
+                              result.product_name &&
+                              analysis.label_name !== result.product_name && (
+                                <p className="text-sm text-slate-500 mb-2">
+                                  Product: {result.product_name}
+                                </p>
+                              )}
                             <div className="flex items-center gap-3 text-sm text-slate-500">
                               <div className="flex items-center gap-1">
                                 <Calendar className="h-4 w-4" />
@@ -468,13 +513,23 @@ function HistoryContent() {
                           </div>
                           {result.overall_assessment?.primary_compliance_status && (
                             <div>
-                              <span className={`inline-block px-3 py-1.5 rounded-lg text-sm font-semibold ${
-                                result.overall_assessment.primary_compliance_status === 'compliant' ? 'bg-green-100 text-green-800 border-green-200 border' :
-                                result.overall_assessment.primary_compliance_status === 'likely_compliant' ? 'bg-green-50 text-green-700 border-green-200 border' :
-                                result.overall_assessment.primary_compliance_status === 'potentially_non_compliant' ? 'bg-yellow-100 text-yellow-800 border-yellow-200 border' :
-                                'bg-red-100 text-red-800 border-red-200 border'
-                              }`}>
-                                {result.overall_assessment.primary_compliance_status.replace(/_/g, ' ').toUpperCase()}
+                              <span
+                                className={`inline-block px-3 py-1.5 rounded-lg text-sm font-semibold ${
+                                  result.overall_assessment.primary_compliance_status ===
+                                  'compliant'
+                                    ? 'bg-green-100 text-green-800 border-green-200 border'
+                                    : result.overall_assessment.primary_compliance_status ===
+                                        'likely_compliant'
+                                      ? 'bg-green-50 text-green-700 border-green-200 border'
+                                      : result.overall_assessment.primary_compliance_status ===
+                                          'potentially_non_compliant'
+                                        ? 'bg-yellow-100 text-yellow-800 border-yellow-200 border'
+                                        : 'bg-red-100 text-red-800 border-red-200 border'
+                                }`}
+                              >
+                                {result.overall_assessment.primary_compliance_status
+                                  .replace(/_/g, ' ')
+                                  .toUpperCase()}
                               </span>
                             </div>
                           )}
@@ -485,69 +540,115 @@ function HistoryContent() {
                           {(result.overall_assessment?.summary || result.summary) && (
                             <div>
                               <h4 className="text-sm font-semibold text-slate-700 mb-2">Summary</h4>
-                              <p className="text-slate-600 leading-relaxed">{result.overall_assessment?.summary || result.summary}</p>
+                              <p className="text-slate-600 leading-relaxed">
+                                {result.overall_assessment?.summary || result.summary}
+                              </p>
                             </div>
                           )}
 
-                          {((result.ingredient_labeling?.ingredients_list || result.ingredients)?.length > 0) && (
+                          {(result.ingredient_labeling?.ingredients_list || result.ingredients)
+                            ?.length > 0 && (
                             <div>
-                              <h4 className="text-sm font-semibold text-slate-700 mb-2">Ingredients</h4>
+                              <h4 className="text-sm font-semibold text-slate-700 mb-2">
+                                Ingredients
+                              </h4>
                               <div className="flex flex-wrap gap-2">
-                                {(result.ingredient_labeling?.ingredients_list || result.ingredients).slice(0, 8).map((ingredient: string, index: number) => (
-                                  <Badge key={index} variant="secondary" className="bg-slate-100 text-slate-700 hover:bg-slate-200">
-                                    {ingredient}
-                                  </Badge>
-                                ))}
-                                {(result.ingredient_labeling?.ingredients_list || result.ingredients).length > 8 && (
-                                  <Badge variant="secondary" className="bg-slate-100 text-slate-700">
-                                    +{(result.ingredient_labeling?.ingredients_list || result.ingredients).length - 8} more
+                                {(
+                                  result.ingredient_labeling?.ingredients_list || result.ingredients
+                                )
+                                  .slice(0, 8)
+                                  .map((ingredient: string, index: number) => (
+                                    <Badge
+                                      key={index}
+                                      variant="secondary"
+                                      className="bg-slate-100 text-slate-700 hover:bg-slate-200"
+                                    >
+                                      {ingredient}
+                                    </Badge>
+                                  ))}
+                                {(
+                                  result.ingredient_labeling?.ingredients_list || result.ingredients
+                                ).length > 8 && (
+                                  <Badge
+                                    variant="secondary"
+                                    className="bg-slate-100 text-slate-700"
+                                  >
+                                    +
+                                    {(
+                                      result.ingredient_labeling?.ingredients_list ||
+                                      result.ingredients
+                                    ).length - 8}{' '}
+                                    more
                                   </Badge>
                                 )}
                               </div>
                             </div>
                           )}
 
-                          {result.nutrition_facts && Object.keys(result.nutrition_facts).length > 0 && (
-                            <div>
-                              <h4 className="text-sm font-semibold text-slate-700 mb-2">Key Nutrition Facts</h4>
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                {Object.entries(result.nutrition_facts)
-                                  .slice(0, 4)
-                                  .map(([key, value]) => (
-                                    <div key={key} className="bg-slate-50 rounded-lg p-3 border border-slate-200">
-                                      <p className="text-xs text-slate-600 capitalize mb-1">{key.replace('_', ' ')}</p>
-                                      <p className="text-sm font-semibold text-slate-900">{value as string}</p>
-                                    </div>
-                                  ))}
+                          {result.nutrition_facts &&
+                            Object.keys(result.nutrition_facts).length > 0 && (
+                              <div>
+                                <h4 className="text-sm font-semibold text-slate-700 mb-2">
+                                  Key Nutrition Facts
+                                </h4>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                  {Object.entries(result.nutrition_facts)
+                                    .slice(0, 4)
+                                    .map(([key, value]) => (
+                                      <div
+                                        key={key}
+                                        className="bg-slate-50 rounded-lg p-3 border border-slate-200"
+                                      >
+                                        <p className="text-xs text-slate-600 capitalize mb-1">
+                                          {key.replace('_', ' ')}
+                                        </p>
+                                        <p className="text-sm font-semibold text-slate-900">
+                                          {value as string}
+                                        </p>
+                                      </div>
+                                    ))}
+                                </div>
                               </div>
-                            </div>
-                          )}
+                            )}
 
                           {result.recommendations && result.recommendations.length > 0 && (
                             <div>
-                              <h4 className="text-sm font-semibold text-slate-700 mb-2">Top Recommendations</h4>
+                              <h4 className="text-sm font-semibold text-slate-700 mb-2">
+                                Top Recommendations
+                              </h4>
                               <ul className="space-y-1">
-                                {result.recommendations.slice(0, 3).map((rec: any, index: number) => {
-                                  // Handle both old string format and new object format
-                                  const recText = typeof rec === 'string' ? rec : rec.recommendation;
-                                  const priority = typeof rec === 'object' ? rec.priority : null;
+                                {result.recommendations
+                                  .slice(0, 3)
+                                  .map((rec: any, index: number) => {
+                                    // Handle both old string format and new object format
+                                    const recText =
+                                      typeof rec === 'string' ? rec : rec.recommendation;
+                                    const priority = typeof rec === 'object' ? rec.priority : null;
 
-                                  return (
-                                    <li key={index} className="flex items-start gap-2 text-sm text-slate-600">
-                                      {priority && (
-                                        <span className={`px-1.5 py-0.5 rounded text-xs font-semibold ${
-                                          priority === 'critical' ? 'bg-red-100 text-red-800' :
-                                          priority === 'high' ? 'bg-orange-100 text-orange-800' :
-                                          priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                                          'bg-blue-100 text-blue-800'
-                                        }`}>
-                                          {priority.toUpperCase()}
-                                        </span>
-                                      )}
-                                      <span className="flex-1">{recText}</span>
-                                    </li>
-                                  );
-                                })}
+                                    return (
+                                      <li
+                                        key={index}
+                                        className="flex items-start gap-2 text-sm text-slate-600"
+                                      >
+                                        {priority && (
+                                          <span
+                                            className={`px-1.5 py-0.5 rounded text-xs font-semibold ${
+                                              priority === 'critical'
+                                                ? 'bg-red-100 text-red-800'
+                                                : priority === 'high'
+                                                  ? 'bg-orange-100 text-orange-800'
+                                                  : priority === 'medium'
+                                                    ? 'bg-yellow-100 text-yellow-800'
+                                                    : 'bg-blue-100 text-blue-800'
+                                            }`}
+                                          >
+                                            {priority.toUpperCase()}
+                                          </span>
+                                        )}
+                                        <span className="flex-1">{recText}</span>
+                                      </li>
+                                    );
+                                  })}
                               </ul>
                             </div>
                           )}
@@ -592,7 +693,9 @@ function HistoryContent() {
                       <PaginationItem>
                         <PaginationPrevious
                           onClick={() => currentPage > 0 && handlePageChange(currentPage - 1)}
-                          className={currentPage === 0 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                          className={
+                            currentPage === 0 ? 'pointer-events-none opacity-50' : 'cursor-pointer'
+                          }
                         />
                       </PaginationItem>
 
@@ -646,8 +749,15 @@ function HistoryContent() {
 
                       <PaginationItem>
                         <PaginationNext
-                          onClick={() => currentPage < Math.ceil(totalCount / PAGE_SIZE) - 1 && handlePageChange(currentPage + 1)}
-                          className={currentPage >= Math.ceil(totalCount / PAGE_SIZE) - 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                          onClick={() =>
+                            currentPage < Math.ceil(totalCount / PAGE_SIZE) - 1 &&
+                            handlePageChange(currentPage + 1)
+                          }
+                          className={
+                            currentPage >= Math.ceil(totalCount / PAGE_SIZE) - 1
+                              ? 'pointer-events-none opacity-50'
+                              : 'cursor-pointer'
+                          }
                         />
                       </PaginationItem>
                     </PaginationContent>
@@ -666,8 +776,13 @@ function HistoryContent() {
                     <Search className="h-8 w-8 text-slate-400" />
                   </div>
                   <h3 className="text-lg font-semibold text-slate-900 mb-2">No analyses yet</h3>
-                  <p className="text-slate-600 mb-6">Start analyzing labels to see your history here</p>
-                  <a href="/analyze" className="inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                  <p className="text-slate-600 mb-6">
+                    Start analyzing labels to see your history here
+                  </p>
+                  <a
+                    href="/analyze"
+                    className="inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                  >
                     Analyze Your First Label
                   </a>
                 </div>
@@ -681,11 +796,20 @@ function HistoryContent() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete Analysis?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Are you sure you want to delete the analysis for "{analysisToDelete?.analysis_result?.product_name || 'this product'}"?
-                  <br /><br />
-                  <span className="font-semibold text-slate-900">This action cannot be undone.</span> The analysis will be permanently removed from your history.
-                  <br /><br />
-                  <span className="text-sm text-slate-600">Note: Deleting this analysis does not refund your usage quota. You paid for the analysis, not storage.</span>
+                  Are you sure you want to delete the analysis for "
+                  {analysisToDelete?.analysis_result?.product_name || 'this product'}"?
+                  <br />
+                  <br />
+                  <span className="font-semibold text-slate-900">
+                    This action cannot be undone.
+                  </span>{' '}
+                  The analysis will be permanently removed from your history.
+                  <br />
+                  <br />
+                  <span className="text-sm text-slate-600">
+                    Note: Deleting this analysis does not refund your usage quota. You paid for the
+                    analysis, not storage.
+                  </span>
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -707,11 +831,13 @@ function HistoryContent() {
 
 export default function HistoryPage() {
   return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        </div>
+      }
+    >
       <HistoryContent />
     </Suspense>
   );

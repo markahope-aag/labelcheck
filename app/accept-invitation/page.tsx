@@ -12,7 +12,9 @@ function AcceptInvitationContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { isSignedIn, user, isLoaded } = useUser();
-  const [status, setStatus] = useState<'loading' | 'success' | 'error' | 'invalid' | 'expired'>('loading');
+  const [status, setStatus] = useState<'loading' | 'success' | 'error' | 'invalid' | 'expired'>(
+    'loading'
+  );
   const [message, setMessage] = useState('');
   const [invitationDetails, setInvitationDetails] = useState<{
     organizationName: string;
@@ -110,12 +112,16 @@ function AcceptInvitationContent() {
               Please sign in or create an account to accept this invitation
             </p>
             <div className="space-y-2">
-              <Link href={`/sign-in?redirect_url=${encodeURIComponent('/accept-invitation?token=' + token)}`}>
+              <Link
+                href={`/sign-in?redirect_url=${encodeURIComponent('/accept-invitation?token=' + token)}`}
+              >
                 <Button className="w-full" size="lg">
                   Sign In
                 </Button>
               </Link>
-              <Link href={`/sign-up?redirect_url=${encodeURIComponent('/accept-invitation?token=' + token)}`}>
+              <Link
+                href={`/sign-up?redirect_url=${encodeURIComponent('/accept-invitation?token=' + token)}`}
+              >
                 <Button variant="outline" className="w-full" size="lg">
                   Create Account
                 </Button>

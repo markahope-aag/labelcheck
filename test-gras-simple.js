@@ -37,7 +37,7 @@ async function checkSingleIngredient(ingredientName) {
     };
   }
 
-  const searchTerms = normalized.split(' ').filter(word => word.length > 3);
+  const searchTerms = normalized.split(' ').filter((word) => word.length > 3);
   if (searchTerms.length > 0) {
     const reversedTerms = [...searchTerms].reverse();
 
@@ -82,7 +82,7 @@ async function test() {
     'Taurine',
     'Caffeine',
     'Panax Ginseng Root Extract',
-    'Guarana Seed Extract'
+    'Guarana Seed Extract',
   ];
 
   console.log('Testing GRAS matching...\n');

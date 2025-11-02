@@ -50,10 +50,14 @@ export async function POST(req: Request) {
         (email: any) => email.id === primary_email_address_id
       );
 
-      const { data: newUser, error } = await supabaseAdmin.from('users').insert({
-        clerk_user_id: id,
-        email: primaryEmail?.email_address || '',
-      }).select().single();
+      const { data: newUser, error } = await supabaseAdmin
+        .from('users')
+        .insert({
+          clerk_user_id: id,
+          email: primaryEmail?.email_address || '',
+        })
+        .select()
+        .single();
 
       if (error) {
         console.error('Error creating user in database:', error);
@@ -95,10 +99,7 @@ export async function POST(req: Request) {
     }
 
     if (eventType === 'user.deleted') {
-      const { error } = await supabaseAdmin
-        .from('users')
-        .delete()
-        .eq('clerk_user_id', id);
+      const { error } = await supabaseAdmin.from('users').delete().eq('clerk_user_id', id);
 
       if (error) {
         console.error('Error deleting user from database:', error);

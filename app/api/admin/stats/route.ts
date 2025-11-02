@@ -11,7 +11,11 @@ export async function GET(request: NextRequest) {
 
     const currentDate = new Date();
     const currentMonth = currentDate.toISOString().slice(0, 7);
-    const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).toISOString();
+    const firstDayOfMonth = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      1
+    ).toISOString();
 
     // Get total users
     const { count: totalUsers } = await supabaseAdmin

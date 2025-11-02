@@ -15,24 +15,66 @@ async function testExpandedGRAS() {
   const testProducts = [
     {
       name: 'Energy Drink',
-      ingredients: ['Water', 'Sugar', 'Citric Acid', 'Caffeine', 'Taurine', 'Niacin', 'Vitamin B6', 'Riboflavin']
+      ingredients: [
+        'Water',
+        'Sugar',
+        'Citric Acid',
+        'Caffeine',
+        'Taurine',
+        'Niacin',
+        'Vitamin B6',
+        'Riboflavin',
+      ],
     },
     {
       name: 'Protein Bar',
-      ingredients: ['Whey Protein', 'Soy Protein Isolate', 'Maltitol', 'Cocoa', 'Natural Flavors', 'Lecithin', 'Stevia']
+      ingredients: [
+        'Whey Protein',
+        'Soy Protein Isolate',
+        'Maltitol',
+        'Cocoa',
+        'Natural Flavors',
+        'Lecithin',
+        'Stevia',
+      ],
     },
     {
       name: 'Diet Soda',
-      ingredients: ['Carbonated Water', 'Aspartame', 'Phosphoric Acid', 'Potassium Benzoate', 'Natural Flavors', 'Caramel Color', 'Caffeine']
+      ingredients: [
+        'Carbonated Water',
+        'Aspartame',
+        'Phosphoric Acid',
+        'Potassium Benzoate',
+        'Natural Flavors',
+        'Caramel Color',
+        'Caffeine',
+      ],
     },
     {
       name: 'Yogurt',
-      ingredients: ['Milk', 'Sugar', 'Pectin', 'Natural Flavors', 'Vitamin D', 'Calcium Carbonate', 'Lactose']
+      ingredients: [
+        'Milk',
+        'Sugar',
+        'Pectin',
+        'Natural Flavors',
+        'Vitamin D',
+        'Calcium Carbonate',
+        'Lactose',
+      ],
     },
     {
       name: 'Salad Dressing',
-      ingredients: ['Soybean Oil', 'Vinegar', 'Egg Yolk', 'Salt', 'Sugar', 'Xanthan Gum', 'Calcium Disodium EDTA', 'Natural Flavors']
-    }
+      ingredients: [
+        'Soybean Oil',
+        'Vinegar',
+        'Egg Yolk',
+        'Salt',
+        'Sugar',
+        'Xanthan Gum',
+        'Calcium Disodium EDTA',
+        'Natural Flavors',
+      ],
+    },
   ];
 
   for (const product of testProducts) {
@@ -55,7 +97,9 @@ async function testExpandedGRAS() {
         .maybeSingle();
 
       if (exactMatch) {
-        console.log(`      ✅ ${ingredient} → ${exactMatch.ingredient_name} (${exactMatch.category})`);
+        console.log(
+          `      ✅ ${ingredient} → ${exactMatch.ingredient_name} (${exactMatch.category})`
+        );
         grasCount++;
         continue;
       }
@@ -70,8 +114,10 @@ async function testExpandedGRAS() {
       let found = false;
       if (allIngredients) {
         for (const ing of allIngredients) {
-          if (ing.synonyms && ing.synonyms.some(syn => syn.toLowerCase() === normalized)) {
-            console.log(`      ✅ ${ingredient} → ${ing.ingredient_name} (synonym, ${ing.category})`);
+          if (ing.synonyms && ing.synonyms.some((syn) => syn.toLowerCase() === normalized)) {
+            console.log(
+              `      ✅ ${ingredient} → ${ing.ingredient_name} (synonym, ${ing.category})`
+            );
             grasCount++;
             found = true;
             break;
@@ -81,7 +127,7 @@ async function testExpandedGRAS() {
 
       if (!found) {
         // Strategy 3: Fuzzy match
-        const words = normalized.split(' ').filter(w => w.length > 3);
+        const words = normalized.split(' ').filter((w) => w.length > 3);
         let fuzzyFound = false;
 
         for (const word of words) {
@@ -93,7 +139,9 @@ async function testExpandedGRAS() {
             .limit(1);
 
           if (fuzzyMatches && fuzzyMatches.length > 0) {
-            console.log(`      🔍 ${ingredient} → ${fuzzyMatches[0].ingredient_name} (fuzzy match, ${fuzzyMatches[0].category})`);
+            console.log(
+              `      🔍 ${ingredient} → ${fuzzyMatches[0].ingredient_name} (fuzzy match, ${fuzzyMatches[0].category})`
+            );
             grasCount++;
             fuzzyFound = true;
             break;
@@ -118,9 +166,7 @@ async function testExpandedGRAS() {
   console.log(`   Total ingredients: ${totalCount}`);
 
   // Count by category
-  const { data: categories } = await supabase
-    .from('gras_ingredients')
-    .select('category');
+  const { data: categories } = await supabase.from('gras_ingredients').select('category');
 
   const categoryCounts = categories.reduce((acc, item) => {
     acc[item.category] = (acc[item.category] || 0) + 1;

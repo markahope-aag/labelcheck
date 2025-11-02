@@ -22,8 +22,8 @@ async function verifyMigrations() {
       'alternative_categories',
       'user_selected_category',
       'category_selection_reason',
-      'compared_categories'
-    ]
+      'compared_categories',
+    ],
   };
 
   let allPresent = true;
@@ -33,10 +33,7 @@ async function verifyMigrations() {
 
     for (const column of columns) {
       try {
-        const { error } = await supabase
-          .from('analyses')
-          .select(column)
-          .limit(1);
+        const { error } = await supabase.from('analyses').select(column).limit(1);
 
         if (error) {
           if (error.message.includes('column') && error.message.includes('does not exist')) {

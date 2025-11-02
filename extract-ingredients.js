@@ -14,8 +14,8 @@ const SKIP_PATTERNS = [
   /^CRN LIST OF DIETARY INGREDIENTS$/,
   /GRANDFATHERED.*DSHEA/i,
   /^September 1998$/,
-  /^\s*$/,  // Empty lines
-  /^[0-9]+\/[0-9]+$/,  // Dates like 9/98
+  /^\s*$/, // Empty lines
+  /^[0-9]+\/[0-9]+$/, // Dates like 9/98
   /Dietary Supplement/i,
   /DSHEA/i,
   /NNFA/i,
@@ -32,8 +32,8 @@ const SKIP_PATTERNS = [
   /member companies/i,
   /recommended.*addition/i,
   /based.*list compiled/i,
-  /\.$/,  // Lines ending with period (likely sentences, not ingredients)
-  /\?"$/,  // Lines ending with ?" (likely sentences)
+  /\.$/, // Lines ending with period (likely sentences, not ingredients)
+  /\?"$/, // Lines ending with ?" (likely sentences)
   /^with additions/i,
   /^by CRN/i,
   /^By this provision/i,
@@ -42,14 +42,14 @@ const SKIP_PATTERNS = [
   /policy is for any/i,
   /has not independently/i,
   /more complete list/i,
-  / were$/,  // Lines ending with "were" (sentence fragments)
-  / and$/,  // Lines ending with "and" (sentence fragments)
-  / of an$/,  // Lines ending with "of an" (sentence fragments)
-  / see$/,  // Lines ending with "see" (sentence fragments)
+  / were$/, // Lines ending with "were" (sentence fragments)
+  / and$/, // Lines ending with "and" (sentence fragments)
+  / of an$/, // Lines ending with "of an" (sentence fragments)
+  / see$/, // Lines ending with "see" (sentence fragments)
 ];
 
 function shouldSkipLine(line) {
-  return SKIP_PATTERNS.some(pattern => pattern.test(line));
+  return SKIP_PATTERNS.some((pattern) => pattern.test(line));
 }
 
 function cleanIngredientName(line) {
@@ -107,6 +107,6 @@ fs.writeFileSync('grandfather-ingredients.json', JSON.stringify(ingredients, nul
 console.log('\nFull list saved to: grandfather-ingredients.json');
 
 // Save to CSV for easy review
-const csv = ingredients.map(ing => `"${ing.replace(/"/g, '""')}"`).join('\n');
+const csv = ingredients.map((ing) => `"${ing.replace(/"/g, '""')}"`).join('\n');
 fs.writeFileSync('grandfather-ingredients.csv', 'ingredient_name\n' + csv, 'utf8');
 console.log('CSV saved to: grandfather-ingredients.csv');

@@ -37,10 +37,22 @@ async function checkSingleIngredient(ingredientName) {
     };
   }
 
-  const GENERIC_TERMS = ['extract', 'powder', 'concentrate', 'isolate', 'blend', 'complex', 'root', 'seed', 'leaf', 'fruit', 'berry'];
+  const GENERIC_TERMS = [
+    'extract',
+    'powder',
+    'concentrate',
+    'isolate',
+    'blend',
+    'complex',
+    'root',
+    'seed',
+    'leaf',
+    'fruit',
+    'berry',
+  ];
   const searchTerms = normalized
     .split(' ')
-    .filter(word => word.length > 3 && !GENERIC_TERMS.includes(word));
+    .filter((word) => word.length > 3 && !GENERIC_TERMS.includes(word));
 
   if (searchTerms.length > 0) {
     const sortedTerms = [...searchTerms].sort((a, b) => b.length - a.length);
@@ -86,7 +98,7 @@ async function test() {
     'Taurine',
     'Caffeine',
     'Panax Ginseng Root Extract',
-    'Guarana Seed Extract'
+    'Guarana Seed Extract',
   ];
 
   console.log('Testing GRAS matching with FINAL logic...\n');

@@ -16,9 +16,7 @@ async function auditDatabase() {
 
   try {
     // Get all ingredients
-    const { data: allIngredients, error } = await supabase
-      .from('gras_ingredients')
-      .select('*');
+    const { data: allIngredients, error } = await supabase.from('gras_ingredients').select('*');
 
     if (error) throw error;
 
@@ -29,7 +27,7 @@ async function auditDatabase() {
     const nameCount = {};
     const duplicateNames = [];
 
-    allIngredients.forEach(ing => {
+    allIngredients.forEach((ing) => {
       const name = ing.ingredient_name.toLowerCase().trim();
       nameCount[name] = (nameCount[name] || 0) + 1;
       if (nameCount[name] === 2) {
@@ -39,11 +37,15 @@ async function auditDatabase() {
 
     if (duplicateNames.length > 0) {
       console.log(`   ⚠️  Found ${duplicateNames.length} duplicate ingredient names:`);
-      duplicateNames.slice(0, 10).forEach(name => {
-        const matches = allIngredients.filter(i => i.ingredient_name.toLowerCase().trim() === name);
+      duplicateNames.slice(0, 10).forEach((name) => {
+        const matches = allIngredients.filter(
+          (i) => i.ingredient_name.toLowerCase().trim() === name
+        );
         console.log(`      • "${matches[0].ingredient_name}" (${nameCount[name]} times)`);
         matches.forEach((m, idx) => {
-          console.log(`        ${idx + 1}. ID: ${m.id}, Status: ${m.gras_status}, Source: ${m.source_reference}`);
+          console.log(
+            `        ${idx + 1}. ID: ${m.id}, Status: ${m.gras_status}, Source: ${m.source_reference}`
+          );
         });
       });
       if (duplicateNames.length > 10) {
@@ -59,8 +61,8 @@ async function auditDatabase() {
     const duplicateGRNs = [];
 
     allIngredients
-      .filter(ing => ing.gras_notice_number)
-      .forEach(ing => {
+      .filter((ing) => ing.gras_notice_number)
+      .forEach((ing) => {
         const grn = ing.gras_notice_number.toUpperCase().trim();
         grnCount[grn] = (grnCount[grn] || 0) + 1;
         if (grnCount[grn] === 2) {
@@ -70,9 +72,9 @@ async function auditDatabase() {
 
     if (duplicateGRNs.length > 0) {
       console.log(`   ⚠️  Found ${duplicateGRNs.length} duplicate GRN numbers:`);
-      duplicateGRNs.slice(0, 10).forEach(grn => {
-        const matches = allIngredients.filter(i =>
-          i.gras_notice_number && i.gras_notice_number.toUpperCase().trim() === grn
+      duplicateGRNs.slice(0, 10).forEach((grn) => {
+        const matches = allIngredients.filter(
+          (i) => i.gras_notice_number && i.gras_notice_number.toUpperCase().trim() === grn
         );
         console.log(`      • ${grn} (${grnCount[grn]} times)`);
         matches.forEach((m, idx) => {
@@ -88,9 +90,11 @@ async function auditDatabase() {
 
     // Check for empty or null required fields
     console.log('🔍 Checking for missing required fields...');
-    const missingName = allIngredients.filter(i => !i.ingredient_name || i.ingredient_name.trim() === '');
-    const missingStatus = allIngredients.filter(i => !i.gras_status);
-    const missingCategory = allIngredients.filter(i => !i.category);
+    const missingName = allIngredients.filter(
+      (i) => !i.ingredient_name || i.ingredient_name.trim() === ''
+    );
+    const missingStatus = allIngredients.filter((i) => !i.gras_status);
+    const missingCategory = allIngredients.filter((i) => !i.category);
 
     if (missingName.length > 0) {
       console.log(`   ⚠️  ${missingName.length} ingredients missing name`);
@@ -109,21 +113,19 @@ async function auditDatabase() {
 
     // Check for suspicious patterns
     console.log('🔍 Checking for suspicious patterns...');
-    const suspiciousChars = allIngredients.filter(i =>
-      /[<>{}[\]\\|`~]/.test(i.ingredient_name)
-    );
-    const tooLong = allIngredients.filter(i => i.ingredient_name.length > 200);
-    const tooShort = allIngredients.filter(i => i.ingredient_name.length < 2);
+    const suspiciousChars = allIngredients.filter((i) => /[<>{}[\]\\|`~]/.test(i.ingredient_name));
+    const tooLong = allIngredients.filter((i) => i.ingredient_name.length > 200);
+    const tooShort = allIngredients.filter((i) => i.ingredient_name.length < 2);
 
     if (suspiciousChars.length > 0) {
       console.log(`   ⚠️  ${suspiciousChars.length} ingredients with suspicious characters`);
-      suspiciousChars.slice(0, 5).forEach(i => {
+      suspiciousChars.slice(0, 5).forEach((i) => {
         console.log(`      • "${i.ingredient_name}"`);
       });
     }
     if (tooLong.length > 0) {
       console.log(`   ⚠️  ${tooLong.length} ingredients with names > 200 chars`);
-      tooLong.slice(0, 3).forEach(i => {
+      tooLong.slice(0, 3).forEach((i) => {
         console.log(`      • "${i.ingredient_name.substring(0, 80)}..."`);
       });
     }
@@ -139,11 +141,10 @@ async function auditDatabase() {
     // Category distribution
     console.log('📊 Category Distribution:');
     const categoryCount = {};
-    allIngredients.forEach(i => {
+    allIngredients.forEach((i) => {
       categoryCount[i.category] = (categoryCount[i.category] || 0) + 1;
     });
-    const sortedCategories = Object.entries(categoryCount)
-      .sort((a, b) => b[1] - a[1]);
+    const sortedCategories = Object.entries(categoryCount).sort((a, b) => b[1] - a[1]);
 
     console.log(`   Total categories: ${sortedCategories.length}`);
     console.log('   Top 10:');
@@ -155,7 +156,7 @@ async function auditDatabase() {
     // Status distribution
     console.log('📊 GRAS Status Distribution:');
     const statusCount = {};
-    allIngredients.forEach(i => {
+    allIngredients.forEach((i) => {
       statusCount[i.gras_status] = (statusCount[i.gras_status] || 0) + 1;
     });
     Object.entries(statusCount)
@@ -179,9 +180,8 @@ async function auditDatabase() {
       console.log('   ✅ Database is clean - no issues detected!');
     } else {
       console.log(`   ⚠️  Found ${issues.length} issue(s):`);
-      issues.forEach(issue => console.log(`      • ${issue}`));
+      issues.forEach((issue) => console.log(`      • ${issue}`));
     }
-
   } catch (error) {
     console.error('❌ Audit failed:', error);
     process.exit(1);

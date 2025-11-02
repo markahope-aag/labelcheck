@@ -4,7 +4,13 @@ import { useEffect, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import { BarChart3, FileText, TrendingUp, Calendar, Download } from 'lucide-react';
@@ -62,8 +68,18 @@ export default function ReportsPage() {
 
       const monthlyData: { [key: string]: any } = {};
       const monthNames = [
-        'January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December'
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December',
       ];
 
       monthNames.forEach((month, index) => {
@@ -104,7 +120,8 @@ export default function ReportsPage() {
       const statsArray: MonthlyStats[] = Object.values(monthlyData).map((m: any) => ({
         month: m.month,
         total_analyses: m.total_analyses,
-        avg_health_score: m.total_analyses > 0 ? Math.round(m.total_health_score / m.total_analyses) : 0,
+        avg_health_score:
+          m.total_analyses > 0 ? Math.round(m.total_health_score / m.total_analyses) : 0,
         compliant_count: m.compliant_count,
         total_issues: m.total_issues,
       }));
@@ -140,7 +157,7 @@ export default function ReportsPage() {
 
       if (!userData) return;
 
-      const monthIndex = monthlyStats.findIndex(m => m.month === month);
+      const monthIndex = monthlyStats.findIndex((m) => m.month === month);
       const startDate = new Date(parseInt(selectedYear), monthIndex, 1);
       const endDate = new Date(parseInt(selectedYear), monthIndex + 1, 0);
 
@@ -201,8 +218,10 @@ export default function ReportsPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {years.map(year => (
-                <SelectItem key={year} value={year}>{year}</SelectItem>
+              {years.map((year) => (
+                <SelectItem key={year} value={year}>
+                  {year}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -242,7 +261,10 @@ export default function ReportsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-sm text-muted-foreground">
-                {yearlyTotals.total > 0 ? Math.round((yearlyTotals.compliant / yearlyTotals.total) * 100) : 0}% compliance rate
+                {yearlyTotals.total > 0
+                  ? Math.round((yearlyTotals.compliant / yearlyTotals.total) * 100)
+                  : 0}
+                % compliance rate
               </div>
             </CardContent>
           </Card>
@@ -254,7 +276,8 @@ export default function ReportsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-sm text-muted-foreground">
-                {yearlyTotals.total > 0 ? (yearlyTotals.issues / yearlyTotals.total).toFixed(1) : 0} avg per product
+                {yearlyTotals.total > 0 ? (yearlyTotals.issues / yearlyTotals.total).toFixed(1) : 0}{' '}
+                avg per product
               </div>
             </CardContent>
           </Card>
@@ -278,7 +301,8 @@ export default function ReportsPage() {
                       <div>
                         <p className="font-semibold">{stat.month}</p>
                         <p className="text-sm text-muted-foreground">
-                          {stat.total_analyses} {stat.total_analyses === 1 ? 'analysis' : 'analyses'}
+                          {stat.total_analyses}{' '}
+                          {stat.total_analyses === 1 ? 'analysis' : 'analyses'}
                         </p>
                       </div>
                     </div>
@@ -292,7 +316,9 @@ export default function ReportsPage() {
                       </div>
                       <div className="text-center">
                         <p className="text-sm text-muted-foreground">Compliant</p>
-                        <p className="text-lg font-semibold text-green-600">{stat.compliant_count}</p>
+                        <p className="text-lg font-semibold text-green-600">
+                          {stat.compliant_count}
+                        </p>
                       </div>
                       <div className="text-center">
                         <p className="text-sm text-muted-foreground">Issues</p>

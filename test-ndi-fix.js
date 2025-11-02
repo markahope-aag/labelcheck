@@ -19,7 +19,7 @@ async function test() {
 
   console.log('Summary:', result.summary);
   console.log('\nDetailed Results:');
-  result.results.forEach(r => {
+  result.results.forEach((r) => {
     console.log(`\n${r.ingredient}:`);
     console.log(`  Has NDI: ${r.hasNDI}`);
     console.log(`  Requires NDI: ${r.requiresNDI}`);

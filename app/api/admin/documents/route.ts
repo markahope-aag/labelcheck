@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
-    const { data: document, error} = await supabaseAdmin
+    const { data: document, error } = await supabaseAdmin
       .from('regulatory_documents')
       .insert(body)
       .select()

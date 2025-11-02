@@ -15,7 +15,11 @@
 import { clerkClient } from '@clerk/nextjs/server';
 import OpenAI from 'openai';
 import { supabase, supabaseAdmin } from '@/lib/supabase';
-import { getActiveRegulatoryDocuments, buildRegulatoryContext, getRecommendedDocuments } from '@/lib/regulatory-documents';
+import {
+  getActiveRegulatoryDocuments,
+  buildRegulatoryContext,
+  getRecommendedDocuments,
+} from '@/lib/regulatory-documents';
 import { sendEmail } from '@/lib/resend';
 import { generateAnalysisResultEmail } from '@/lib/email-templates';
 import { preprocessImage } from '@/lib/image-processing';
@@ -66,7 +70,7 @@ export async function getUserWithFallback(userId: string): Promise<UserInfo> {
     .select('id, email')
     .eq('clerk_user_id', userId)
     .maybeSingle()
-    .then(res => res.data);
+    .then((res) => res.data);
 
   // If user doesn't exist in Supabase, create them (fallback for webhook issues)
   if (!user) {
@@ -114,10 +118,7 @@ export async function getUserWithFallback(userId: string): Promise<UserInfo> {
 /**
  * Check usage limits and return current usage info
  */
-export async function checkUsageLimits(
-  userId: string,
-  userInternalId: string
-): Promise<UsageInfo> {
+export async function checkUsageLimits(userId: string, userInternalId: string): Promise<UsageInfo> {
   const currentMonth = new Date().toISOString().slice(0, 7);
 
   // Use admin client for usage tracking (bypass RLS)
@@ -330,7 +331,9 @@ export async function loadRegulatoryDocuments(
     // RAG lite - filter by pre-classified category
     const { documents, preClassifiedCategory, documentCount, totalCount } =
       await getRecommendedDocuments(textForRag);
-    console.log(`✅ RAG Lite: Loaded ${documentCount}/${totalCount} documents for ${preClassifiedCategory}`);
+    console.log(
+      `✅ RAG Lite: Loaded ${documentCount}/${totalCount} documents for ${preClassifiedCategory}`
+    );
 
     return {
       regulatoryDocuments: documents,
@@ -414,13 +417,15 @@ export async function callAIWithRetry(
 
         if (attempt === maxRetries) {
           // On final attempt, throw a user-friendly error
-          throw new Error('API rate limit reached. Please wait 60 seconds and try again. If this persists, you may need to upgrade your OpenAI API plan at https://platform.openai.com/settings');
+          throw new Error(
+            'API rate limit reached. Please wait 60 seconds and try again. If this persists, you may need to upgrade your OpenAI API plan at https://platform.openai.com/settings'
+          );
         }
 
         // Exponential backoff: wait 5s, 10s, 20s
         const waitTime = 5000 * Math.pow(2, attempt - 1);
         console.log(`Waiting ${waitTime}ms before retry...`);
-        await new Promise(resolve => setTimeout(resolve, waitTime));
+        await new Promise((resolve) => setTimeout(resolve, waitTime));
         continue;
       }
 
@@ -448,9 +453,11 @@ export async function saveAnalysis(
   // Determine compliance status from the new analysis structure
   const complianceStatus = analysisData.overall_assessment?.primary_compliance_status || 'unknown';
   const dbComplianceStatus =
-    complianceStatus === 'compliant' || complianceStatus === 'likely_compliant' ? 'compliant' :
-    complianceStatus === 'potentially_non_compliant' ? 'minor_issues' :
-    'major_violations';
+    complianceStatus === 'compliant' || complianceStatus === 'likely_compliant'
+      ? 'compliant'
+      : complianceStatus === 'potentially_non_compliant'
+        ? 'minor_issues'
+        : 'major_violations';
 
   const { data: analysis, error: insertError } = await supabaseAdmin
     .from('analyses')
@@ -463,7 +470,10 @@ export async function saveAnalysis(
       label_name: labelName || null,
       analysis_result: analysisData,
       compliance_status: dbComplianceStatus,
-      issues_found: analysisData.recommendations?.filter((r: any) => r.priority === 'critical' || r.priority === 'high')?.length || 0,
+      issues_found:
+        analysisData.recommendations?.filter(
+          (r: any) => r.priority === 'critical' || r.priority === 'high'
+        )?.length || 0,
       session_id: sessionId || null,
       product_category: analysisData.product_category || null,
       category_rationale: analysisData.category_rationale || null,
@@ -549,9 +559,10 @@ export async function sendNotificationEmail(
       summary: analysisData.overall_assessment?.summary || 'Analysis completed successfully.',
       healthScore: 0, // No longer using health score
       complianceStatus: analysis.compliance_status,
-      recommendations: analysisData.recommendations?.map((r: any) =>
-        `[${r.priority.toUpperCase()}] ${r.recommendation} (${r.regulation})`
-      ) || [],
+      recommendations:
+        analysisData.recommendations?.map(
+          (r: any) => `[${r.priority.toUpperCase()}] ${r.recommendation} (${r.regulation})`
+        ) || [],
       analyzedAt: analysis.created_at,
     });
 

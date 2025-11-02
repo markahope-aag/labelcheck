@@ -20,10 +20,7 @@ export async function POST(request: NextRequest) {
     const { sessionId, message, parentIterationId } = await request.json();
 
     if (!sessionId || !message) {
-      return NextResponse.json(
-        { error: 'Session ID and message are required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Session ID and message are required' }, { status: 400 });
     }
 
     // Get user from database (use admin client to bypass RLS)
@@ -39,25 +36,20 @@ export async function POST(request: NextRequest) {
 
     // Get session with all iterations to build context
     // Use admin client to bypass RLS since sessions are created with admin
-    const { session, iterations, error: sessionError } = await getSessionWithIterations(
-      sessionId,
-      true
-    );
+    const {
+      session,
+      iterations,
+      error: sessionError,
+    } = await getSessionWithIterations(sessionId, true);
 
     if (sessionError || !session) {
       console.error('Error fetching session:', sessionError);
-      return NextResponse.json(
-        { error: 'Session not found or access denied' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Session not found or access denied' }, { status: 404 });
     }
 
     // Verify session belongs to user
     if (session.user_id !== user.id) {
-      return NextResponse.json(
-        { error: 'Access denied to this session' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Access denied to this session' }, { status: 403 });
     }
 
     // Get regulatory documents for reference
@@ -66,7 +58,8 @@ export async function POST(request: NextRequest) {
 
     // Build cached context (regulatory docs + latest analysis - these don't change often)
     let cachedContext = regulatoryContext + '\n\n';
-    cachedContext += 'You are a regulatory compliance expert helping a user understand their label analysis.\n\n';
+    cachedContext +=
+      'You are a regulatory compliance expert helping a user understand their label analysis.\n\n';
 
     // Find the most recent analysis iteration
     const analysisIterations = iterations.filter(
@@ -108,7 +101,8 @@ export async function POST(request: NextRequest) {
       // Include ingredient list so AI can answer questions about specific ingredients
       if (latestAnalysis.result_data?.ingredient_labeling?.ingredients_list?.length > 0) {
         cachedContext += '**Complete Ingredient List (as analyzed from the label):**\n';
-        cachedContext += latestAnalysis.result_data.ingredient_labeling.ingredients_list.join(', ') + '\n\n';
+        cachedContext +=
+          latestAnalysis.result_data.ingredient_labeling.ingredients_list.join(', ') + '\n\n';
         cachedContext += `IMPORTANT: This is the complete list of ALL ingredients found on the label. If an ingredient is not in this list, it is NOT present in the product.\n\n`;
       }
 
@@ -144,10 +138,12 @@ export async function POST(request: NextRequest) {
           cachedContext += `- PROHIBITED Claims Detected: ${latestAnalysis.result_data.claims.prohibited_claims.join('; ')}\n`;
         }
 
-        if (!latestAnalysis.result_data.claims.structure_function_claims?.length &&
-            !latestAnalysis.result_data.claims.nutrient_content_claims?.length &&
-            !latestAnalysis.result_data.claims.health_claims?.length &&
-            !latestAnalysis.result_data.claims.prohibited_claims?.length) {
+        if (
+          !latestAnalysis.result_data.claims.structure_function_claims?.length &&
+          !latestAnalysis.result_data.claims.nutrient_content_claims?.length &&
+          !latestAnalysis.result_data.claims.health_claims?.length &&
+          !latestAnalysis.result_data.claims.prohibited_claims?.length
+        ) {
           cachedContext += '- No claims detected on the label\n';
         }
 
@@ -159,9 +155,7 @@ export async function POST(request: NextRequest) {
     let dynamicContext = '';
 
     // Include recent chat history for context
-    const chatIterations = iterations.filter(
-      (iter) => iter.iteration_type === 'chat_question'
-    );
+    const chatIterations = iterations.filter((iter) => iter.iteration_type === 'chat_question');
 
     if (chatIterations.length > 0) {
       dynamicContext += '## Recent Conversation History\n\n';
@@ -175,14 +169,20 @@ export async function POST(request: NextRequest) {
     dynamicContext += '## Current Question\n\n';
     dynamicContext += `The user is now asking: "${message}"\n\n`;
     dynamicContext += 'CRITICAL INSTRUCTIONS:\n';
-    dynamicContext += '1. Answer ONLY based on the analysis data provided above. Do not speculate, add caveats, or suggest checking things manually.\n';
-    dynamicContext += '2. If the analysis data says "no allergens detected" - simply confirm NO allergens are present. Do not mention cross-contamination or trace amounts.\n';
-    dynamicContext += '3. If an ingredient is in the "Complete Ingredient List" - confirm it IS present. If it is NOT in the list - confirm it is NOT present.\n';
-    dynamicContext += '4. If the "Label Claims Analysis" shows claims - list them. If it shows no claims - state no claims were detected.\n';
-    dynamicContext += '5. Be direct and confident. The analysis has already been completed thoroughly.\n';
+    dynamicContext +=
+      '1. Answer ONLY based on the analysis data provided above. Do not speculate, add caveats, or suggest checking things manually.\n';
+    dynamicContext +=
+      '2. If the analysis data says "no allergens detected" - simply confirm NO allergens are present. Do not mention cross-contamination or trace amounts.\n';
+    dynamicContext +=
+      '3. If an ingredient is in the "Complete Ingredient List" - confirm it IS present. If it is NOT in the list - confirm it is NOT present.\n';
+    dynamicContext +=
+      '4. If the "Label Claims Analysis" shows claims - list them. If it shows no claims - state no claims were detected.\n';
+    dynamicContext +=
+      '5. Be direct and confident. The analysis has already been completed thoroughly.\n';
     dynamicContext += '6. For regulatory questions, cite the relevant CFR section.\n';
     dynamicContext += '7. For compliance issues, provide specific, actionable guidance.\n';
-    dynamicContext += '8. FORMATTING: Use plain text only - no markdown formatting (no asterisks, no headers).';
+    dynamicContext +=
+      '8. FORMATTING: Use plain text only - no markdown formatting (no asterisks, no headers).';
 
     // Call OpenAI API
     const completion = await openai.chat.completions.create({

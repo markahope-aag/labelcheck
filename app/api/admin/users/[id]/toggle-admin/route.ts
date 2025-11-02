@@ -2,10 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { userId } = await auth();
     if (!userId) {
@@ -22,10 +19,7 @@ export async function POST(
       .single();
 
     if (currentUserError || !currentUser) {
-      return NextResponse.json(
-        { error: 'Current user not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Current user not found' }, { status: 404 });
     }
 
     if (!currentUser.is_system_admin) {
@@ -51,10 +45,7 @@ export async function POST(
       .single();
 
     if (targetUserError || !targetUser) {
-      return NextResponse.json(
-        { error: 'Target user not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Target user not found' }, { status: 404 });
     }
 
     // Toggle admin status
@@ -67,22 +58,19 @@ export async function POST(
 
     if (updateError) {
       console.error('Error updating admin status:', updateError);
-      return NextResponse.json(
-        { error: 'Failed to update admin status' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to update admin status' }, { status: 500 });
     }
 
-    return NextResponse.json({
-      success: true,
-      is_system_admin: newAdminStatus,
-      email: targetUser.email,
-    }, { status: 200 });
+    return NextResponse.json(
+      {
+        success: true,
+        is_system_admin: newAdminStatus,
+        email: targetUser.email,
+      },
+      { status: 200 }
+    );
   } catch (error) {
     console.error('Error in toggle admin:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -73,7 +73,9 @@ export async function getUserUsage(userId: string): Promise<UsageInfo | null> {
   };
 }
 
-export async function canUserAnalyze(userId: string): Promise<{ canAnalyze: boolean; reason?: string }> {
+export async function canUserAnalyze(
+  userId: string
+): Promise<{ canAnalyze: boolean; reason?: string }> {
   const usage = await getUserUsage(userId);
 
   if (!usage) {

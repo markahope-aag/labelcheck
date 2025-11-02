@@ -66,31 +66,24 @@ export async function POST(request: NextRequest) {
 
     // Get session with all iterations to find original analysis
     // Use admin client to bypass RLS since sessions are created with admin
-    const { session, iterations, error: sessionError } = await getSessionWithIterations(
-      sessionId,
-      true
-    );
+    const {
+      session,
+      iterations,
+      error: sessionError,
+    } = await getSessionWithIterations(sessionId, true);
 
     if (sessionError || !session) {
       console.error('Error fetching session:', sessionError);
-      return NextResponse.json(
-        { error: 'Session not found or access denied' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Session not found or access denied' }, { status: 404 });
     }
 
     // Verify session belongs to user
     if (session.user_id !== user.id) {
-      return NextResponse.json(
-        { error: 'Access denied to this session' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Access denied to this session' }, { status: 403 });
     }
 
     // Find the original image analysis
-    const originalAnalysis = iterations.find(
-      (iter) => iter.iteration_type === 'image_analysis'
-    );
+    const originalAnalysis = iterations.find((iter) => iter.iteration_type === 'image_analysis');
 
     let originalContext = '';
     if (originalAnalysis?.result_data) {

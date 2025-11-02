@@ -37,7 +37,9 @@ export default async function BillingPage() {
             <div className="lg:col-span-2 space-y-6">
               <Card className="border-slate-200">
                 <CardHeader>
-                  <CardTitle className="text-xl font-semibold text-slate-900">Current Plan</CardTitle>
+                  <CardTitle className="text-xl font-semibold text-slate-900">
+                    Current Plan
+                  </CardTitle>
                   <CardDescription>Your active subscription details</CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -45,14 +47,18 @@ export default async function BillingPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-2xl font-bold text-slate-900 capitalize">{currentPlan} Plan</h3>
-                          <Badge className={
-                            currentPlan === 'business'
-                              ? 'bg-purple-100 text-purple-700 border-purple-200'
-                              : currentPlan === 'professional'
-                              ? 'bg-blue-100 text-blue-700 border-blue-200'
-                              : 'bg-slate-100 text-slate-700 border-slate-200'
-                          }>
+                          <h3 className="text-2xl font-bold text-slate-900 capitalize">
+                            {currentPlan} Plan
+                          </h3>
+                          <Badge
+                            className={
+                              currentPlan === 'business'
+                                ? 'bg-purple-100 text-purple-700 border-purple-200'
+                                : currentPlan === 'professional'
+                                  ? 'bg-blue-100 text-blue-700 border-blue-200'
+                                  : 'bg-slate-100 text-slate-700 border-slate-200'
+                            }
+                          >
                             Subscribed
                           </Badge>
                         </div>
@@ -81,9 +87,15 @@ export default async function BillingPage() {
                     <div className="border-t border-slate-200 pt-6">
                       <div className="flex items-center gap-2 text-sm text-slate-600 mb-4">
                         <Calendar className="h-4 w-4" />
-                        <span>Next billing date: {new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}</span>
+                        <span>
+                          Next billing date:{' '}
+                          {new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}
+                        </span>
                       </div>
-                      <Button variant="outline" className="w-full border-red-300 text-red-600 hover:bg-red-50">
+                      <Button
+                        variant="outline"
+                        className="w-full border-red-300 text-red-600 hover:bg-red-50"
+                      >
                         Cancel Subscription
                       </Button>
                     </div>
@@ -93,7 +105,9 @@ export default async function BillingPage() {
 
               <Card className="border-slate-200">
                 <CardHeader>
-                  <CardTitle className="text-xl font-semibold text-slate-900">Usage Statistics</CardTitle>
+                  <CardTitle className="text-xl font-semibold text-slate-900">
+                    Usage Statistics
+                  </CardTitle>
                   <CardDescription>Your current month activity</CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -106,13 +120,19 @@ export default async function BillingPage() {
                         <div>
                           <p className="text-sm text-slate-600">Analyses Used</p>
                           <p className="text-xl font-bold text-slate-900">
-                            {user?.analyses_count || 0} <span className="text-sm font-normal text-slate-600">/ {planLimits.analyses}</span>
+                            {user?.analyses_count || 0}{' '}
+                            <span className="text-sm font-normal text-slate-600">
+                              / {planLimits.analyses}
+                            </span>
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
                         <p className="text-2xl font-bold text-slate-900">
-                          {Math.min(100, Math.round(((user?.analyses_count || 0) / planLimits.analyses) * 100))}
+                          {Math.min(
+                            100,
+                            Math.round(((user?.analyses_count || 0) / planLimits.analyses) * 100)
+                          )}
                           <span className="text-sm text-slate-600">%</span>
                         </p>
                       </div>
@@ -120,8 +140,12 @@ export default async function BillingPage() {
 
                     {currentPlan === 'starter' && (
                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <p className="text-sm text-blue-900 font-medium mb-2">Upgrade for more analyses</p>
-                        <p className="text-sm text-blue-800">Get more analyses and priority support with Professional or Business plans</p>
+                        <p className="text-sm text-blue-900 font-medium mb-2">
+                          Upgrade for more analyses
+                        </p>
+                        <p className="text-sm text-blue-800">
+                          Get more analyses and priority support with Professional or Business plans
+                        </p>
                       </div>
                     )}
                   </div>
@@ -132,7 +156,9 @@ export default async function BillingPage() {
             <div className="space-y-6">
               <Card className="border-slate-200">
                 <CardHeader>
-                  <CardTitle className="text-xl font-semibold text-slate-900">Upgrade Plan</CardTitle>
+                  <CardTitle className="text-xl font-semibold text-slate-900">
+                    Upgrade Plan
+                  </CardTitle>
                   <CardDescription>Get more features and analyses</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -141,7 +167,10 @@ export default async function BillingPage() {
                     const limits = PLAN_LIMITS[key];
                     const prices = PLAN_PRICES[key];
                     return (
-                      <div key={key} className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                      <div
+                        key={key}
+                        className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                      >
                         <div className="mb-3">
                           <h3 className="font-semibold text-slate-900 capitalize mb-1">{key}</h3>
                           <p className="text-2xl font-bold text-slate-900">
@@ -159,7 +188,10 @@ export default async function BillingPage() {
                         </ul>
                         <form action="/api/create-checkout-session" method="POST">
                           <input type="hidden" name="plan" value={key} />
-                          <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                          <Button
+                            type="submit"
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                          >
                             Upgrade to {key}
                           </Button>
                         </form>
@@ -172,8 +204,13 @@ export default async function BillingPage() {
               <Card className="border-slate-200 bg-gradient-to-br from-blue-50 to-purple-50">
                 <CardContent className="pt-6">
                   <h3 className="font-semibold text-slate-900 mb-2">Need help?</h3>
-                  <p className="text-sm text-slate-600 mb-4">Contact our support team for billing assistance</p>
-                  <Button variant="outline" className="w-full border-slate-300 bg-white hover:bg-slate-50">
+                  <p className="text-sm text-slate-600 mb-4">
+                    Contact our support team for billing assistance
+                  </p>
+                  <Button
+                    variant="outline"
+                    className="w-full border-slate-300 bg-white hover:bg-slate-50"
+                  >
                     Contact Support
                   </Button>
                 </CardContent>

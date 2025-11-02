@@ -100,7 +100,8 @@ export class PerformanceMonitor {
     console.log('╠════════════════════════════════════════════════════════════╣');
 
     // Show metadata
-    if (Object.keys(summary.metadata).length > 1) { // More than just 'operation'
+    if (Object.keys(summary.metadata).length > 1) {
+      // More than just 'operation'
       console.log('║ Metadata:'.padEnd(61) + '║');
       for (const [key, value] of Object.entries(summary.metadata)) {
         if (key !== 'operation') {
@@ -112,7 +113,7 @@ export class PerformanceMonitor {
     }
 
     // Identify bottlenecks (>20% of total time)
-    const bottlenecks = sortedSteps.filter(s => s.percentage > 20);
+    const bottlenecks = sortedSteps.filter((s) => s.percentage > 20);
     if (bottlenecks.length > 0) {
       console.log('║ ⚠️  BOTTLENECKS (>20% of total time):'.padEnd(61) + '║');
       for (const bottleneck of bottlenecks) {

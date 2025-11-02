@@ -55,14 +55,12 @@ async function importGRASData() {
       throw checkError;
     }
 
-    const existingNames = new Set(
-      (existing || []).map(i => i.ingredient_name.toLowerCase())
-    );
+    const existingNames = new Set((existing || []).map((i) => i.ingredient_name.toLowerCase()));
     console.log(`   Found ${existingNames.size} existing ingredients in database\n`);
 
     // Filter out duplicates
     const newIngredients = ingredients.filter(
-      ing => !existingNames.has(ing.ingredient_name.toLowerCase())
+      (ing) => !existingNames.has(ing.ingredient_name.toLowerCase())
     );
 
     if (newIngredients.length === 0) {
@@ -81,17 +79,16 @@ async function importGRASData() {
     for (let i = 0; i < newIngredients.length; i += BATCH_SIZE) {
       const batch = newIngredients.slice(i, i + BATCH_SIZE);
 
-      const { data, error } = await supabase
-        .from('gras_ingredients')
-        .insert(batch)
-        .select();
+      const { data, error } = await supabase.from('gras_ingredients').insert(batch).select();
 
       if (error) {
         console.error(`❌ Error importing batch ${Math.floor(i / BATCH_SIZE) + 1}:`, error.message);
         failed += batch.length;
       } else {
         imported += data.length;
-        console.log(`✅ Imported batch ${Math.floor(i / BATCH_SIZE) + 1}: ${data.length} ingredients`);
+        console.log(
+          `✅ Imported batch ${Math.floor(i / BATCH_SIZE) + 1}: ${data.length} ingredients`
+        );
       }
     }
 
@@ -116,7 +113,7 @@ async function importGRASData() {
       .limit(5)
       .order('ingredient_name');
 
-    samples.forEach(ing => {
+    samples.forEach((ing) => {
       console.log(`   • ${ing.ingredient_name} (${ing.category})`);
       if (ing.synonyms && ing.synonyms.length > 0) {
         console.log(`     Synonyms: ${ing.synonyms.join(', ')}`);
@@ -124,7 +121,6 @@ async function importGRASData() {
     });
 
     console.log('\n✅ GRAS import completed successfully!');
-
   } catch (error) {
     console.error('\n❌ Import failed:', error);
     process.exit(1);

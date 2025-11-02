@@ -37,9 +37,7 @@ export async function POST(request: NextRequest) {
           break;
         }
 
-        const subscription = await stripe.subscriptions.retrieve(
-          session.subscription as string
-        );
+        const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
 
         await supabaseAdmin.from('subscriptions').insert({
           user_id: supabaseUserId,
@@ -59,17 +57,15 @@ export async function POST(request: NextRequest) {
         };
 
         const currentMonth = new Date().toISOString().slice(0, 7);
-        await supabaseAdmin
-          .from('usage_tracking')
-          .upsert(
-            {
-              user_id: supabaseUserId,
-              month: currentMonth,
-              analyses_used: 0,
-              analyses_limit: limits[planTier] || 10,
-            },
-            { onConflict: 'user_id,month' }
-          );
+        await supabaseAdmin.from('usage_tracking').upsert(
+          {
+            user_id: supabaseUserId,
+            month: currentMonth,
+            analyses_used: 0,
+            analyses_limit: limits[planTier] || 10,
+          },
+          { onConflict: 'user_id,month' }
+        );
 
         console.log(`Subscription created for user: ${supabaseUserId}`);
         break;
@@ -127,17 +123,15 @@ export async function POST(request: NextRequest) {
           .eq('stripe_subscription_id', subscription.id);
 
         const currentMonth = new Date().toISOString().slice(0, 7);
-        await supabaseAdmin
-          .from('usage_tracking')
-          .upsert(
-            {
-              user_id: user.id,
-              month: currentMonth,
-              analyses_used: 0,
-              analyses_limit: 5,
-            },
-            { onConflict: 'user_id,month' }
-          );
+        await supabaseAdmin.from('usage_tracking').upsert(
+          {
+            user_id: user.id,
+            month: currentMonth,
+            analyses_used: 0,
+            analyses_limit: 5,
+          },
+          { onConflict: 'user_id,month' }
+        );
 
         console.log(`Subscription canceled for user: ${user.id}`);
         break;
@@ -162,9 +156,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ received: true });
   } catch (error: any) {
     console.error('Error processing webhook:', error);
-    return NextResponse.json(
-      { error: 'Webhook processing failed' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Webhook processing failed' }, { status: 500 });
   }
 }

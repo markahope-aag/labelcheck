@@ -23,7 +23,6 @@ const pdfPath = 'C:\\Users\\markh\\Desktop\\CRNGrandfatherlist.pdf';
 
     console.log('\nTotal characters extracted:', text.length);
     console.log('Total lines:', text.split('\n').length);
-
   } catch (error) {
     console.error('Error:', error.message);
     console.error(error.stack);

@@ -14,10 +14,7 @@ const isPublicRoute = createRouteMatcher([
   '/api/webhooks/stripe(.*)',
 ]);
 
-const isAdminRoute = createRouteMatcher([
-  '/admin(.*)',
-  '/api/admin(.*)',
-]);
+const isAdminRoute = createRouteMatcher(['/admin(.*)', '/api/admin(.*)']);
 
 export default clerkMiddleware(async (auth, request) => {
   // Generate nonce for CSP
@@ -89,7 +86,10 @@ function secureCookies(response: NextResponse): NextResponse {
       }
 
       // Add HttpOnly flag if not present (unless it's a cookie that needs JS access)
-      if (!secureCookie.toLowerCase().includes('httponly') && !secureCookie.startsWith('__clerk_db')) {
+      if (
+        !secureCookie.toLowerCase().includes('httponly') &&
+        !secureCookie.startsWith('__clerk_db')
+      ) {
         secureCookie += '; HttpOnly';
       }
 

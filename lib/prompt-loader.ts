@@ -82,10 +82,7 @@ function getCategoryDescription(category: ProductCategory): string {
  * Build complete category-specific analysis prompt
  * Composes: intro + category rules + common sections + JSON schema
  */
-export function buildCategoryPrompt(
-  category: ProductCategory,
-  isPdf: boolean
-): string {
+export function buildCategoryPrompt(category: ProductCategory, isPdf: boolean): string {
   const categoryDesc = getCategoryDescription(category);
   const fdaOrTtb = category === 'ALCOHOLIC_BEVERAGE' ? '/TTB' : '';
 

@@ -61,9 +61,10 @@ export function TextChecker({ sessionId, isOpen, onClose, onAnalysisComplete }: 
 
       toast({
         title: 'Analysis Complete',
-        description: uploadMode === 'pdf'
-          ? 'Your PDF has been analyzed for compliance'
-          : 'Your text content has been analyzed for compliance',
+        description:
+          uploadMode === 'pdf'
+            ? 'Your PDF has been analyzed for compliance'
+            : 'Your text content has been analyzed for compliance',
       });
 
       onAnalysisComplete(data);
@@ -104,7 +105,9 @@ export function TextChecker({ sessionId, isOpen, onClose, onAnalysisComplete }: 
   };
 
   const handleLoadExample = () => {
-    setTextContent('Product Name: Organic Ground Coffee\nNet Weight: 12 oz (340g)\n\nIngredients: 100% Arabica Coffee Beans\n\nDistributed by:\nExample Coffee Company\n123 Main Street\nSeattle, WA 98101\n\nCertified Organic by USDA\nFair Trade Certified');
+    setTextContent(
+      'Product Name: Organic Ground Coffee\nNet Weight: 12 oz (340g)\n\nIngredients: 100% Arabica Coffee Beans\n\nDistributed by:\nExample Coffee Company\n123 Main Street\nSeattle, WA 98101\n\nCertified Organic by USDA\nFair Trade Certified'
+    );
   };
 
   if (!isOpen) return null;
@@ -212,7 +215,8 @@ export function TextChecker({ sessionId, isOpen, onClose, onAnalysisComplete }: 
                 disabled={isAnalyzing}
               />
               <p className="text-xs text-slate-500">
-                Enter all the text content you plan to include on your label. The more complete the information, the more accurate the analysis.
+                Enter all the text content you plan to include on your label. The more complete the
+                information, the more accurate the analysis.
               </p>
             </div>
           ) : (
@@ -252,9 +256,7 @@ export function TextChecker({ sessionId, isOpen, onClose, onAnalysisComplete }: 
                       <div className="p-4 bg-green-100 rounded-full mb-4">
                         <Upload className="h-8 w-8 text-green-600" />
                       </div>
-                      <p className="text-lg font-medium text-slate-900 mb-2">
-                        Click to upload PDF
-                      </p>
+                      <p className="text-lg font-medium text-slate-900 mb-2">Click to upload PDF</p>
                       <p className="text-sm text-slate-500">
                         PDF up to 10MB • AI will extract and analyze text
                       </p>
@@ -289,7 +291,9 @@ export function TextChecker({ sessionId, isOpen, onClose, onAnalysisComplete }: 
                 Note About Text-Only Analysis
               </h4>
               <p className="text-sm text-yellow-800">
-                This analyzes content compliance only. Visual elements like font size, placement, and prominence cannot be evaluated from text alone. For complete validation, you'll still need to analyze the final label image.
+                This analyzes content compliance only. Visual elements like font size, placement,
+                and prominence cannot be evaluated from text alone. For complete validation, you'll
+                still need to analyze the final label image.
               </p>
             </div>
           )}
@@ -297,11 +301,7 @@ export function TextChecker({ sessionId, isOpen, onClose, onAnalysisComplete }: 
 
         <div className="border-t p-4 bg-slate-50">
           <div className="flex gap-2 justify-end">
-            <Button
-              variant="outline"
-              onClick={onClose}
-              disabled={isAnalyzing}
-            >
+            <Button variant="outline" onClick={onClose} disabled={isAnalyzing}>
               Cancel
             </Button>
             <Button

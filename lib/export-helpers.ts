@@ -21,7 +21,9 @@ export function generateCSV(analyses: AnalysisData[]): string {
 
   const rows = analyses.map((analysis) => {
     const result = analysis.analysis_result;
-    const criticalIssues = result.recommendations?.filter((r: any) => r.priority === 'critical' || r.priority === 'high').length || 0;
+    const criticalIssues =
+      result.recommendations?.filter((r: any) => r.priority === 'critical' || r.priority === 'high')
+        .length || 0;
     const keyFindings = result.overall_assessment?.key_findings?.join('; ') || '';
 
     return [
@@ -95,16 +97,20 @@ export async function exportAnalysesAsPDF(analyses: AnalysisData[]) {
   doc.text(`Generated: ${timestamp}`, 14, 28);
   doc.text(`Total Analyses: ${analyses.length}`, 14, 33);
 
-  const compliantCount = analyses.filter(a => a.compliance_status === 'compliant').length;
+  const compliantCount = analyses.filter((a) => a.compliance_status === 'compliant').length;
   doc.text(`Compliant: ${compliantCount}/${analyses.length}`, 14, 38);
 
   autoTable(doc, {
     startY: 45,
     head: [['Date', 'Product', 'Compliance Status', 'Critical Issues']],
-    body: analyses.map(analysis => {
+    body: analyses.map((analysis) => {
       const result = analysis.analysis_result;
-      const criticalIssues = result.recommendations?.filter((r: any) => r.priority === 'critical' || r.priority === 'high').length || 0;
-      const status = result.overall_assessment?.primary_compliance_status || analysis.compliance_status;
+      const criticalIssues =
+        result.recommendations?.filter(
+          (r: any) => r.priority === 'critical' || r.priority === 'high'
+        ).length || 0;
+      const status =
+        result.overall_assessment?.primary_compliance_status || analysis.compliance_status;
 
       return [
         new Date(analysis.created_at).toLocaleDateString(),
@@ -135,7 +141,8 @@ export async function exportAnalysesAsPDF(analyses: AnalysisData[]) {
     doc.text(`Date: ${new Date(analysis.created_at).toLocaleString()}`, 14, yPos);
     yPos += 5;
 
-    const complianceStatus = result.overall_assessment?.primary_compliance_status || analysis.compliance_status;
+    const complianceStatus =
+      result.overall_assessment?.primary_compliance_status || analysis.compliance_status;
     doc.text(`Status: ${complianceStatus.replace(/_/g, ' ')}`, 14, yPos);
     yPos += 5;
 
@@ -198,9 +205,11 @@ export async function exportSingleAnalysisAsPDF(analysis: AnalysisData) {
   // Overall Compliance Status Badge
   const complianceStatus = result.overall_assessment?.primary_compliance_status || 'unknown';
   const statusColor: [number, number, number] =
-    complianceStatus === 'compliant' || complianceStatus === 'likely_compliant' ? [34, 197, 94] :
-    complianceStatus === 'potentially_non_compliant' ? [234, 179, 8] :
-    [239, 68, 68];
+    complianceStatus === 'compliant' || complianceStatus === 'likely_compliant'
+      ? [34, 197, 94]
+      : complianceStatus === 'potentially_non_compliant'
+        ? [234, 179, 8]
+        : [239, 68, 68];
 
   doc.setFillColor(statusColor[0], statusColor[1], statusColor[2]);
   doc.rect(150, 12, 48, 16, 'F');
@@ -222,14 +231,20 @@ export async function exportSingleAnalysisAsPDF(analysis: AnalysisData) {
     doc.text(`Confidence: ${result.overall_assessment.confidence_level || 'N/A'}`, 160, yPos + 8);
 
     doc.setFontSize(9);
-    const summaryLines = doc.splitTextToSize(result.overall_assessment.summary || 'No summary available', 180);
+    const summaryLines = doc.splitTextToSize(
+      result.overall_assessment.summary || 'No summary available',
+      180
+    );
     doc.text(summaryLines, 14, yPos + 16);
 
     yPos += 35;
   }
 
   // Key Findings
-  if (result.overall_assessment?.key_findings && result.overall_assessment.key_findings.length > 0) {
+  if (
+    result.overall_assessment?.key_findings &&
+    result.overall_assessment.key_findings.length > 0
+  ) {
     doc.setFontSize(12);
     doc.text('Key Findings', 14, yPos);
     yPos += 6;
@@ -261,11 +276,7 @@ export async function exportSingleAnalysisAsPDF(analysis: AnalysisData) {
     autoTable(doc, {
       startY: yPos,
       head: [['Labeling Element', 'Status', 'Rationale']],
-      body: result.compliance_table.map((row: any) => [
-        row.element,
-        row.status,
-        row.rationale,
-      ]),
+      body: result.compliance_table.map((row: any) => [row.element, row.status, row.rationale]),
       theme: 'striped',
       headStyles: { fillColor: [37, 99, 235], textColor: [255, 255, 255] },
       styles: { fontSize: 8, cellPadding: 3 },
@@ -300,7 +311,11 @@ export async function exportSingleAnalysisAsPDF(analysis: AnalysisData) {
         const section = result.general_labeling[key];
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
-        doc.text(`${key.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}: ${section.status}`, 14, yPos);
+        doc.text(
+          `${key.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}: ${section.status}`,
+          14,
+          yPos
+        );
         doc.setFont('helvetica', 'normal');
         yPos += 5;
 
@@ -334,7 +349,10 @@ export async function exportSingleAnalysisAsPDF(analysis: AnalysisData) {
     doc.text(`Status: ${result.ingredient_labeling.status}`, 14, yPos);
     yPos += 6;
 
-    if (result.ingredient_labeling.ingredients_list && result.ingredient_labeling.ingredients_list.length > 0) {
+    if (
+      result.ingredient_labeling.ingredients_list &&
+      result.ingredient_labeling.ingredients_list.length > 0
+    ) {
       doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
       doc.text('Ingredients:', 14, yPos);
@@ -372,7 +390,10 @@ export async function exportSingleAnalysisAsPDF(analysis: AnalysisData) {
     doc.text(`Risk Level: ${result.allergen_labeling.risk_level || 'N/A'}`, 100, yPos);
     yPos += 7;
 
-    if (result.allergen_labeling.potential_allergens && result.allergen_labeling.potential_allergens.length > 0) {
+    if (
+      result.allergen_labeling.potential_allergens &&
+      result.allergen_labeling.potential_allergens.length > 0
+    ) {
       doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
       doc.text('Potential Allergen-Containing Ingredients:', 14, yPos);
@@ -410,7 +431,11 @@ export async function exportSingleAnalysisAsPDF(analysis: AnalysisData) {
     doc.text(`Status: ${result.nutrition_labeling.status}`, 14, yPos);
     yPos += 5;
     doc.text(`Panel Present: ${result.nutrition_labeling.panel_present ? 'Yes' : 'No'}`, 14, yPos);
-    doc.text(`Exemption Applicable: ${result.nutrition_labeling.exemption_applicable ? 'Yes' : 'No'}`, 90, yPos);
+    doc.text(
+      `Exemption Applicable: ${result.nutrition_labeling.exemption_applicable ? 'Yes' : 'No'}`,
+      90,
+      yPos
+    );
     yPos += 7;
 
     if (result.nutrition_labeling.exemption_reason) {
@@ -450,10 +475,13 @@ export async function exportSingleAnalysisAsPDF(analysis: AnalysisData) {
       }
 
       const priorityColor: [number, number, number] =
-        rec.priority === 'critical' ? [220, 38, 38] :
-        rec.priority === 'high' ? [234, 88, 12] :
-        rec.priority === 'medium' ? [202, 138, 4] :
-        [37, 99, 235];
+        rec.priority === 'critical'
+          ? [220, 38, 38]
+          : rec.priority === 'high'
+            ? [234, 88, 12]
+            : rec.priority === 'medium'
+              ? [202, 138, 4]
+              : [37, 99, 235];
 
       doc.setFillColor(priorityColor[0], priorityColor[1], priorityColor[2]);
       doc.rect(14, yPos - 3, 30, 6, 'F');

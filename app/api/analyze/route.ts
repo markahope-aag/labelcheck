@@ -84,7 +84,10 @@ export async function POST(request: NextRequest) {
     }
 
     // 7. Load regulatory documents with RAG lite filtering
-    const { regulatoryContext } = await loadRegulatoryDocuments(pdfTextContent, extractedTextForRag);
+    const { regulatoryContext } = await loadRegulatoryDocuments(
+      pdfTextContent,
+      extractedTextForRag
+    );
 
     // 8. Build analysis prompt
     const analysisInstructions = buildAnalysisPrompt({ isPdf, forcedCategory });
@@ -151,7 +154,7 @@ export async function POST(request: NextRequest) {
       analysisData.category_confidence !== 'high' ||
       analysisData.category_ambiguity?.is_ambiguous ||
       (analysisData.category_ambiguity?.label_conflicts &&
-       analysisData.category_ambiguity.label_conflicts.length > 0);
+        analysisData.category_ambiguity.label_conflicts.length > 0);
 
     return NextResponse.json({
       id: analysis.id,
@@ -165,10 +168,12 @@ export async function POST(request: NextRequest) {
         used: currentUsage.analyses_used + 1,
         limit: currentUsage.analyses_limit,
       },
-      session: sessionId ? {
-        id: sessionId,
-        title: session?.title || null,
-      } : null,
+      session: sessionId
+        ? {
+            id: sessionId,
+            title: session?.title || null,
+          }
+        : null,
     });
   } catch (error: any) {
     console.error('Error analyzing image:', error);

@@ -16,7 +16,7 @@ async function getOldDietaryIngredients(): Promise<Set<string>> {
   const now = Date.now();
 
   // Return cached data if still fresh
-  if (oldDietaryIngredientsCache && (now - cacheTimestamp) < CACHE_DURATION) {
+  if (oldDietaryIngredientsCache && now - cacheTimestamp < CACHE_DURATION) {
     return oldDietaryIngredientsCache;
   }
 
@@ -64,7 +64,9 @@ async function getOldDietaryIngredients(): Promise<Set<string>> {
       }
     });
 
-    console.log(`Loaded ${allData.length} old dietary ingredients into cache (${ingredientSet.size} total entries including synonyms)`);
+    console.log(
+      `Loaded ${allData.length} old dietary ingredients into cache (${ingredientSet.size} total entries including synonyms)`
+    );
 
     // Update cache
     oldDietaryIngredientsCache = ingredientSet;
@@ -84,72 +86,183 @@ async function getOldDietaryIngredients(): Promise<Set<string>> {
 function getFallbackPre1994Ingredients(): Set<string> {
   return new Set([
     // Vitamins
-    'vitamin a', 'retinol', 'beta-carotene', 'beta carotene',
-    'vitamin b1', 'thiamin', 'thiamine', 'thiamine mononitrate', 'thiamine hydrochloride',
-    'vitamin b2', 'riboflavin',
-    'vitamin b3', 'niacin', 'nicotinic acid', 'nicotinamide', 'niacinamide',
-    'vitamin b5', 'pantothenic acid', 'calcium pantothenate', 'calcium d-pantothenate',
-    'vitamin b6', 'pyridoxine', 'pyridoxine hydrochloride', 'pyridoxal',
-    'vitamin b7', 'biotin',
-    'vitamin b9', 'folic acid', 'folate', 'methylfolate',
-    'vitamin b12', 'cobalamin', 'cyanocobalamin', 'methylcobalamin', 'adenosylcobalamin',
-    'vitamin c', 'ascorbic acid', 'sodium ascorbate', 'calcium ascorbate',
-    'vitamin d', 'vitamin d2', 'vitamin d3', 'ergocalciferol', 'cholecalciferol',
-    'vitamin e', 'tocopherol', 'alpha-tocopherol', 'd-alpha-tocopherol',
-    'vitamin k', 'vitamin k1', 'vitamin k2', 'phylloquinone', 'menaquinone',
+    'vitamin a',
+    'retinol',
+    'beta-carotene',
+    'beta carotene',
+    'vitamin b1',
+    'thiamin',
+    'thiamine',
+    'thiamine mononitrate',
+    'thiamine hydrochloride',
+    'vitamin b2',
+    'riboflavin',
+    'vitamin b3',
+    'niacin',
+    'nicotinic acid',
+    'nicotinamide',
+    'niacinamide',
+    'vitamin b5',
+    'pantothenic acid',
+    'calcium pantothenate',
+    'calcium d-pantothenate',
+    'vitamin b6',
+    'pyridoxine',
+    'pyridoxine hydrochloride',
+    'pyridoxal',
+    'vitamin b7',
+    'biotin',
+    'vitamin b9',
+    'folic acid',
+    'folate',
+    'methylfolate',
+    'vitamin b12',
+    'cobalamin',
+    'cyanocobalamin',
+    'methylcobalamin',
+    'adenosylcobalamin',
+    'vitamin c',
+    'ascorbic acid',
+    'sodium ascorbate',
+    'calcium ascorbate',
+    'vitamin d',
+    'vitamin d2',
+    'vitamin d3',
+    'ergocalciferol',
+    'cholecalciferol',
+    'vitamin e',
+    'tocopherol',
+    'alpha-tocopherol',
+    'd-alpha-tocopherol',
+    'vitamin k',
+    'vitamin k1',
+    'vitamin k2',
+    'phylloquinone',
+    'menaquinone',
 
     // Minerals
-    'calcium', 'calcium carbonate', 'calcium citrate', 'calcium phosphate',
-    'iron', 'ferrous sulfate', 'ferrous fumarate', 'ferric', 'iron chelate',
-    'magnesium', 'magnesium oxide', 'magnesium citrate', 'magnesium glycinate',
-    'zinc', 'zinc oxide', 'zinc gluconate', 'zinc citrate', 'zinc picolinate',
-    'iodine', 'potassium iodide', 'sodium iodide', 'kelp',
-    'selenium', 'sodium selenite', 'sodium selenate', 'selenomethionine',
-    'copper', 'copper gluconate', 'copper sulfate',
-    'manganese', 'manganese gluconate', 'manganese sulfate',
-    'chromium', 'chromium picolinate', 'chromium polynicotinate',
-    'molybdenum', 'sodium molybdate',
-    'potassium', 'potassium chloride', 'potassium citrate',
-    'phosphorus', 'phosphate',
-    'sodium', 'sodium chloride', 'salt',
+    'calcium',
+    'calcium carbonate',
+    'calcium citrate',
+    'calcium phosphate',
+    'iron',
+    'ferrous sulfate',
+    'ferrous fumarate',
+    'ferric',
+    'iron chelate',
+    'magnesium',
+    'magnesium oxide',
+    'magnesium citrate',
+    'magnesium glycinate',
+    'zinc',
+    'zinc oxide',
+    'zinc gluconate',
+    'zinc citrate',
+    'zinc picolinate',
+    'iodine',
+    'potassium iodide',
+    'sodium iodide',
+    'kelp',
+    'selenium',
+    'sodium selenite',
+    'sodium selenate',
+    'selenomethionine',
+    'copper',
+    'copper gluconate',
+    'copper sulfate',
+    'manganese',
+    'manganese gluconate',
+    'manganese sulfate',
+    'chromium',
+    'chromium picolinate',
+    'chromium polynicotinate',
+    'molybdenum',
+    'sodium molybdate',
+    'potassium',
+    'potassium chloride',
+    'potassium citrate',
+    'phosphorus',
+    'phosphate',
+    'sodium',
+    'sodium chloride',
+    'salt',
 
     // Common herbs and botanicals
-    'ginseng', 'panax ginseng',
-    'ginkgo', 'ginkgo biloba',
+    'ginseng',
+    'panax ginseng',
+    'ginkgo',
+    'ginkgo biloba',
     'echinacea',
-    'garlic', 'allium sativum',
-    'ginger', 'zingiber officinale',
-    'green tea', 'camellia sinensis', 'green tea extract', 'green tea leaf extract',
+    'garlic',
+    'allium sativum',
+    'ginger',
+    'zingiber officinale',
+    'green tea',
+    'camellia sinensis',
+    'green tea extract',
+    'green tea leaf extract',
     'chamomile',
-    'valerian', 'valerian root',
-    'st. john\'s wort', 'st john\'s wort', 'st johns wort',
+    'valerian',
+    'valerian root',
+    "st. john's wort",
+    "st john's wort",
+    'st johns wort',
     'saw palmetto',
-    'milk thistle', 'silymarin',
+    'milk thistle',
+    'silymarin',
     'black cohosh',
 
     // Amino Acids
-    'l-lysine', 'lysine',
-    'l-arginine', 'arginine',
-    'l-glutamine', 'glutamine',
-    'l-carnitine', 'carnitine',
-    'l-tryptophan', 'tryptophan',
-    'l-tyrosine', 'tyrosine',
+    'l-lysine',
+    'lysine',
+    'l-arginine',
+    'arginine',
+    'l-glutamine',
+    'glutamine',
+    'l-carnitine',
+    'carnitine',
+    'l-tryptophan',
+    'tryptophan',
+    'l-tyrosine',
+    'tyrosine',
 
     // Other common ingredients
-    'protein', 'whey protein', 'soy protein', 'casein',
-    'fiber', 'psyllium', 'inulin',
-    'lecithin', 'soy lecithin',
-    'omega-3', 'fish oil', 'dha', 'epa',
-    'coenzyme q10', 'coq10', 'ubiquinone',
-    'glucosamine', 'glucosamine sulfate', 'glucosamine hydrochloride',
-    'chondroitin', 'chondroitin sulfate',
-    'msm', 'methylsulfonylmethane',
+    'protein',
+    'whey protein',
+    'soy protein',
+    'casein',
+    'fiber',
+    'psyllium',
+    'inulin',
+    'lecithin',
+    'soy lecithin',
+    'omega-3',
+    'fish oil',
+    'dha',
+    'epa',
+    'coenzyme q10',
+    'coq10',
+    'ubiquinone',
+    'glucosamine',
+    'glucosamine sulfate',
+    'glucosamine hydrochloride',
+    'chondroitin',
+    'chondroitin sulfate',
+    'msm',
+    'methylsulfonylmethane',
 
     // Food-based ingredients
-    'coffee', 'caffeine', 'arabica', 'robusta',
-    'tea', 'black tea', 'oolong tea',
-    'cocoa', 'cacao',
-    'spirulina', 'chlorella',
+    'coffee',
+    'caffeine',
+    'arabica',
+    'robusta',
+    'tea',
+    'black tea',
+    'oolong tea',
+    'cocoa',
+    'cacao',
+    'spirulina',
+    'chlorella',
   ]);
 }
 
@@ -163,8 +276,8 @@ async function isLikelyPre1994Ingredient(ingredient: string): Promise<boolean> {
   // Also create a normalized version without parentheses for better matching
   // E.g., "Calcium (Carbonate)" → "calcium carbonate"
   const normalizedIngredient = cleanIngredient
-    .replace(/\s*\([^)]*\)/g, ' ')  // Remove parentheses and content
-    .replace(/\s+/g, ' ')            // Normalize spaces
+    .replace(/\s*\([^)]*\)/g, ' ') // Remove parentheses and content
+    .replace(/\s+/g, ' ') // Normalize spaces
     .trim();
 
   // Get ingredients list (from cache or database)
@@ -196,7 +309,10 @@ async function isLikelyPre1994Ingredient(ingredient: string): Promise<boolean> {
   // Check for partial matches (e.g., "calcium d-pantothenate 1%" matches "calcium d-pantothenate")
   const ingredientsArray = Array.from(pre1994Ingredients);
   for (const knownIngredient of ingredientsArray) {
-    if (normalizedIngredient.includes(knownIngredient) || knownIngredient.includes(normalizedIngredient)) {
+    if (
+      normalizedIngredient.includes(knownIngredient) ||
+      knownIngredient.includes(normalizedIngredient)
+    ) {
       return true;
     }
   }
@@ -232,9 +348,7 @@ export interface NDICheckResult {
  *
  * This function checks if an ingredient has an NDI notification on file.
  */
-export async function checkNDICompliance(
-  ingredients: string[]
-): Promise<{
+export async function checkNDICompliance(ingredients: string[]): Promise<{
   results: NDICheckResult[];
   summary: {
     totalChecked: number;
@@ -271,7 +385,7 @@ export async function checkNDICompliance(
     if (error) {
       console.error('Error fetching NDI ingredients:', error);
       return {
-        results: ingredients.map(ing => ({
+        results: ingredients.map((ing) => ({
           ingredient: ing,
           hasNDI: false,
           ndiMatch: null,
@@ -396,8 +510,12 @@ export function formatNDIInfo(ndiIngredient: NDIIngredient): string {
     `NDI Notification #${ndiIngredient.notification_number}`,
     ndiIngredient.report_number ? `(${ndiIngredient.report_number})` : '',
     ndiIngredient.firm ? `- Firm: ${ndiIngredient.firm}` : '',
-    ndiIngredient.submission_date ? `- Submitted: ${new Date(ndiIngredient.submission_date).toLocaleDateString()}` : '',
-    ndiIngredient.fda_response_date ? `- FDA Response: ${new Date(ndiIngredient.fda_response_date).toLocaleDateString()}` : '',
+    ndiIngredient.submission_date
+      ? `- Submitted: ${new Date(ndiIngredient.submission_date).toLocaleDateString()}`
+      : '',
+    ndiIngredient.fda_response_date
+      ? `- FDA Response: ${new Date(ndiIngredient.fda_response_date).toLocaleDateString()}`
+      : '',
   ].filter(Boolean);
 
   return parts.join(' ');

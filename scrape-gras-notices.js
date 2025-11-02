@@ -23,23 +23,25 @@ function fetchPage(startRow) {
       path: path,
       method: 'GET',
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-      }
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      },
     };
 
-    https.get(options, (res) => {
-      let data = '';
+    https
+      .get(options, (res) => {
+        let data = '';
 
-      res.on('data', (chunk) => {
-        data += chunk;
-      });
+        res.on('data', (chunk) => {
+          data += chunk;
+        });
 
-      res.on('end', () => {
-        resolve(data);
+        res.on('end', () => {
+          resolve(data);
+        });
+      })
+      .on('error', (err) => {
+        reject(err);
       });
-    }).on('error', (err) => {
-      reject(err);
-    });
   });
 }
 
@@ -64,7 +66,7 @@ function parseHTML(html) {
           source_reference: 'GRN ' + grnNo,
           category: 'food ingredient', // Will be categorized later
           synonyms: [],
-          common_name: substance
+          common_name: substance,
         });
       }
     }
@@ -84,7 +86,7 @@ function parseHTML(html) {
 
 // Sleep function for rate limiting
 function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 // Main scraping function
@@ -154,7 +156,6 @@ async function scrapeAll() {
     console.log(`   (The import script will automatically use this file)\n`);
 
     return allSubstances;
-
   } catch (error) {
     console.error('\n❌ Error during scraping:', error.message);
     console.error('\nPartially scraped data:');
@@ -176,7 +177,7 @@ async function scrapeAll() {
 }
 
 // Run the scraper
-scrapeAll().catch(err => {
+scrapeAll().catch((err) => {
   console.error('Fatal error:', err);
   process.exit(1);
 });

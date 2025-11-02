@@ -49,7 +49,8 @@ const CATEGORY_DISPLAY_NAMES: Record<ProductCategory, string> = {
 
 const CATEGORY_DESCRIPTIONS: Record<ProductCategory, string> = {
   CONVENTIONAL_FOOD: 'Standard packaged foods regulated by FDA under 21 CFR Part 101',
-  DIETARY_SUPPLEMENT: 'Products regulated under DSHEA (Dietary Supplement Health and Education Act)',
+  DIETARY_SUPPLEMENT:
+    'Products regulated under DSHEA (Dietary Supplement Health and Education Act)',
   ALCOHOLIC_BEVERAGE: 'Products containing ≥0.5% ABV regulated by TTB',
   NON_ALCOHOLIC_BEVERAGE: 'Ready-to-drink beverages for refreshment/hydration',
 };
@@ -117,7 +118,8 @@ export default function CategorySelector({
         <div>
           <h2 className="text-xl font-bold text-gray-900">Category Selection Needed</h2>
           <p className="text-gray-600 mt-1">
-            This product could be classified in multiple ways. Please select how you intend to market it.
+            This product could be classified in multiple ways. Please select how you intend to
+            market it.
           </p>
         </div>
       </div>
@@ -127,13 +129,17 @@ export default function CategorySelector({
         <div className="flex items-center gap-2 mb-2">
           <Info className="w-5 h-5 text-blue-600" />
           <span className="font-semibold text-blue-900">AI Detected Category</span>
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getConfidenceBadge(confidence)}`}>
-            {confidence.toUpperCase()} Confidence ({confidence === 'high' ? '90%+' : confidence === 'medium' ? '60-89%' : '<60%'})
+          <span
+            className={`px-2 py-1 rounded-full text-xs font-medium ${getConfidenceBadge(confidence)}`}
+          >
+            {confidence.toUpperCase()} Confidence (
+            {confidence === 'high' ? '90%+' : confidence === 'medium' ? '60-89%' : '<60%'})
           </span>
         </div>
         <p className="text-sm text-blue-800">
           <span className="font-medium">{CATEGORY_DISPLAY_NAMES[aiCategory]}</span>
-          {' — '}{categoryRationale}
+          {' — '}
+          {categoryRationale}
         </p>
       </div>
 
@@ -147,7 +153,8 @@ export default function CategorySelector({
           <ul className="space-y-2">
             {labelConflicts.map((conflict, idx) => (
               <li key={idx} className="text-sm text-red-800">
-                <span className="font-medium">{conflict.severity.toUpperCase()}:</span> {conflict.conflict}
+                <span className="font-medium">{conflict.severity.toUpperCase()}:</span>{' '}
+                {conflict.conflict}
                 <br />
                 <span className="text-red-600 text-xs">{conflict.violation}</span>
               </li>
@@ -164,19 +171,22 @@ export default function CategorySelector({
             <span className="font-semibold text-green-900">Our Recommendation</span>
           </div>
           <p className="text-sm text-green-800 mb-2">
-            <span className="font-medium">{CATEGORY_DISPLAY_NAMES[recommendation.suggested_category]}</span>
+            <span className="font-medium">
+              {CATEGORY_DISPLAY_NAMES[recommendation.suggested_category]}
+            </span>
           </p>
           <p className="text-sm text-green-700 mb-2">{recommendation.reasoning}</p>
-          {recommendation.key_decision_factors && recommendation.key_decision_factors.length > 0 && (
-            <div className="mt-2">
-              <span className="text-xs font-medium text-green-800">Key factors:</span>
-              <ul className="list-disc list-inside text-xs text-green-700 mt-1">
-                {recommendation.key_decision_factors.map((factor, idx) => (
-                  <li key={idx}>{factor}</li>
-                ))}
-              </ul>
-            </div>
-          )}
+          {recommendation.key_decision_factors &&
+            recommendation.key_decision_factors.length > 0 && (
+              <div className="mt-2">
+                <span className="text-xs font-medium text-green-800">Key factors:</span>
+                <ul className="list-disc list-inside text-xs text-green-700 mt-1">
+                  {recommendation.key_decision_factors.map((factor, idx) => (
+                    <li key={idx}>{factor}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
         </div>
       )}
 
@@ -200,112 +210,130 @@ export default function CategorySelector({
                   onChange={() => {}}
                 />
                 <div>
-                  <div className="font-semibold text-gray-900">{CATEGORY_DISPLAY_NAMES[option.category]}</div>
-                  <div className="text-xs text-gray-600">{CATEGORY_DESCRIPTIONS[option.category]}</div>
+                  <div className="font-semibold text-gray-900">
+                    {CATEGORY_DISPLAY_NAMES[option.category]}
+                  </div>
+                  <div className="text-xs text-gray-600">
+                    {CATEGORY_DESCRIPTIONS[option.category]}
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 {option.isAIDetected && (
-                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">AI Detected</span>
+                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                    AI Detected
+                  </span>
                 )}
                 {recommendation && recommendation.suggested_category === option.category && (
-                  <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Recommended</span>
+                  <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                    Recommended
+                  </span>
                 )}
               </div>
             </div>
 
             {/* Details - Always Visible */}
             <div className="mt-4 pt-4 border-t border-gray-200 space-y-4">
-                {/* Compliance Status */}
-                <div>
-                  <span className="text-sm font-medium text-gray-700">Current Label Status:</span>
-                  <div className={`inline-flex items-center gap-1 ml-2 text-sm ${option.currentLabelCompliant ? 'text-green-600' : 'text-red-600'}`}>
-                    {option.currentLabelCompliant ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
-                    {option.currentLabelCompliant ? 'Compliant' : 'Needs Changes'}
-                  </div>
-                </div>
-
-                {/* Required Changes */}
-                {option.requiredChanges.length > 0 && (
-                  <div>
-                    <span className="text-sm font-medium text-gray-700">Required Changes:</span>
-                    <ul className="list-disc list-inside text-sm text-gray-600 mt-1 space-y-1">
-                      {option.requiredChanges.map((change, idx) => (
-                        <li key={idx}>{change}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Pros */}
-                {option.pros.length > 0 && (
-                  <div>
-                    <span className="text-sm font-medium text-green-700">✓ Advantages:</span>
-                    <ul className="list-disc list-inside text-sm text-gray-600 mt-1 space-y-1">
-                      {option.pros.map((pro, idx) => (
-                        <li key={idx}>{pro}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Cons */}
-                {option.cons.length > 0 && (
-                  <div>
-                    <span className="text-sm font-medium text-red-700">✗ Restrictions:</span>
-                    <ul className="list-disc list-inside text-sm text-gray-600 mt-1 space-y-1">
-                      {option.cons.map((con, idx) => (
-                        <li key={idx}>{con}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Allowed/Prohibited Claims */}
-                <div className="grid grid-cols-2 gap-4">
-                  {option.allowedClaims.length > 0 && (
-                    <div>
-                      <span className="text-xs font-medium text-gray-700">What You CAN Say:</span>
-                      <ul className="list-disc list-inside text-xs text-gray-600 mt-1 space-y-0.5">
-                        {option.allowedClaims.slice(0, 3).map((claim, idx) => (
-                          <li key={idx}>{claim}</li>
-                        ))}
-                        {option.allowedClaims.length > 3 && (
-                          <li className="text-gray-500">+{option.allowedClaims.length - 3} more...</li>
-                        )}
-                      </ul>
-                    </div>
-                  )}
-                  {option.prohibitedClaims.length > 0 && (
-                    <div>
-                      <span className="text-xs font-medium text-gray-700">What You CANNOT Say:</span>
-                      <ul className="list-disc list-inside text-xs text-gray-600 mt-1 space-y-0.5">
-                        {option.prohibitedClaims.slice(0, 3).map((claim, idx) => (
-                          <li key={idx}>{claim}</li>
-                        ))}
-                        {option.prohibitedClaims.length > 3 && (
-                          <li className="text-gray-500">+{option.prohibitedClaims.length - 3} more...</li>
-                        )}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-
-                {/* Select Button */}
-                <button
-                  onClick={() => {
-                    if (option.category !== aiCategory) {
-                      setSelectedCategory(option.category);
-                      setShowCustomReason(true);
-                    } else {
-                      onSelect(option.category);
-                    }
-                  }}
-                  className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+              {/* Compliance Status */}
+              <div>
+                <span className="text-sm font-medium text-gray-700">Current Label Status:</span>
+                <div
+                  className={`inline-flex items-center gap-1 ml-2 text-sm ${option.currentLabelCompliant ? 'text-green-600' : 'text-red-600'}`}
                 >
-                  Select {CATEGORY_DISPLAY_NAMES[option.category]}
-                </button>
+                  {option.currentLabelCompliant ? (
+                    <CheckCircle2 className="w-4 h-4" />
+                  ) : (
+                    <XCircle className="w-4 h-4" />
+                  )}
+                  {option.currentLabelCompliant ? 'Compliant' : 'Needs Changes'}
+                </div>
               </div>
+
+              {/* Required Changes */}
+              {option.requiredChanges.length > 0 && (
+                <div>
+                  <span className="text-sm font-medium text-gray-700">Required Changes:</span>
+                  <ul className="list-disc list-inside text-sm text-gray-600 mt-1 space-y-1">
+                    {option.requiredChanges.map((change, idx) => (
+                      <li key={idx}>{change}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Pros */}
+              {option.pros.length > 0 && (
+                <div>
+                  <span className="text-sm font-medium text-green-700">✓ Advantages:</span>
+                  <ul className="list-disc list-inside text-sm text-gray-600 mt-1 space-y-1">
+                    {option.pros.map((pro, idx) => (
+                      <li key={idx}>{pro}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Cons */}
+              {option.cons.length > 0 && (
+                <div>
+                  <span className="text-sm font-medium text-red-700">✗ Restrictions:</span>
+                  <ul className="list-disc list-inside text-sm text-gray-600 mt-1 space-y-1">
+                    {option.cons.map((con, idx) => (
+                      <li key={idx}>{con}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Allowed/Prohibited Claims */}
+              <div className="grid grid-cols-2 gap-4">
+                {option.allowedClaims.length > 0 && (
+                  <div>
+                    <span className="text-xs font-medium text-gray-700">What You CAN Say:</span>
+                    <ul className="list-disc list-inside text-xs text-gray-600 mt-1 space-y-0.5">
+                      {option.allowedClaims.slice(0, 3).map((claim, idx) => (
+                        <li key={idx}>{claim}</li>
+                      ))}
+                      {option.allowedClaims.length > 3 && (
+                        <li className="text-gray-500">
+                          +{option.allowedClaims.length - 3} more...
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                )}
+                {option.prohibitedClaims.length > 0 && (
+                  <div>
+                    <span className="text-xs font-medium text-gray-700">What You CANNOT Say:</span>
+                    <ul className="list-disc list-inside text-xs text-gray-600 mt-1 space-y-0.5">
+                      {option.prohibitedClaims.slice(0, 3).map((claim, idx) => (
+                        <li key={idx}>{claim}</li>
+                      ))}
+                      {option.prohibitedClaims.length > 3 && (
+                        <li className="text-gray-500">
+                          +{option.prohibitedClaims.length - 3} more...
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                )}
+              </div>
+
+              {/* Select Button */}
+              <button
+                onClick={() => {
+                  if (option.category !== aiCategory) {
+                    setSelectedCategory(option.category);
+                    setShowCustomReason(true);
+                  } else {
+                    onSelect(option.category);
+                  }
+                }}
+                className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+              >
+                Select {CATEGORY_DISPLAY_NAMES[option.category]}
+              </button>
+            </div>
           </div>
         ))}
       </div>

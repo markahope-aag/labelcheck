@@ -20,9 +20,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(documentsWithCategories);
   } catch (error: any) {
     console.error('Error fetching document categories:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch document categories' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch document categories' }, { status: 500 });
   }
 }

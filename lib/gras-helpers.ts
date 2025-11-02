@@ -108,9 +108,7 @@ async function checkSingleIngredient(ingredientName: string): Promise<GRASCheckR
 
   if (allIngredients) {
     for (const ing of allIngredients) {
-      if (ing.synonyms && ing.synonyms.some((syn: string) =>
-        syn.toLowerCase() === normalized
-      )) {
+      if (ing.synonyms && ing.synonyms.some((syn: string) => syn.toLowerCase() === normalized)) {
         return {
           ingredient: ingredientName,
           isGRAS: true,
@@ -126,10 +124,22 @@ async function checkSingleIngredient(ingredientName: string): Promise<GRASCheckR
   // e.g., "CALCIUM D-PANTOTHENATE" → try "pantothenate" first, then "calcium"
   // e.g., "GROUND ROASTED COFFEE" → try "coffee" first, then "roasted", then "ground"
   // Skip generic terms that match too broadly
-  const GENERIC_TERMS = ['extract', 'powder', 'concentrate', 'isolate', 'blend', 'complex', 'root', 'seed', 'leaf', 'fruit', 'berry'];
+  const GENERIC_TERMS = [
+    'extract',
+    'powder',
+    'concentrate',
+    'isolate',
+    'blend',
+    'complex',
+    'root',
+    'seed',
+    'leaf',
+    'fruit',
+    'berry',
+  ];
   const searchTerms = normalized
     .split(' ')
-    .filter(word => word.length > 3 && !GENERIC_TERMS.includes(word));
+    .filter((word) => word.length > 3 && !GENERIC_TERMS.includes(word));
 
   if (searchTerms.length > 0) {
     // Sort by word length (longest first) to prioritize more specific terms
@@ -184,9 +194,7 @@ async function checkSingleIngredient(ingredientName: string): Promise<GRASCheckR
  * Check multiple ingredients against GRAS database
  * Returns comprehensive compliance report
  */
-export async function checkGRASCompliance(
-  ingredients: string[]
-): Promise<GRASComplianceReport> {
+export async function checkGRASCompliance(ingredients: string[]): Promise<GRASComplianceReport> {
   if (!ingredients || ingredients.length === 0) {
     return {
       totalIngredients: 0,
@@ -200,15 +208,14 @@ export async function checkGRASCompliance(
   }
 
   // Check each ingredient
-  const results = await Promise.all(
-    ingredients.map(ing => checkSingleIngredient(ing))
-  );
+  const results = await Promise.all(ingredients.map((ing) => checkSingleIngredient(ing)));
 
-  const grasIngredients = results.filter(r => r.isGRAS).map(r => r.ingredient);
-  const nonGRASIngredients = results.filter(r => !r.isGRAS).map(r => r.ingredient);
+  const grasIngredients = results.filter((r) => r.isGRAS).map((r) => r.ingredient);
+  const nonGRASIngredients = results.filter((r) => !r.isGRAS).map((r) => r.ingredient);
 
   const criticalIssues = nonGRASIngredients.map(
-    ing => `Ingredient "${ing}" is NOT in the FDA GRAS database and may require special approval or be prohibited for use in food products.`
+    (ing) =>
+      `Ingredient "${ing}" is NOT in the FDA GRAS database and may require special approval or be prohibited for use in food products.`
   );
 
   return {
@@ -262,9 +269,7 @@ export async function searchGRASIngredients(
 /**
  * Get all GRAS ingredients by category
  */
-export async function getGRASIngredientsByCategory(
-  category: string
-): Promise<GRASIngredient[]> {
+export async function getGRASIngredientsByCategory(category: string): Promise<GRASIngredient[]> {
   // Use pagination to handle categories with > 1000 ingredients
   let allData: GRASIngredient[] = [];
   let page = 0;

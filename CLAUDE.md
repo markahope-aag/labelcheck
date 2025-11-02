@@ -546,11 +546,26 @@ NEXT_PUBLIC_APP_URL=
 
 ## Deployment Notes
 
-- Optimized for Vercel deployment
+- Optimized for Vercel deployment at https://labelcheck.io
 - ESLint checks are disabled during builds (`next.config.js`)
 - Update webhook URLs in Clerk and Stripe dashboards for production
 - Switch Stripe to live mode with production keys
 - All environment variables must be set in deployment platform
+- **Bot Protection**: Enabled in "Challenge Action" mode to protect OpenAI API costs from bot abuse
+  - Blocks non-browser traffic (malicious bots)
+  - Allows verified bots (search engines, monitoring tools)
+  - Allows internal API calls and cron jobs
+  - Configure at: Vercel Dashboard → Settings → Firewall → Bot Protection
+
+### Vercel CLI Commands
+```bash
+vercel login                    # Authenticate with Vercel
+vercel                          # Deploy to preview
+vercel --prod                   # Deploy to production
+vercel ls                       # List deployments
+vercel logs [deployment-url]    # View deployment logs
+vercel env ls                   # List environment variables
+```
 
 ## Code Style & Patterns
 

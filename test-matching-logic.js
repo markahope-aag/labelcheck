@@ -92,7 +92,10 @@ async function isLikelyPre1994Ingredient(ingredient, pre1994Ingredients) {
   // Check for partial matches
   const ingredientsArray = Array.from(pre1994Ingredients);
   for (const knownIngredient of ingredientsArray) {
-    if (normalizedIngredient.includes(knownIngredient) || knownIngredient.includes(normalizedIngredient)) {
+    if (
+      normalizedIngredient.includes(knownIngredient) ||
+      knownIngredient.includes(normalizedIngredient)
+    ) {
       console.log(`  ✓ FOUND: Partial match with "${knownIngredient}"`);
       return true;
     }

@@ -25,19 +25,21 @@ for (const line of ingredientLines) {
   const trimmed = line.trim();
 
   // Skip empty lines, copyright lines, headers
-  if (!trimmed ||
-      trimmed.includes('©') ||
-      trimmed.includes('UNITED') ||
-      trimmed.includes('NATURAL') ||
-      trimmed.includes('PRODUCTS') ||
-      trimmed.includes('ALLIANCE') ||
-      trimmed.includes('OLDDIETARYINGREDIENTLIST') ||
-      trimmed.includes('AHPA') ||
-      trimmed.includes('CRN') ||
-      trimmed.includes('NNFA') ||
-      trimmed.includes('NPA') ||
-      trimmed.includes('UNPA') ||
-      trimmed.length < 3) {
+  if (
+    !trimmed ||
+    trimmed.includes('©') ||
+    trimmed.includes('UNITED') ||
+    trimmed.includes('NATURAL') ||
+    trimmed.includes('PRODUCTS') ||
+    trimmed.includes('ALLIANCE') ||
+    trimmed.includes('OLDDIETARYINGREDIENTLIST') ||
+    trimmed.includes('AHPA') ||
+    trimmed.includes('CRN') ||
+    trimmed.includes('NNFA') ||
+    trimmed.includes('NPA') ||
+    trimmed.includes('UNPA') ||
+    trimmed.length < 3
+  ) {
     continue;
   }
 
@@ -49,8 +51,8 @@ for (const line of ingredientLines) {
 
   // Clean up common formatting issues
   ingredient = ingredient
-    .replace(/\s+/g, ' ')  // normalize whitespace
-    .replace(/\([^)]*\)/g, match => match.toLowerCase())  // lowercase scientific names in parens
+    .replace(/\s+/g, ' ') // normalize whitespace
+    .replace(/\([^)]*\)/g, (match) => match.toLowerCase()) // lowercase scientific names in parens
     .trim();
 
   // Skip if starts with a number (likely a page number or footnote)
@@ -76,7 +78,7 @@ console.log(`\n=== EXTRACTED ${ingredients.size} UNIQUE INGREDIENTS FROM UNPA PD
       return;
     }
 
-    const currentSet = new Set(currentIngredients.map(i => i.ingredient_name.toLowerCase()));
+    const currentSet = new Set(currentIngredients.map((i) => i.ingredient_name.toLowerCase()));
 
     console.log(`Current database: ${currentSet.size} ingredients\n`);
 
@@ -109,8 +111,12 @@ console.log(`\n=== EXTRACTED ${ingredients.size} UNIQUE INGREDIENTS FROM UNPA PD
 
     console.log('=== COMPARISON RESULTS ===\n');
     console.log(`Total extracted: ${ingredients.size}`);
-    console.log(`Already in database: ${duplicates.length} (${((duplicates.length/ingredients.size)*100).toFixed(1)}%)`);
-    console.log(`New/unique: ${newIngredients.length} (${((newIngredients.length/ingredients.size)*100).toFixed(1)}%)\n`);
+    console.log(
+      `Already in database: ${duplicates.length} (${((duplicates.length / ingredients.size) * 100).toFixed(1)}%)`
+    );
+    console.log(
+      `New/unique: ${newIngredients.length} (${((newIngredients.length / ingredients.size) * 100).toFixed(1)}%)\n`
+    );
 
     if (newIngredients.length > 0) {
       console.log('=== SAMPLE OF NEW INGREDIENTS (first 50) ===\n');
@@ -124,9 +130,13 @@ console.log(`\n=== EXTRACTED ${ingredients.size} UNIQUE INGREDIENTS FROM UNPA PD
         JSON.stringify(newIngredients.sort(), null, 2),
         'utf8'
       );
-      console.log(`\n✓ All ${newIngredients.length} new ingredients saved to: unpa-new-ingredients.json`);
+      console.log(
+        `\n✓ All ${newIngredients.length} new ingredients saved to: unpa-new-ingredients.json`
+      );
     } else {
-      console.log('✓ No new ingredients found - UNPA list is already fully covered by current database');
+      console.log(
+        '✓ No new ingredients found - UNPA list is already fully covered by current database'
+      );
     }
 
     // Save extraction stats
@@ -134,23 +144,19 @@ console.log(`\n=== EXTRACTED ${ingredients.size} UNIQUE INGREDIENTS FROM UNPA PD
       total_extracted: ingredients.size,
       already_in_db: duplicates.length,
       new_unique: newIngredients.length,
-      coverage_percentage: ((duplicates.length/ingredients.size)*100).toFixed(1),
-      recommendation: newIngredients.length > 100
-        ? 'Significant new ingredients found - recommend adding to database'
-        : newIngredients.length > 20
-        ? 'Moderate new ingredients - review and consider adding'
-        : 'Minimal new ingredients - current CRN database provides good coverage'
+      coverage_percentage: ((duplicates.length / ingredients.size) * 100).toFixed(1),
+      recommendation:
+        newIngredients.length > 100
+          ? 'Significant new ingredients found - recommend adding to database'
+          : newIngredients.length > 20
+            ? 'Moderate new ingredients - review and consider adding'
+            : 'Minimal new ingredients - current CRN database provides good coverage',
     };
 
-    fs.writeFileSync(
-      'unpa-analysis-stats.json',
-      JSON.stringify(stats, null, 2),
-      'utf8'
-    );
+    fs.writeFileSync('unpa-analysis-stats.json', JSON.stringify(stats, null, 2), 'utf8');
 
     console.log('\n=== RECOMMENDATION ===');
     console.log(stats.recommendation);
-
   } catch (error) {
     console.error('Error:', error.message);
     console.error(error.stack);

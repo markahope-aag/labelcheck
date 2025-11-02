@@ -7,8 +7,8 @@ const supabaseAdmin = createClient(
   {
     auth: {
       autoRefreshToken: false,
-      persistSession: false
-    }
+      persistSession: false,
+    },
   }
 );
 
@@ -37,7 +37,7 @@ const allIngredients = [
   'Silicon Dioxide',
   'Croscarmellose Sodium',
   'Magnesium Stearate',
-  'Ethyl Cellulose'
+  'Ethyl Cellulose',
 ];
 
 // Simulate the matching logic from ndi-helpers.ts
@@ -113,7 +113,10 @@ async function isLikelyPre1994Ingredient(ingredient, pre1994Ingredients) {
   // Partial match
   const ingredientsArray = Array.from(pre1994Ingredients);
   for (const knownIngredient of ingredientsArray) {
-    if (normalizedIngredient.includes(knownIngredient) || knownIngredient.includes(normalizedIngredient)) {
+    if (
+      normalizedIngredient.includes(knownIngredient) ||
+      knownIngredient.includes(normalizedIngredient)
+    ) {
       return { found: true, method: `partial match (${knownIngredient})` };
     }
   }

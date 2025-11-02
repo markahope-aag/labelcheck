@@ -40,7 +40,7 @@ async function checkSingleIngredient(ingredientName) {
   const GENERIC_TERMS = ['extract', 'powder', 'concentrate', 'isolate', 'blend', 'complex'];
   const searchTerms = normalized
     .split(' ')
-    .filter(word => word.length > 3 && !GENERIC_TERMS.includes(word));
+    .filter((word) => word.length > 3 && !GENERIC_TERMS.includes(word));
 
   if (searchTerms.length > 0) {
     const reversedTerms = [...searchTerms].reverse();
@@ -86,7 +86,7 @@ async function test() {
     'Taurine',
     'Caffeine',
     'Panax Ginseng Root Extract',
-    'Guarana Seed Extract'
+    'Guarana Seed Extract',
   ];
 
   console.log('Testing GRAS matching with updated logic...\n');

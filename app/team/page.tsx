@@ -7,11 +7,27 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import { Users, Plus, Mail, Shield, Trash2, Building2 } from 'lucide-react';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface Organization {
   id: string;
@@ -219,10 +235,7 @@ export default function TeamPage() {
 
   async function removeMember(memberId: string) {
     try {
-      const { error } = await supabase
-        .from('organization_members')
-        .delete()
-        .eq('id', memberId);
+      const { error } = await supabase.from('organization_members').delete().eq('id', memberId);
 
       if (error) throw error;
 
@@ -303,7 +316,12 @@ export default function TeamPage() {
                   value={orgName}
                   onChange={(e) => {
                     setOrgName(e.target.value);
-                    setOrgSlug(e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''));
+                    setOrgSlug(
+                      e.target.value
+                        .toLowerCase()
+                        .replace(/\s+/g, '-')
+                        .replace(/[^a-z0-9-]/g, '')
+                    );
                   }}
                 />
               </div>
@@ -345,9 +363,7 @@ export default function TeamPage() {
                 <Building2 className="h-5 w-5" />
                 <CardTitle>{organization?.name}</CardTitle>
               </div>
-              <CardDescription>
-                Manage your organization and team members
-              </CardDescription>
+              <CardDescription>Manage your organization and team members</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -357,7 +373,9 @@ export default function TeamPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Members</p>
-                  <p className="font-semibold">{members.length} / {organization?.max_members}</p>
+                  <p className="font-semibold">
+                    {members.length} / {organization?.max_members}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -370,9 +388,7 @@ export default function TeamPage() {
                   <Mail className="h-5 w-5" />
                   <CardTitle>Invite Team Member</CardTitle>
                 </div>
-                <CardDescription>
-                  Add new members to your organization
-                </CardDescription>
+                <CardDescription>Add new members to your organization</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex gap-3">
@@ -429,7 +445,8 @@ export default function TeamPage() {
                       <div>
                         <p className="font-medium">{member.users.email}</p>
                         <p className="text-sm text-muted-foreground">
-                          Joined {new Date(member.joined_at || member.invited_at).toLocaleDateString()}
+                          Joined{' '}
+                          {new Date(member.joined_at || member.invited_at).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
@@ -449,8 +466,8 @@ export default function TeamPage() {
                             <AlertDialogHeader>
                               <AlertDialogTitle>Remove Team Member</AlertDialogTitle>
                               <AlertDialogDescription>
-                                Are you sure you want to remove {member.users.email} from the organization?
-                                This action cannot be undone.
+                                Are you sure you want to remove {member.users.email} from the
+                                organization? This action cannot be undone.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
@@ -477,7 +494,8 @@ export default function TeamPage() {
                   <CardTitle>Pending Invitations</CardTitle>
                 </div>
                 <CardDescription>
-                  {pendingInvitations.length} pending invitation{pendingInvitations.length !== 1 ? 's' : ''}
+                  {pendingInvitations.length} pending invitation
+                  {pendingInvitations.length !== 1 ? 's' : ''}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -494,7 +512,8 @@ export default function TeamPage() {
                         <div>
                           <p className="font-medium">{invitation.email}</p>
                           <p className="text-sm text-muted-foreground">
-                            Invited {new Date(invitation.invited_at).toLocaleDateString()} • Expires {new Date(invitation.expires_at).toLocaleDateString()}
+                            Invited {new Date(invitation.invited_at).toLocaleDateString()} • Expires{' '}
+                            {new Date(invitation.expires_at).toLocaleDateString()}
                           </p>
                         </div>
                       </div>
@@ -514,8 +533,8 @@ export default function TeamPage() {
                             <AlertDialogHeader>
                               <AlertDialogTitle>Cancel Invitation</AlertDialogTitle>
                               <AlertDialogDescription>
-                                Are you sure you want to cancel the invitation for {invitation.email}?
-                                This action cannot be undone.
+                                Are you sure you want to cancel the invitation for{' '}
+                                {invitation.email}? This action cannot be undone.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
