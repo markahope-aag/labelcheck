@@ -15,10 +15,38 @@ npm run build         # Build production bundle
 npm run start         # Start production server
 npm run lint          # Run ESLint
 npm run typecheck     # Type check without emitting files
+npm run format        # Format all files with Prettier
+npm run format:check  # Check formatting without changes
+npm run pre-deploy    # Run all pre-deployment checks
 ```
 
 ### Testing
 The project currently has no test suite configured. When adding tests, consider using Jest or Vitest with React Testing Library.
+
+### Deployment Workflow
+**Important:** See `WORKFLOW_IMPROVEMENTS.md`, `DEPLOYMENT_WORKFLOW.md`, and `QUICK_START_WORKFLOW.md` for complete deployment guides.
+
+**Best Practice:** Use feature branches for all changes to enable preview deployments:
+```bash
+# Create feature branch
+git checkout -b feature/my-change
+
+# Make changes, commit
+git commit -m "Add feature"
+
+# Push to create preview deployment
+git push origin feature/my-change
+
+# Test preview URL from Vercel
+
+# Merge to main after testing
+git checkout main && git merge feature/my-change && git push origin main
+```
+
+**Pre-Deployment Checks:**
+```bash
+npm run pre-deploy   # Runs TypeScript, ESLint, formatting, build checks
+```
 
 ## Architecture & Key Concepts
 
