@@ -5,36 +5,21 @@
  */
 
 import { test, expect } from '@playwright/test';
+import sharp from 'sharp';
 
-// Helper to create a minimal valid JPEG buffer
-function createTestImage(): Buffer {
-  // Minimal JPEG header
-  const jpegHeader = Buffer.from([
-    0xff,
-    0xd8,
-    0xff,
-    0xe0, // SOI + APP0
-    0x00,
-    0x10, // APP0 length
-    0x4a,
-    0x46,
-    0x49,
-    0x46,
-    0x00, // "JFIF\0"
-    0x01,
-    0x01, // Version 1.1
-    0x00,
-    0x00,
-    0x01,
-    0x00,
-    0x01, // No units, 1x1 aspect ratio
-    0x00,
-    0x00, // No thumbnail
-    0xff,
-    0xd9, // EOI
-  ]);
+// Helper to create a real tiny JPEG buffer (10x10 pixels) for testing
+async function createTestImage(): Promise<Buffer> {
+  // Create a real tiny JPEG using sharp - this will have actual dimensions
+  const image = sharp({
+    create: {
+      width: 10,
+      height: 10,
+      channels: 3,
+      background: { r: 255, g: 255, b: 255 },
+    },
+  });
 
-  return jpegHeader;
+  return await image.jpeg({ quality: 80 }).toBuffer();
 }
 
 test.describe('POST /api/analyze/check-quality', () => {
@@ -55,7 +40,7 @@ test.describe('POST /api/analyze/check-quality', () => {
   });
 
   test('should successfully check image quality', async ({ request }) => {
-    const imageBuffer = createTestImage();
+    const imageBuffer = await createTestImage();
 
     const response = await request.post('/api/analyze/check-quality', {
       data: imageBuffer,
@@ -71,20 +56,20 @@ test.describe('POST /api/analyze/check-quality', () => {
     expect(data).toHaveProperty('width');
     expect(data).toHaveProperty('height');
     expect(data).toHaveProperty('fileSize');
-    expect(data).toHaveProperty('isHighQuality');
-    expect(data).toHaveProperty('warnings');
+    expect(data).toHaveProperty('recommendation');
+    expect(data).toHaveProperty('issues');
 
     // Validate types
     expect(typeof data.width).toBe('number');
     expect(typeof data.height).toBe('number');
     expect(typeof data.fileSize).toBe('number');
-    expect(typeof data.isHighQuality).toBe('boolean');
-    expect(Array.isArray(data.warnings)).toBe(true);
+    expect(typeof data.recommendation).toBe('string');
+    expect(Array.isArray(data.issues)).toBe(true);
   });
 
   test('should return quality warnings for small images', async ({ request }) => {
-    // Use the minimal JPEG which will be flagged as low quality
-    const imageBuffer = createTestImage();
+    // Use a real tiny JPEG (10x10 pixels) which will be flagged as low quality
+    const imageBuffer = await createTestImage();
 
     const response = await request.post('/api/analyze/check-quality', {
       data: imageBuffer,
@@ -98,9 +83,9 @@ test.describe('POST /api/analyze/check-quality', () => {
 
     const data = await response.json();
 
-    // Small test image should be flagged as low quality
-    expect(data.isHighQuality).toBe(false);
-    expect(data.warnings.length).toBeGreaterThan(0);
+    // Small test image (10x10) should be flagged as unusable/low quality
+    expect(['poor', 'unusable']).toContain(data.recommendation);
+    expect(data.issues.length).toBeGreaterThan(0);
   });
 
   test('should handle invalid image data', async ({ request }) => {

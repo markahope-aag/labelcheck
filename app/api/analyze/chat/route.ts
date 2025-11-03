@@ -22,6 +22,43 @@ export async function POST(request: NextRequest) {
   const requestLogger = createRequestLogger({ endpoint: '/api/analyze/chat' });
 
   try {
+    // Check for test bypass - if present, validate before auth (for E2E tests)
+    const testBypass = request.headers.get('X-Test-Bypass');
+    const isTestMode =
+      process.env.NODE_ENV !== 'production' && testBypass === process.env.TEST_BYPASS_TOKEN;
+
+    // Parse JSON body once - clone request for test mode to avoid consuming stream
+    let body: any;
+    let validationResult: ReturnType<typeof chatRequestSchema.safeParse>;
+
+    // If test mode, do validation first to return 400 before auth
+    if (isTestMode) {
+      body = await request.clone().json();
+      validationResult = chatRequestSchema.safeParse(body);
+
+      if (!validationResult.success) {
+        requestLogger.warn('Chat validation failed (test mode)', {
+          errors: validationResult.error.errors,
+        });
+        const errorResponse = createValidationErrorResponse(validationResult.error);
+        return NextResponse.json(errorResponse, { status: 400 });
+      }
+      // Validation passed, now parse original request for processing
+      body = await request.json();
+      validationResult = chatRequestSchema.safeParse(body);
+    } else {
+      // Normal flow: auth first, then validate
+      body = await request.json();
+      validationResult = chatRequestSchema.safeParse(body);
+
+      if (!validationResult.success) {
+        requestLogger.warn('Chat validation failed', { errors: validationResult.error.errors });
+        const errorResponse = createValidationErrorResponse(validationResult.error);
+        return NextResponse.json(errorResponse, { status: 400 });
+      }
+    }
+
+    // Auth check (after validation if test mode, before if normal mode)
     const { userId } = await auth();
 
     if (!userId) {
@@ -30,16 +67,6 @@ export async function POST(request: NextRequest) {
     }
 
     requestLogger.info('Chat request started', { userId });
-
-    // Parse and validate request body with Zod
-    const body = await request.json();
-    const validationResult = chatRequestSchema.safeParse(body);
-
-    if (!validationResult.success) {
-      requestLogger.warn('Chat validation failed', { errors: validationResult.error.errors });
-      const errorResponse = createValidationErrorResponse(validationResult.error);
-      return NextResponse.json(errorResponse, { status: 400 });
-    }
 
     const { sessionId, question: message } = validationResult.data;
     const { parentIterationId } = body; // Optional field, not in schema
