@@ -43,10 +43,8 @@ CREATE INDEX IF NOT EXISTS idx_gras_ingredients_active_name
 CREATE INDEX IF NOT EXISTS idx_ndi_ingredients_name_lower
   ON ndi_ingredients(LOWER(ingredient_name));
 
--- Active ingredients only (partial index for common filter)
-CREATE INDEX IF NOT EXISTS idx_ndi_ingredients_active
-  ON ndi_ingredients(is_active)
-  WHERE is_active = true;
+-- Note: ndi_ingredients table doesn't have is_active column
+-- All NDI records are considered active by default
 
 -- ============================================================================
 -- old_dietary_ingredients indexes
