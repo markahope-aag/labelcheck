@@ -68,6 +68,11 @@ export async function POST(request: NextRequest) {
 
     requestLogger.info('Chat request started', { userId });
 
+    // TypeScript guard: validationResult is always defined here (assigned in both branches above)
+    if (!validationResult.success) {
+      throw new ValidationError('Validation failed unexpectedly');
+    }
+
     const { sessionId, question: message } = validationResult.data;
     const { parentIterationId } = body; // Optional field, not in schema
 

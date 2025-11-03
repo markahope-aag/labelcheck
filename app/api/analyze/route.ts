@@ -88,8 +88,17 @@ export async function POST(request: NextRequest) {
             } as any);
             return NextResponse.json(errorResponse, { status: 400 });
           }
-          // For JSON in test mode, we'll let it pass validation and fail later when processing
-          // But the validation checks above will catch the test cases
+          // For JSON in test mode, validation passed - now get actual formData for processing
+          formData = await request.formData();
+          validationResult = validateFormData(formData, analyzeRequestSchema);
+
+          if (!validationResult.success) {
+            requestLogger.warn('FormData validation failed (test mode)', {
+              errors: validationResult.error.errors,
+            });
+            const errorResponse = createValidationErrorResponse(validationResult.error);
+            return NextResponse.json(errorResponse, { status: 400 });
+          }
         } catch (error) {
           // Invalid JSON - return 400
           const errorResponse = createValidationErrorResponse({
@@ -151,6 +160,11 @@ export async function POST(request: NextRequest) {
         });
       }
       throw error;
+    }
+
+    // TypeScript guard: validationResult is always defined here (assigned in all branches above)
+    if (!validationResult.success) {
+      throw new ValidationError('Validation failed unexpectedly');
     }
 
     const {
