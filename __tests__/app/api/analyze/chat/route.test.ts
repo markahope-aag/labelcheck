@@ -10,27 +10,18 @@ import { auth } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getSessionWithIterations, addIteration } from '@/lib/session-helpers';
 import { getActiveRegulatoryDocuments, buildRegulatoryContext } from '@/lib/regulatory-documents';
+import OpenAI from 'openai';
 
 // Mock dependencies
 jest.mock('@clerk/nextjs/server');
 jest.mock('@/lib/supabase');
 jest.mock('@/lib/session-helpers');
 jest.mock('@/lib/regulatory-documents');
-jest.mock('@/lib/logger');
-jest.mock('openai');
+// OpenAI and logger are mocked globally in jest.setup.js
 
-// Mock OpenAI
-const mockOpenAI = {
-  chat: {
-    completions: {
-      create: jest.fn(),
-    },
-  },
-};
-
-jest.mock('openai', () => {
-  return jest.fn().mockImplementation(() => mockOpenAI);
-});
+// Get a reference to the mocked OpenAI instance
+const mockOpenAIInstance = new OpenAI({ apiKey: 'test' });
+const mockCreate = mockOpenAIInstance.chat.completions.create as jest.Mock;
 
 describe('POST /api/analyze/chat', () => {
   beforeEach(() => {
@@ -80,7 +71,7 @@ describe('POST /api/analyze/chat', () => {
       (getActiveRegulatoryDocuments as jest.Mock).mockResolvedValue([]);
       (buildRegulatoryContext as jest.Mock).mockReturnValue('');
 
-      mockOpenAI.chat.completions.create.mockResolvedValue({
+      mockCreate.mockResolvedValue({
         choices: [
           {
             message: {
@@ -255,7 +246,7 @@ describe('POST /api/analyze/chat', () => {
       (getActiveRegulatoryDocuments as jest.Mock).mockResolvedValue([]);
       (buildRegulatoryContext as jest.Mock).mockReturnValue('');
 
-      mockOpenAI.chat.completions.create.mockResolvedValue({
+      mockCreate.mockResolvedValue({
         choices: [
           {
             message: {
@@ -319,7 +310,7 @@ describe('POST /api/analyze/chat', () => {
     });
 
     it('should successfully generate chat response', async () => {
-      mockOpenAI.chat.completions.create.mockResolvedValue({
+      mockCreate.mockResolvedValue({
         choices: [
           {
             message: {
@@ -350,12 +341,12 @@ describe('POST /api/analyze/chat', () => {
       expect(response.status).toBe(200);
       expect(data.response).toBe('This product is compliant with FDA regulations.');
       expect(data.timestamp).toBeDefined();
-      expect(mockOpenAI.chat.completions.create).toHaveBeenCalled();
+      expect(mockCreate).toHaveBeenCalled();
       expect(addIteration).toHaveBeenCalled();
     });
 
     it('should include session context in OpenAI call', async () => {
-      mockOpenAI.chat.completions.create.mockResolvedValue({
+      mockCreate.mockResolvedValue({
         choices: [
           {
             message: {
@@ -382,14 +373,14 @@ describe('POST /api/analyze/chat', () => {
       await POST(request);
 
       // Verify OpenAI was called with context
-      expect(mockOpenAI.chat.completions.create).toHaveBeenCalled();
-      const callArgs = mockOpenAI.chat.completions.create.mock.calls[0][0];
+      expect(mockCreate).toHaveBeenCalled();
+      const callArgs = mockCreate.mock.calls[0][0];
       expect(callArgs.messages).toBeDefined();
       expect(callArgs.messages.some((msg: any) => msg.role === 'user')).toBe(true);
     });
 
     it('should handle parent iteration ID for threaded conversations', async () => {
-      mockOpenAI.chat.completions.create.mockResolvedValue({
+      mockCreate.mockResolvedValue({
         choices: [
           {
             message: {
@@ -477,7 +468,7 @@ describe('POST /api/analyze/chat', () => {
     });
 
     it('should handle OpenAI API errors', async () => {
-      mockOpenAI.chat.completions.create.mockRejectedValue(new Error('OpenAI API error'));
+      mockCreate.mockRejectedValue(new Error('OpenAI API error'));
 
       const request = new NextRequest('http://localhost:3000/api/analyze/chat', {
         method: 'POST',
@@ -496,7 +487,7 @@ describe('POST /api/analyze/chat', () => {
     });
 
     it('should handle database errors when saving iteration', async () => {
-      mockOpenAI.chat.completions.create.mockResolvedValue({
+      mockCreate.mockResolvedValue({
         choices: [
           {
             message: {

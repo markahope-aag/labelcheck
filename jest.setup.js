@@ -43,6 +43,24 @@ jest.mock('openai', () => {
   }));
 });
 
+// Mock logger globally to prevent logging in tests
+jest.mock('@/lib/logger', () => ({
+  logger: {
+    info: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
+    child: jest.fn().mockReturnThis(),
+  },
+  createRequestLogger: jest.fn(() => ({
+    info: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
+    child: jest.fn().mockReturnThis(),
+  })),
+}));
+
 // Mock environment variables for tests
 process.env.OPENAI_API_KEY = 'test-openai-key';
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';

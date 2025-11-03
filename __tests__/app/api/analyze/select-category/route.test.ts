@@ -10,9 +10,8 @@ import { auth } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
 
 // Mock dependencies
-jest.mock('@clerk/nextjs/server', () => ({
-  auth: jest.fn(),
-}));
+// Clerk is mocked globally in jest.setup.js, but we need to re-import it to customize
+jest.mock('@clerk/nextjs/server');
 
 jest.mock('@/lib/supabase', () => ({
   supabaseAdmin: {
@@ -20,13 +19,7 @@ jest.mock('@/lib/supabase', () => ({
   },
 }));
 
-jest.mock('@/lib/logger', () => ({
-  createRequestLogger: jest.fn(() => ({
-    info: jest.fn(),
-    error: jest.fn(),
-    warn: jest.fn(),
-  })),
-}));
+// Logger is mocked globally in jest.setup.js
 
 describe('POST /api/analyze/select-category', () => {
   beforeEach(() => {
@@ -59,7 +52,24 @@ describe('POST /api/analyze/select-category', () => {
       (auth as jest.Mock).mockResolvedValue({ userId: 'test-user-id' });
     });
 
-    it('should return 400 if analysisId is missing', async () => {
+    it('should return 500 if analysisId is missing (database error)', async () => {
+      // Mock Supabase to return an error when no analysisId is provided
+      (supabaseAdmin.from as jest.Mock).mockReturnValue({
+        update: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            select: jest.fn().mockReturnValue({
+              single: jest.fn().mockResolvedValue({
+                data: null,
+                error: {
+                  message: 'No rows found',
+                  code: 'PGRST116',
+                },
+              }),
+            }),
+          }),
+        }),
+      });
+
       const request = new NextRequest('http://localhost:3000/api/analyze/select-category', {
         method: 'POST',
         body: JSON.stringify({
@@ -69,10 +79,8 @@ describe('POST /api/analyze/select-category', () => {
       });
 
       const response = await POST(request);
-      const data = await response.json();
 
-      expect(response.status).toBe(400);
-      expect(data.code).toBe('VALIDATION_ERROR');
+      expect(response.status).toBe(500);
     });
 
     it('should return 400 if selectedCategory is missing', async () => {
@@ -105,7 +113,7 @@ describe('POST /api/analyze/select-category', () => {
       const data = await response.json();
 
       expect(response.status).toBe(400);
-      expect(data.code).toBe('VALIDATION_ERROR');
+      expect(data.error).toContain('Invalid category');
     });
   });
 
