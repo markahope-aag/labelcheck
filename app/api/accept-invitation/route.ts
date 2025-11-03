@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth, clerkClient } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { logger, createRequestLogger } from '@/lib/logger';
+import {
+  handleApiError,
+  ValidationError,
+  NotFoundError,
+  handleSupabaseError,
+} from '@/lib/error-handler';
 
 export async function POST(req: NextRequest) {
   const requestLogger = createRequestLogger({ endpoint: '/api/accept-invitation' });
@@ -18,7 +24,7 @@ export async function POST(req: NextRequest) {
     const { token } = await req.json();
 
     if (!token) {
-      return NextResponse.json({ error: 'Invitation token is required' }, { status: 400 });
+      throw new ValidationError('Invitation token is required', { field: 'token' });
     }
 
     // Get current user's email from Clerk (source of truth)
@@ -68,12 +74,11 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
 
     if (invitationError) {
-      requestLogger.error('Failed to fetch invitation', { error: invitationError, token });
-      return NextResponse.json({ error: 'Error processing invitation' }, { status: 500 });
+      throw handleSupabaseError(invitationError, 'fetch invitation');
     }
 
     if (!invitation) {
-      return NextResponse.json({ error: 'Invalid invitation token' }, { status: 404 });
+      throw new NotFoundError('Invitation', token);
     }
 
     // Check if invitation has already been accepted
@@ -145,12 +150,7 @@ export async function POST(req: NextRequest) {
     requestLogger.debug('Member insertion result', { newMember, memberError });
 
     if (memberError) {
-      requestLogger.error('Failed to add member to organization', {
-        error: memberError,
-        organizationId: invitation.organization_id,
-        userId: currentUser.id,
-      });
-      return NextResponse.json({ error: 'Failed to add you to the organization' }, { status: 500 });
+      throw handleSupabaseError(memberError, 'add member to organization');
     }
 
     // Mark invitation as accepted
@@ -182,8 +182,7 @@ export async function POST(req: NextRequest) {
       },
       { status: 200 }
     );
-  } catch (error) {
-    requestLogger.error('Invitation acceptance failed', { error });
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  } catch (err: unknown) {
+    return handleApiError(err);
   }
 }

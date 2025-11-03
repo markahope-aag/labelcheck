@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import type { PostgrestError } from '@supabase/supabase-js';
 
 import { RegulatoryDocument, ProductCategory } from './supabase';
 import { getCachedRegulatoryDocuments, invalidateDocumentCache } from './regulatory-cache';
@@ -342,7 +343,7 @@ export async function getDocumentCategories(): Promise<DocumentCategory[]> {
 
 export async function createRegulatoryDocument(
   document: Omit<RegulatoryDocument, 'id' | 'created_at' | 'updated_at'>
-): Promise<{ data: RegulatoryDocument | null; error: any }> {
+): Promise<{ data: RegulatoryDocument | null; error: PostgrestError | null }> {
   const { data, error } = await supabase
     .from('regulatory_documents')
     .insert(document)
@@ -360,7 +361,7 @@ export async function createRegulatoryDocument(
 export async function updateRegulatoryDocument(
   id: string,
   updates: Partial<RegulatoryDocument>
-): Promise<{ data: RegulatoryDocument | null; error: any }> {
+): Promise<{ data: RegulatoryDocument | null; error: PostgrestError | null }> {
   const { data, error } = await supabase
     .from('regulatory_documents')
     .update(updates)
@@ -376,7 +377,7 @@ export async function updateRegulatoryDocument(
   return { data, error };
 }
 
-export async function deactivateDocument(id: string): Promise<{ error: any }> {
+export async function deactivateDocument(id: string): Promise<{ error: PostgrestError | null }> {
   const { error } = await supabase
     .from('regulatory_documents')
     .update({ is_active: false })

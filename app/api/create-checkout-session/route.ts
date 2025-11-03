@@ -4,10 +4,17 @@ import Stripe from 'stripe';
 import { supabaseAdmin } from '@/lib/supabase';
 import { PLAN_PRICES } from '@/lib/constants';
 import { logger, createRequestLogger } from '@/lib/logger';
+import {
+  handleApiError,
+  ValidationError,
+  AuthenticationError,
+  NotFoundError,
+  ExternalServiceError,
+  ConfigurationError,
+} from '@/lib/error-handler';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-02-24.acacia',
-});
+// Stripe client will be initialized after checking for key
+let stripe: Stripe | null = null;
 
 export async function POST(request: NextRequest) {
   const requestLogger = createRequestLogger({ endpoint: '/api/create-checkout-session' });
@@ -17,7 +24,17 @@ export async function POST(request: NextRequest) {
 
     if (!userId) {
       requestLogger.warn('Unauthorized checkout session request');
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      throw new AuthenticationError();
+    }
+
+    if (!process.env.STRIPE_SECRET_KEY) {
+      throw new ConfigurationError('STRIPE_SECRET_KEY');
+    }
+
+    if (!stripe) {
+      stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+        apiVersion: '2025-02-24.acacia',
+      });
     }
 
     requestLogger.info('Checkout session creation started', { userId });
@@ -25,8 +42,9 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const plan = formData.get('plan') as string;
 
-    if (!plan || !['basic', 'pro', 'enterprise'].includes(plan)) {
-      return NextResponse.json({ error: 'Invalid plan' }, { status: 400 });
+    const validPlans = ['basic', 'pro', 'enterprise'];
+    if (!plan || !validPlans.includes(plan)) {
+      throw new ValidationError('Invalid plan selected', { plan, validPlans });
     }
 
     // Use admin client to bypass RLS
@@ -37,7 +55,7 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      throw new NotFoundError('User', userId);
     }
 
     let customerId = user.stripe_customer_id;
@@ -61,31 +79,37 @@ export async function POST(request: NextRequest) {
     }
 
     const planPrices = PLAN_PRICES[plan as keyof typeof PLAN_PRICES];
-    const stripePriceId = planPrices.stripePriceId;
+    const stripePriceId = planPrices?.stripePriceId;
 
     if (!stripePriceId) {
-      return NextResponse.json({ error: 'Stripe Price ID not configured' }, { status: 500 });
+      throw new ValidationError('Invalid plan selected', { plan });
     }
 
-    const session = await stripe.checkout.sessions.create({
-      customer: customerId,
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price: stripePriceId,
-          quantity: 1,
+    let session;
+    try {
+      session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price: stripePriceId,
+            quantity: 1,
+          },
+        ],
+        mode: 'subscription',
+        success_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing?success=true`,
+        cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing?canceled=true`,
+        client_reference_id: user.id,
+        metadata: {
+          clerk_user_id: userId,
+          supabase_user_id: user.id,
+          plan_tier: plan,
         },
-      ],
-      mode: 'subscription',
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing?success=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing?canceled=true`,
-      client_reference_id: user.id,
-      metadata: {
-        clerk_user_id: userId,
-        supabase_user_id: user.id,
-        plan_tier: plan,
-      },
-    });
+      });
+    } catch (stripeError) {
+      const error = stripeError instanceof Error ? stripeError : new Error(String(stripeError));
+      throw new ExternalServiceError('Stripe', error);
+    }
 
     requestLogger.info('Checkout session created', {
       userId,
@@ -94,11 +118,7 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ url: session.url });
-  } catch (error: any) {
-    requestLogger.error('Checkout session creation failed', { error, message: error.message });
-    return NextResponse.json(
-      { error: error.message || 'Failed to create checkout session' },
-      { status: 500 }
-    );
+  } catch (err: unknown) {
+    return handleApiError(err);
   }
 }

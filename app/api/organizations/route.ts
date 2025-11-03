@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getAuthenticatedUser } from '@/lib/auth-helpers';
 import { logger, createRequestLogger } from '@/lib/logger';
+import { handleApiError, ValidationError, handleSupabaseError } from '@/lib/error-handler';
 
 export async function POST(req: NextRequest) {
   const requestLogger = createRequestLogger({ endpoint: '/api/organizations' });
@@ -17,11 +18,8 @@ export async function POST(req: NextRequest) {
 
     const { name, slug } = await req.json();
 
-    if (!name || !slug) {
-      return NextResponse.json(
-        { error: 'Organization name and slug are required' },
-        { status: 400 }
-      );
+    if (!name) {
+      throw new ValidationError('Organization name is required', { field: 'name' });
     }
 
     // Check if user already belongs to an organization
@@ -62,13 +60,7 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (orgError) {
-      requestLogger.error('Failed to create organization', {
-        error: orgError,
-        userId: userData.id,
-        name,
-        slug,
-      });
-      return NextResponse.json({ error: 'Failed to create organization' }, { status: 500 });
+      throw handleSupabaseError(orgError, 'create organization');
     }
 
     // Add user as organization owner
@@ -80,15 +72,9 @@ export async function POST(req: NextRequest) {
     });
 
     if (memberError) {
-      requestLogger.error('Failed to add member to organization', {
-        error: memberError,
-        organizationId: newOrg.id,
-        userId: userData.id,
-      });
       // Rollback organization creation
       await supabaseAdmin.from('organizations').delete().eq('id', newOrg.id);
-
-      return NextResponse.json({ error: 'Failed to add user to organization' }, { status: 500 });
+      throw handleSupabaseError(memberError, 'add member to organization');
     }
 
     requestLogger.info('Organization created successfully', {
@@ -99,17 +85,7 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json(newOrg, { status: 201 });
-  } catch (error: any) {
-    requestLogger.error('Organization creation endpoint failed', { error, message: error.message });
-
-    // Handle auth errors with appropriate status codes
-    if (error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    if (error.message === 'User not found') {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+  } catch (err: unknown) {
+    return handleApiError(err);
   }
 }

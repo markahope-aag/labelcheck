@@ -3,6 +3,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { randomBytes } from 'crypto';
 import { logger, createRequestLogger } from '@/lib/logger';
+import {
+  handleApiError,
+  ValidationError,
+  AuthenticationError,
+  NotFoundError,
+  handleSupabaseError,
+} from '@/lib/error-handler';
 
 export async function POST(request: NextRequest) {
   const requestLogger = createRequestLogger({ endpoint: '/api/share' });
@@ -12,7 +19,7 @@ export async function POST(request: NextRequest) {
 
     if (!userId) {
       requestLogger.warn('Unauthorized share request');
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      throw new AuthenticationError();
     }
 
     requestLogger.info('Share link generation requested', { userId });
@@ -21,7 +28,7 @@ export async function POST(request: NextRequest) {
     const { analysisId } = body;
 
     if (!analysisId) {
-      return NextResponse.json({ error: 'Analysis ID required' }, { status: 400 });
+      throw new ValidationError('Analysis ID is required', { field: 'analysisId' });
     }
 
     // Get user's internal ID (use admin client to bypass RLS)
@@ -44,7 +51,7 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     if (!analysis) {
-      return NextResponse.json({ error: 'Analysis not found' }, { status: 404 });
+      throw new NotFoundError('Analysis', analysisId);
     }
 
     // If analysis already has a share token, return it
@@ -63,12 +70,7 @@ export async function POST(request: NextRequest) {
       .eq('id', analysisId);
 
     if (updateError) {
-      requestLogger.error('Failed to update share token', {
-        error: updateError,
-        analysisId,
-        userId,
-      });
-      return NextResponse.json({ error: 'Failed to generate share link' }, { status: 500 });
+      throw handleSupabaseError(updateError, 'generate share token');
     }
 
     const shareUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/share/${shareToken}`;
@@ -80,11 +82,7 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ shareToken, shareUrl });
-  } catch (error: any) {
-    requestLogger.error('Share link generation failed', { error, message: error.message });
-    return NextResponse.json(
-      { error: error.message || 'Failed to generate share link' },
-      { status: 500 }
-    );
+  } catch (err: unknown) {
+    return handleApiError(err);
   }
 }

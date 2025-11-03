@@ -27,6 +27,7 @@ import { createSession, addIteration } from '@/lib/session-helpers';
 import { processPdfForAnalysis } from '@/lib/pdf-helpers';
 import { isUserAdmin } from '@/lib/auth-helpers';
 import { logger } from '@/lib/logger';
+import type { AnalysisResult, Recommendation, RegulatoryDocument, Analysis } from '@/types';
 
 export interface UserInfo {
   id: string;
@@ -52,7 +53,7 @@ export interface ProcessedFile {
 }
 
 export interface DocumentLoadResult {
-  regulatoryDocuments: any[];
+  regulatoryDocuments: RegulatoryDocument[];
   regulatoryContext: string;
   ragInfo: {
     preClassifiedCategory: string | null;
@@ -107,9 +108,10 @@ export async function getUserWithFallback(userId: string): Promise<UserInfo> {
 
       user = newUser;
       logger.info('User created successfully', { userId, userInternalId: newUser.id });
-    } catch (err: any) {
-      logger.error('Exception creating user', { error: err, userId });
-      throw new Error(`Failed to create user: ${err.message}`);
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      logger.error('Exception creating user', { error, userId });
+      throw new Error(`Failed to create user: ${error.message}`);
     }
   }
 
@@ -382,7 +384,9 @@ export async function callAIWithRetry(
     logger.debug('Calling OpenAI API', { attempt, maxRetries });
     try {
       // Construct the message content based on content type
-      let userMessage: any;
+      let userMessage:
+        | OpenAI.Chat.Completions.ChatCompletionUserMessageParam
+        | OpenAI.Chat.Completions.ChatCompletionMessageParam;
 
       if (pdfTextContent) {
         // Text-only mode (PDF with extractable text)
@@ -423,7 +427,10 @@ export async function callAIWithRetry(
         messages: [userMessage],
         response_format: { type: 'json_object' },
       });
-    } catch (error: any) {
+    } catch (err: unknown) {
+      // Type guard for OpenAI API errors
+      const error = err as { status?: number; error?: { type?: string } };
+
       // Check if it's a rate limit error
       if (error?.status === 429 || error?.error?.type === 'rate_limit_error') {
         logger.warn('OpenAI rate limit exceeded', { attempt, maxRetries });
@@ -457,12 +464,12 @@ export async function saveAnalysis(
   userInternalId: string,
   imageFile: File,
   labelName: string | null,
-  analysisData: any,
+  analysisData: AnalysisResult,
   base64Data: string | undefined,
   pdfTextContent: string | undefined,
   mediaType: 'image/jpeg' | 'image/png',
   sessionId: string | null
-): Promise<any> {
+): Promise<Analysis> {
   // Determine compliance status from the new analysis structure
   const complianceStatus = analysisData.overall_assessment?.primary_compliance_status || 'unknown';
   const dbComplianceStatus =
@@ -485,7 +492,7 @@ export async function saveAnalysis(
       compliance_status: dbComplianceStatus,
       issues_found:
         analysisData.recommendations?.filter(
-          (r: any) => r.priority === 'critical' || r.priority === 'high'
+          (r: Recommendation) => r.priority === 'critical' || r.priority === 'high'
         )?.length || 0,
       session_id: sessionId || null,
       product_category: analysisData.product_category || null,
@@ -535,7 +542,7 @@ export async function updateUsage(
 export async function saveIteration(
   sessionId: string,
   imageFile: File,
-  analysisData: any,
+  analysisData: AnalysisResult,
   analysisId: string,
   mediaType: 'image/jpeg' | 'image/png'
 ): Promise<void> {
@@ -570,8 +577,8 @@ export async function saveIteration(
  */
 export async function sendNotificationEmail(
   userEmail: string,
-  analysisData: any,
-  analysis: any
+  analysisData: AnalysisResult,
+  analysis: Analysis
 ): Promise<void> {
   try {
     const emailHtml = generateAnalysisResultEmail({
@@ -581,7 +588,8 @@ export async function sendNotificationEmail(
       complianceStatus: analysis.compliance_status,
       recommendations:
         analysisData.recommendations?.map(
-          (r: any) => `[${r.priority.toUpperCase()}] ${r.recommendation} (${r.regulation})`
+          (r: Recommendation) =>
+            `[${r.priority.toUpperCase()}] ${r.recommendation} (${r.regulation})`
         ) || [],
       analyzedAt: analysis.created_at,
     });

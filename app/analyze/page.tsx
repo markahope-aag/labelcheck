@@ -36,6 +36,17 @@ import CategoryComparison from '@/components/CategoryComparison';
 import { ImageQualityWarning } from '@/components/ImageQualityWarning';
 import { ProductCategory } from '@/lib/supabase';
 import type { ImageQualityMetrics } from '@/lib/image-quality';
+import type {
+  AnalysisResult,
+  Recommendation,
+  LabelingSection,
+  AnalyzeImageResponse,
+  APIError,
+  ComplianceTableRow,
+  OtherRequirement,
+  IngredientMatch,
+  CreateShareLinkResponse,
+} from '@/types';
 
 // Helper function to format compliance status for display
 const formatComplianceStatus = (status: string): string => {
@@ -68,7 +79,7 @@ export default function AnalyzePage() {
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string>('');
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<AnalyzeImageResponse | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
@@ -77,10 +88,10 @@ export default function AnalyzePage() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isTextCheckerOpen, setIsTextCheckerOpen] = useState(false);
   const [isRevisedMode, setIsRevisedMode] = useState(false);
-  const [previousResult, setPreviousResult] = useState<any>(null);
+  const [previousResult, setPreviousResult] = useState<AnalyzeImageResponse | null>(null);
   const [showCategorySelector, setShowCategorySelector] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
-  const [analysisData, setAnalysisData] = useState<any>(null);
+  const [analysisData, setAnalysisData] = useState<AnalyzeImageResponse | null>(null);
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [analysisStep, setAnalysisStep] = useState('');
   const [labelName, setLabelName] = useState<string>('');
@@ -135,7 +146,7 @@ export default function AnalyzePage() {
         const qualityResponse = await fetch('/api/analyze/check-quality', {
           method: 'POST',
           headers: { 'Content-Type': 'application/octet-stream' },
-          body: buffer,
+          body: buffer as unknown as BodyInit,
         });
 
         if (qualityResponse.ok) {
@@ -283,26 +294,29 @@ export default function AnalyzePage() {
       setAnalysisProgress(100);
       setAnalysisStep('Complete!');
 
-      const data = await response.json();
+      const data: AnalyzeImageResponse | APIError = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to analyze image');
+        const errorData = data as APIError;
+        throw new Error(errorData.error || 'Failed to analyze image');
       }
 
+      const responseData = data as AnalyzeImageResponse;
+
       // Store session ID if present
-      if (data.session?.id) {
-        setSessionId(data.session.id);
+      if (responseData.session?.id) {
+        setSessionId(responseData.session.id);
       }
 
       // Check if category selector should be shown
-      if (data.show_category_selector) {
+      if (responseData.show_category_selector) {
         // Store analysis data temporarily
-        setAnalysisData(data);
+        setAnalysisData(responseData);
         setShowCategorySelector(true);
         // Don't set result yet - wait for category selection
       } else {
         // No category selection needed, show results immediately
-        setResult(data);
+        setResult(responseData);
         setShowCategorySelector(false);
       }
 
@@ -310,8 +324,11 @@ export default function AnalyzePage() {
       if (isRevisedMode) {
         setIsRevisedMode(false);
       }
-    } catch (err: any) {
-      setError(err.message || 'An error occurred while analyzing the image');
+    } catch (err: unknown) {
+      const error =
+        err instanceof Error ? err : new Error('An error occurred while analyzing the image');
+      setError(error.message);
+      clientLogger.error('Analysis failed', { error });
     } finally {
       setIsAnalyzing(false);
     }
@@ -361,21 +378,23 @@ export default function AnalyzePage() {
         body: formData,
       });
 
+      const data: AnalyzeImageResponse | APIError = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = data as APIError;
         throw new Error(errorData.error || 'Analysis failed');
       }
 
-      const data = await response.json();
+      const responseData = data as AnalyzeImageResponse;
 
       // Save the user's category selection and reason to the database
-      if (data.id) {
+      if (responseData.id) {
         try {
           await fetch('/api/analyze/select-category', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              analysisId: data.id,
+              analysisId: responseData.id,
               selectedCategory: category,
               selectionReason: reason || null,
             }),
@@ -383,7 +402,7 @@ export default function AnalyzePage() {
         } catch (error) {
           clientLogger.error('Failed to save category selection', {
             error,
-            analysisId: data.id,
+            analysisId: responseData.id,
             category,
           });
           // Continue anyway - don't block user from seeing results
@@ -391,20 +410,23 @@ export default function AnalyzePage() {
       }
 
       // Show the new analysis results
-      setResult(data);
+      setResult(responseData);
       setShowCategorySelector(false);
       setShowComparison(false);
-      setAnalysisData(data); // Update analysisData with new results
+      setAnalysisData(responseData); // Update analysisData with new results
 
       toast({
         title: 'Re-analysis Complete',
         description: `Label analyzed using ${category.replace(/_/g, ' ')} category rules`,
       });
-    } catch (err: any) {
-      setError(err.message || 'Failed to re-analyze with selected category');
+    } catch (err: unknown) {
+      const error =
+        err instanceof Error ? err : new Error('Failed to re-analyze with selected category');
+      setError(error.message);
+      clientLogger.error('Category re-analysis failed', { error, category });
       toast({
         title: 'Re-analysis Failed',
-        description: err.message || 'An error occurred',
+        description: error.message,
         variant: 'destructive',
       });
     } finally {
@@ -432,7 +454,15 @@ export default function AnalyzePage() {
     if (!result) return;
 
     try {
-      await exportSingleAnalysisAsPDF(result);
+      // Transform AnalyzeImageResponse to AnalysisData format expected by export function
+      await exportSingleAnalysisAsPDF({
+        id: result.id,
+        image_name: result.image_name,
+        analysis_result: result,
+        compliance_status: result.compliance_status,
+        issues_found: result.issues_found,
+        created_at: result.created_at,
+      } as Parameters<typeof exportSingleAnalysisAsPDF>[0]);
       toast({
         title: 'Success',
         description: 'Compliance report downloaded successfully',
@@ -457,20 +487,23 @@ export default function AnalyzePage() {
         body: JSON.stringify({ analysisId: result.id }),
       });
 
-      const data = await response.json();
+      const data: CreateShareLinkResponse | APIError = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to generate share link');
+        const errorData = data as APIError;
+        throw new Error(errorData.error || 'Failed to generate share link');
       }
 
-      setShareUrl(data.shareUrl);
+      const shareData = data as CreateShareLinkResponse;
+      setShareUrl(shareData.shareUrl);
       setShareDialogOpen(true);
       setCopied(false);
-    } catch (error: any) {
-      clientLogger.error('Share link generation failed', { error, analysisId: result.id });
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error('Failed to generate share link');
+      clientLogger.error('Share link generation failed', { error: err, analysisId: result.id });
       toast({
         title: 'Error',
-        description: error.message || 'Failed to generate share link',
+        description: err.message,
         variant: 'destructive',
       });
     }
@@ -494,13 +527,16 @@ export default function AnalyzePage() {
     }
   };
 
-  const handleTextAnalysisComplete = (analysisResult: any) => {
+  const handleTextAnalysisComplete = (analysisResult: AnalysisResult) => {
     // Update the result state with the text analysis
     setResult({
       ...analysisResult,
-      analysisType: 'text_check',
+      id: '',
       image_name: 'Text Content Analysis',
-    });
+      compliance_status: '',
+      issues_found: 0,
+      created_at: new Date().toISOString(),
+    } as unknown as AnalyzeImageResponse);
 
     toast({
       title: 'Text Analysis Complete',
@@ -548,25 +584,56 @@ export default function AnalyzePage() {
     };
 
     // Helper to count issues from a section
-    const countIssuesInSection = (section: any, counters: any) => {
+    const countIssuesInSection = (
+      section: LabelingSection | Record<string, LabelingSection | undefined> | undefined,
+      counters: { critical: number; warning: number; compliant: number }
+    ) => {
       if (!section) return;
-      Object.values(section).forEach((item: any) => {
-        if (item && item.status) {
-          if (item.status === 'non_compliant') counters.critical++;
-          else if (item.status === 'warning' || item.status === 'potentially_non_compliant')
-            counters.warning++;
-          else if (item.status === 'compliant') counters.compliant++;
-        }
-      });
+
+      // Handle direct LabelingSection
+      if ('status' in section && typeof section === 'object' && !Array.isArray(section)) {
+        const status = (section as LabelingSection).status;
+        if (status === 'non_compliant') counters.critical++;
+        else if (status === 'potentially_non_compliant') counters.warning++;
+        else if (status === 'compliant') counters.compliant++;
+      } else if (typeof section === 'object') {
+        // Handle Record<string, LabelingSection | undefined>
+        Object.values(section).forEach((item) => {
+          if (item && item.status) {
+            if (item.status === 'non_compliant') counters.critical++;
+            else if (item.status === 'potentially_non_compliant') counters.warning++;
+            else if (item.status === 'compliant') counters.compliant++;
+          }
+        });
+      }
     };
 
     // Count issues in both results
     [previousResult, result].forEach((res, idx) => {
       const counters = idx === 0 ? prevIssues : currIssues;
-      countIssuesInSection(res.general_labeling, counters);
-      countIssuesInSection(res.nutrition_labeling, counters);
-      countIssuesInSection(res.allergen_labeling, counters);
-      countIssuesInSection(res.claims_and_statements, counters);
+      // Count from general_labeling (which is an object with sub-sections)
+      if (res.general_labeling) {
+        Object.values(res.general_labeling).forEach((section) => {
+          if (section && section.status) {
+            if (section.status === 'non_compliant') counters.critical++;
+            else if (section.status === 'potentially_non_compliant') counters.warning++;
+            else if (section.status === 'compliant') counters.compliant++;
+          }
+        });
+      }
+      // Count from nutrition_labeling (optional)
+      if (res.nutrition_labeling && res.nutrition_labeling.status) {
+        if (res.nutrition_labeling.status === 'non_compliant') counters.critical++;
+        else if (res.nutrition_labeling.status === 'potentially_non_compliant') counters.warning++;
+        else if (res.nutrition_labeling.status === 'compliant') counters.compliant++;
+      }
+      // Count from allergen_labeling
+      if (res.allergen_labeling && res.allergen_labeling.status) {
+        if (res.allergen_labeling.status === 'non_compliant') counters.critical++;
+        else if (res.allergen_labeling.status === 'potentially_non_compliant') counters.warning++;
+        else if (res.allergen_labeling.status === 'compliant') counters.compliant++;
+      }
+      // Claims are structured differently, skip for now
     });
 
     const prevTotal = prevIssues.critical + prevIssues.warning;
@@ -620,9 +687,16 @@ export default function AnalyzePage() {
               confidence={analysisData.category_confidence || 'medium'}
               categoryRationale={analysisData.category_rationale || ''}
               alternatives={analysisData.category_ambiguity?.alternative_categories || []}
-              categoryOptions={analysisData.category_options || {}}
-              labelConflicts={analysisData.category_ambiguity?.label_conflicts || []}
-              recommendation={analysisData.recommendation}
+              categoryOptions={analysisData.category_ambiguity?.category_options || {}}
+              labelConflicts={(analysisData.category_ambiguity?.label_conflicts || []).map(
+                (conflict) => ({
+                  conflict: conflict as string,
+                  current_category: analysisData.product_category || '',
+                  violation: conflict as string,
+                  severity: 'medium' as const,
+                })
+              )}
+              recommendation={analysisData.category_ambiguity?.recommendation}
               onSelect={handleCategorySelect}
               onBack={handleBackToSelector}
             />
@@ -633,9 +707,16 @@ export default function AnalyzePage() {
               confidence={analysisData.category_confidence || 'medium'}
               categoryRationale={analysisData.category_rationale || ''}
               alternatives={analysisData.category_ambiguity?.alternative_categories || []}
-              categoryOptions={analysisData.category_options || {}}
-              labelConflicts={analysisData.category_ambiguity?.label_conflicts || []}
-              recommendation={analysisData.recommendation}
+              categoryOptions={analysisData.category_ambiguity?.category_options || {}}
+              labelConflicts={(analysisData.category_ambiguity?.label_conflicts || []).map(
+                (conflict) => ({
+                  conflict: conflict as string,
+                  current_category: analysisData.product_category || '',
+                  violation: conflict as string,
+                  severity: 'medium' as const,
+                })
+              )}
+              recommendation={analysisData.category_ambiguity?.recommendation}
               onSelect={handleCategorySelect}
               onCompare={handleCompare}
             />
@@ -871,7 +952,8 @@ export default function AnalyzePage() {
                       <div className="flex gap-2 flex-wrap justify-end">
                         {/* Show "Change Category" button if this result came from category selection */}
                         {analysisData &&
-                          analysisData.category_ambiguity?.alternative_categories?.length > 0 && (
+                          (analysisData.category_ambiguity?.alternative_categories?.length ?? 0) >
+                            0 && (
                             <Button
                               onClick={handleChangeCategoryClick}
                               variant="outline"
@@ -1191,24 +1273,30 @@ export default function AnalyzePage() {
                     {result.recommendations && (
                       <PrintReadyCertification
                         criticalCount={
-                          result.recommendations.filter((r: any) => r.priority === 'critical')
-                            .length
+                          result.recommendations.filter(
+                            (r: Recommendation) => r.priority === 'critical'
+                          ).length
                         }
                         highCount={
-                          result.recommendations.filter((r: any) => r.priority === 'high').length
+                          result.recommendations.filter(
+                            (r: Recommendation) => r.priority === 'high'
+                          ).length
                         }
                         mediumCount={
-                          result.recommendations.filter((r: any) => r.priority === 'medium').length
+                          result.recommendations.filter(
+                            (r: Recommendation) => r.priority === 'medium'
+                          ).length
                         }
                         lowCount={
-                          result.recommendations.filter((r: any) => r.priority === 'low').length
+                          result.recommendations.filter((r: Recommendation) => r.priority === 'low')
+                            .length
                         }
                         analysisDate={result.created_at || new Date().toISOString()}
                         criticalIssues={result.recommendations.filter(
-                          (r: any) => r.priority === 'critical'
+                          (r: Recommendation) => r.priority === 'critical'
                         )}
                         highIssues={result.recommendations.filter(
-                          (r: any) => r.priority === 'high'
+                          (r: Recommendation) => r.priority === 'high'
                         )}
                       />
                     )}
@@ -1421,10 +1509,10 @@ export default function AnalyzePage() {
                                     (ingredient: string, idx: number) => {
                                       // Find GRAS status for this ingredient
                                       const grasStatus =
-                                        result.gras_compliance?.detailed_results?.find(
-                                          (r: any) => r.ingredient === ingredient
+                                        result.gras_compliance?.gras_ingredients?.find(
+                                          (r: IngredientMatch) => r.ingredient === ingredient
                                         );
-                                      const isGRAS = grasStatus?.isGRAS;
+                                      const isGRAS = grasStatus?.is_gras;
 
                                       return (
                                         <span
@@ -1438,7 +1526,7 @@ export default function AnalyzePage() {
                                           }`}
                                           title={
                                             isGRAS === true
-                                              ? `✓ GRAS Compliant${grasStatus?.matchType ? ` (${grasStatus.matchType} match)` : ' (match type unknown)'}`
+                                              ? `✓ GRAS Compliant${grasStatus?.match_type ? ` (${grasStatus.match_type} match)` : ' (match type unknown)'}`
                                               : isGRAS === false
                                                 ? `✗ Not in GRAS database`
                                                 : 'GRAS status unknown'
@@ -1644,214 +1732,194 @@ export default function AnalyzePage() {
                         </h3>
                         <div className="space-y-4">
                           {/* Structure/Function Claims */}
-                          {result.claims.structure_function_claims &&
-                            ((typeof result.claims.structure_function_claims === 'object' &&
-                              result.claims.structure_function_claims.claims_present) ||
-                              (Array.isArray(result.claims.structure_function_claims) &&
-                                result.claims.structure_function_claims.length > 0)) && (
+                          {result.claims.structure_function_claims?.claims_present &&
+                            result.claims.structure_function_claims.claims_found.length > 0 && (
                               <div className="bg-slate-50 rounded-lg p-4">
                                 <div className="flex items-center justify-between mb-3">
                                   <h4 className="font-semibold text-slate-900">
                                     Structure/Function Claims
                                   </h4>
-                                  {typeof result.claims.structure_function_claims === 'object' &&
-                                    result.claims.structure_function_claims.status && (
-                                      <span
-                                        className={`px-2 py-1 rounded text-xs font-semibold ${
-                                          result.claims.structure_function_claims.status ===
-                                          'compliant'
-                                            ? 'bg-green-100 text-green-800'
-                                            : result.claims.structure_function_claims.status ===
-                                                'non_compliant'
-                                              ? 'bg-red-100 text-red-800'
-                                              : 'bg-gray-100 text-gray-800'
-                                        }`}
-                                      >
-                                        {formatComplianceStatus(
-                                          result.claims.structure_function_claims.status
-                                        )}
-                                      </span>
-                                    )}
+                                  {result.claims.structure_function_claims.status && (
+                                    <span
+                                      className={`px-2 py-1 rounded text-xs font-semibold ${
+                                        result.claims.structure_function_claims.status ===
+                                        'compliant'
+                                          ? 'bg-green-100 text-green-800'
+                                          : result.claims.structure_function_claims.status ===
+                                              'non_compliant'
+                                            ? 'bg-red-100 text-red-800'
+                                            : 'bg-gray-100 text-gray-800'
+                                      }`}
+                                    >
+                                      {formatComplianceStatus(
+                                        result.claims.structure_function_claims.status
+                                      )}
+                                    </span>
+                                  )}
                                 </div>
                                 <div className="space-y-2">
-                                  {(Array.isArray(result.claims.structure_function_claims)
-                                    ? result.claims.structure_function_claims
-                                    : result.claims.structure_function_claims.claims_found || []
-                                  ).map((claim: any, idx: number) => (
-                                    <div
-                                      key={idx}
-                                      className="p-3 bg-white border border-slate-200 rounded"
-                                    >
-                                      <div className="text-sm text-slate-900 mb-1">
-                                        {typeof claim === 'string' ? claim : claim.claim_text}
-                                      </div>
-                                      {typeof claim === 'object' && claim.compliance_issue && (
-                                        <div className="text-xs text-red-700 mt-1">
-                                          ⚠️ {claim.compliance_issue}
+                                  {result.claims.structure_function_claims.claims_found.map(
+                                    (claim, idx: number) => (
+                                      <div
+                                        key={idx}
+                                        className="p-3 bg-white border border-slate-200 rounded"
+                                      >
+                                        <div className="text-sm text-slate-900 mb-1">
+                                          {claim.claim_text}
                                         </div>
-                                      )}
-                                      {typeof claim === 'object' &&
-                                        claim.disclaimer_required &&
-                                        !claim.disclaimer_present && (
+                                        {claim.compliance_issue && (
+                                          <div className="text-xs text-red-700 mt-1">
+                                            ⚠️ {claim.compliance_issue}
+                                          </div>
+                                        )}
+                                        {claim.disclaimer_required && !claim.disclaimer_present && (
                                           <div className="text-xs text-yellow-700 mt-1">
                                             ⚠️ Disclaimer required but not found
                                           </div>
                                         )}
-                                    </div>
-                                  ))}
+                                      </div>
+                                    )
+                                  )}
                                 </div>
                               </div>
                             )}
 
                           {/* Nutrient Content Claims */}
-                          {result.claims.nutrient_content_claims &&
-                            ((typeof result.claims.nutrient_content_claims === 'object' &&
-                              result.claims.nutrient_content_claims.claims_present) ||
-                              (Array.isArray(result.claims.nutrient_content_claims) &&
-                                result.claims.nutrient_content_claims.length > 0)) && (
+                          {result.claims.nutrient_content_claims?.claims_present &&
+                            result.claims.nutrient_content_claims.claims_found.length > 0 && (
                               <div className="bg-slate-50 rounded-lg p-4">
                                 <div className="flex items-center justify-between mb-3">
                                   <h4 className="font-semibold text-slate-900">
                                     Nutrient Content Claims
                                   </h4>
-                                  {typeof result.claims.nutrient_content_claims === 'object' &&
-                                    result.claims.nutrient_content_claims.status && (
-                                      <span
-                                        className={`px-2 py-1 rounded text-xs font-semibold ${
-                                          result.claims.nutrient_content_claims.status ===
-                                          'compliant'
-                                            ? 'bg-green-100 text-green-800'
-                                            : result.claims.nutrient_content_claims.status ===
-                                                'non_compliant'
-                                              ? 'bg-red-100 text-red-800'
-                                              : 'bg-gray-100 text-gray-800'
-                                        }`}
-                                      >
-                                        {formatComplianceStatus(
-                                          result.claims.nutrient_content_claims.status
-                                        )}
-                                      </span>
-                                    )}
+                                  {result.claims.nutrient_content_claims.status && (
+                                    <span
+                                      className={`px-2 py-1 rounded text-xs font-semibold ${
+                                        result.claims.nutrient_content_claims.status === 'compliant'
+                                          ? 'bg-green-100 text-green-800'
+                                          : result.claims.nutrient_content_claims.status ===
+                                              'non_compliant'
+                                            ? 'bg-red-100 text-red-800'
+                                            : 'bg-gray-100 text-gray-800'
+                                      }`}
+                                    >
+                                      {formatComplianceStatus(
+                                        result.claims.nutrient_content_claims.status
+                                      )}
+                                    </span>
+                                  )}
                                 </div>
                                 <div className="space-y-2">
-                                  {(Array.isArray(result.claims.nutrient_content_claims)
-                                    ? result.claims.nutrient_content_claims
-                                    : result.claims.nutrient_content_claims.claims_found || []
-                                  ).map((claim: any, idx: number) => (
-                                    <div
-                                      key={idx}
-                                      className="p-3 bg-white border border-slate-200 rounded"
-                                    >
-                                      <div className="flex items-start justify-between">
-                                        <div className="text-sm text-slate-900 mb-1">
-                                          {typeof claim === 'string' ? claim : claim.claim_text}
+                                  {result.claims.nutrient_content_claims.claims_found.map(
+                                    (claim, idx: number) => (
+                                      <div
+                                        key={idx}
+                                        className="p-3 bg-white border border-slate-200 rounded"
+                                      >
+                                        <div className="flex items-start justify-between">
+                                          <div className="text-sm text-slate-900 mb-1">
+                                            {claim.claim_text}
+                                          </div>
+                                          <span
+                                            className={`ml-2 px-2 py-0.5 rounded text-xs font-semibold whitespace-nowrap ${
+                                              claim.meets_definition
+                                                ? 'bg-green-100 text-green-800'
+                                                : 'bg-red-100 text-red-800'
+                                            }`}
+                                          >
+                                            {claim.meets_definition
+                                              ? 'Meets Definition'
+                                              : 'Does Not Meet Definition'}
+                                          </span>
                                         </div>
-                                        {typeof claim === 'object' &&
-                                          claim.meets_definition !== undefined && (
-                                            <span
-                                              className={`ml-2 px-2 py-0.5 rounded text-xs font-semibold whitespace-nowrap ${
-                                                claim.meets_definition
-                                                  ? 'bg-green-100 text-green-800'
-                                                  : 'bg-red-100 text-red-800'
-                                              }`}
-                                            >
-                                              {claim.meets_definition
-                                                ? 'Meets Definition'
-                                                : 'Does Not Meet Definition'}
-                                            </span>
-                                          )}
+                                        {claim.issue && (
+                                          <div className="text-xs text-red-700 mt-1">
+                                            ⚠️ {claim.issue}
+                                          </div>
+                                        )}
                                       </div>
-                                      {typeof claim === 'object' && claim.issue && (
-                                        <div className="text-xs text-red-700 mt-1">
-                                          ⚠️ {claim.issue}
-                                        </div>
-                                      )}
-                                    </div>
-                                  ))}
+                                    )
+                                  )}
                                 </div>
                               </div>
                             )}
 
                           {/* Health Claims */}
-                          {result.claims.health_claims &&
-                            ((typeof result.claims.health_claims === 'object' &&
-                              result.claims.health_claims.claims_present) ||
-                              (Array.isArray(result.claims.health_claims) &&
-                                result.claims.health_claims.length > 0)) && (
+                          {result.claims.health_claims?.claims_present &&
+                            result.claims.health_claims.claims_found.length > 0 && (
                               <div className="bg-slate-50 rounded-lg p-4">
                                 <div className="flex items-center justify-between mb-3">
                                   <h4 className="font-semibold text-slate-900">Health Claims</h4>
-                                  {typeof result.claims.health_claims === 'object' &&
-                                    result.claims.health_claims.status && (
-                                      <span
-                                        className={`px-2 py-1 rounded text-xs font-semibold ${
-                                          result.claims.health_claims.status === 'compliant'
-                                            ? 'bg-green-100 text-green-800'
-                                            : result.claims.health_claims.status === 'non_compliant'
-                                              ? 'bg-red-100 text-red-800'
-                                              : 'bg-gray-100 text-gray-800'
-                                        }`}
-                                      >
-                                        {formatComplianceStatus(result.claims.health_claims.status)}
-                                      </span>
-                                    )}
+                                  {result.claims.health_claims.status && (
+                                    <span
+                                      className={`px-2 py-1 rounded text-xs font-semibold ${
+                                        result.claims.health_claims.status === 'compliant'
+                                          ? 'bg-green-100 text-green-800'
+                                          : result.claims.health_claims.status === 'non_compliant'
+                                            ? 'bg-red-100 text-red-800'
+                                            : 'bg-gray-100 text-gray-800'
+                                      }`}
+                                    >
+                                      {formatComplianceStatus(result.claims.health_claims.status)}
+                                    </span>
+                                  )}
                                 </div>
                                 <div className="space-y-2">
-                                  {(Array.isArray(result.claims.health_claims)
-                                    ? result.claims.health_claims
-                                    : result.claims.health_claims.claims_found || []
-                                  ).map((claim: any, idx: number) => (
-                                    <div
-                                      key={idx}
-                                      className="p-3 bg-white border border-slate-200 rounded"
-                                    >
-                                      <div className="text-sm text-slate-900">
-                                        {typeof claim === 'string'
-                                          ? claim
-                                          : claim.claim_text || claim}
+                                  {result.claims.health_claims.claims_found.map(
+                                    (claim, idx: number) => (
+                                      <div
+                                        key={idx}
+                                        className="p-3 bg-white border border-slate-200 rounded"
+                                      >
+                                        <div className="text-sm text-slate-900">
+                                          {claim.claim_text}
+                                        </div>
+                                        {claim.issue && (
+                                          <div className="text-xs text-red-700 mt-1">
+                                            ⚠️ {claim.issue}
+                                          </div>
+                                        )}
                                       </div>
-                                    </div>
-                                  ))}
+                                    )
+                                  )}
                                 </div>
                               </div>
                             )}
 
                           {/* Prohibited Claims */}
-                          {result.claims.prohibited_claims &&
-                            ((typeof result.claims.prohibited_claims === 'object' &&
-                              result.claims.prohibited_claims.claims_present) ||
-                              (Array.isArray(result.claims.prohibited_claims) &&
-                                result.claims.prohibited_claims.length > 0)) && (
+                          {result.claims.prohibited_claims?.claims_present &&
+                            result.claims.prohibited_claims.claims_found.length > 0 && (
                               <div className="bg-red-50 rounded-lg p-4 border-2 border-red-300">
                                 <div className="flex items-center justify-between mb-3">
                                   <h4 className="font-semibold text-red-900">
                                     ⚠️ Prohibited Claims Detected
                                   </h4>
-                                  {typeof result.claims.prohibited_claims === 'object' &&
-                                    result.claims.prohibited_claims.status && (
-                                      <span className="px-2 py-1 rounded text-xs font-semibold bg-red-200 text-red-900">
-                                        {formatComplianceStatus(
-                                          result.claims.prohibited_claims.status
-                                        )}
-                                      </span>
-                                    )}
+                                  {result.claims.prohibited_claims.status && (
+                                    <span className="px-2 py-1 rounded text-xs font-semibold bg-red-200 text-red-900">
+                                      {formatComplianceStatus(
+                                        result.claims.prohibited_claims.status
+                                      )}
+                                    </span>
+                                  )}
                                 </div>
                                 <div className="space-y-2">
-                                  {(Array.isArray(result.claims.prohibited_claims)
-                                    ? result.claims.prohibited_claims
-                                    : result.claims.prohibited_claims.claims_found || []
-                                  ).map((claim: any, idx: number) => (
-                                    <div
-                                      key={idx}
-                                      className="p-3 bg-white border border-red-300 rounded"
-                                    >
-                                      <div className="text-sm text-red-900">
-                                        {typeof claim === 'string'
-                                          ? claim
-                                          : claim.claim_text || claim}
+                                  {result.claims.prohibited_claims.claims_found.map(
+                                    (claim, idx: number) => (
+                                      <div
+                                        key={idx}
+                                        className="p-3 bg-white border border-red-300 rounded"
+                                      >
+                                        <div className="text-sm text-red-900">
+                                          {claim.claim_text}
+                                        </div>
+                                        {claim.issue && (
+                                          <div className="text-xs text-red-700 mt-1">
+                                            ⚠️ {claim.issue}
+                                          </div>
+                                        )}
                                       </div>
-                                    </div>
-                                  ))}
+                                    )
+                                  )}
                                 </div>
                               </div>
                             )}
@@ -1922,10 +1990,10 @@ export default function AnalyzePage() {
                                 )}
                               </div>
                             )}
-                          {result.additional_requirements.other_requirements &&
+                          {result.additional_requirements?.other_requirements &&
                             result.additional_requirements.other_requirements.length > 0 &&
                             result.additional_requirements.other_requirements.map(
-                              (req: any, idx: number) => (
+                              (req: OtherRequirement, idx: number) => (
                                 <div key={idx} className="bg-slate-50 rounded-lg p-4">
                                   <div className="flex items-center justify-between mb-2">
                                     <h4 className="font-semibold text-slate-900">
@@ -2040,7 +2108,7 @@ export default function AnalyzePage() {
 
                                   return getOrder(a.element) - getOrder(b.element);
                                 })
-                                .map((row: any, idx: number) => (
+                                .map((row: ComplianceTableRow, idx: number) => (
                                   <tr key={idx} className="hover:bg-slate-50">
                                     <td className="border border-slate-300 px-4 py-2 text-sm text-slate-900">
                                       {row.element}
@@ -2048,8 +2116,7 @@ export default function AnalyzePage() {
                                     <td className="border border-slate-300 px-4 py-2 text-sm">
                                       <span
                                         className={`px-2 py-1 rounded text-xs font-semibold ${
-                                          row.status === 'Compliant' ||
-                                          row.status === 'Likely Compliant'
+                                          row.status === 'Compliant'
                                             ? 'bg-green-100 text-green-800'
                                             : row.status === 'Potentially Non-compliant'
                                               ? 'bg-yellow-100 text-yellow-800'
@@ -2093,7 +2160,7 @@ export default function AnalyzePage() {
                                 (priorityOrder[b.priority] || 999)
                               );
                             })
-                            .map((rec: any, index: number) => (
+                            .map((rec: Recommendation, index: number) => (
                               <div
                                 key={index}
                                 className={`rounded-lg p-4 border-l-4 ${

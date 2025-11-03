@@ -17,6 +17,15 @@ import {
   sendNotificationEmail,
 } from '@/lib/analysis/orchestrator';
 import { logger, createRequestLogger } from '@/lib/logger';
+import type { AnalysisResult } from '@/types';
+import {
+  handleApiError,
+  ValidationError,
+  AuthenticationError,
+  RateLimitError,
+  ExternalServiceError,
+  handleSupabaseError,
+} from '@/lib/error-handler';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -30,7 +39,7 @@ export async function POST(request: NextRequest) {
 
     if (!userId) {
       requestLogger.warn('Unauthorized analysis request');
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      throw new AuthenticationError();
     }
 
     requestLogger.info('Analysis request started', { userId });
@@ -42,9 +51,16 @@ export async function POST(request: NextRequest) {
     let currentUsage;
     try {
       currentUsage = await checkUsageLimits(userId, user.id);
-    } catch (error: any) {
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error(String(err));
       if (error.message.includes('limit reached')) {
-        return NextResponse.json({ error: error.message }, { status: 429 });
+        // Extract limit info if available from the error
+        throw new RateLimitError('Monthly analysis limit reached. Please upgrade your plan.', {
+          // Note: checkUsageLimits may need to throw RateLimitError directly in future
+          current: error.message.match(/\d+/)?.[0]
+            ? parseInt(error.message.match(/\d+/)?.[0] || '0')
+            : undefined,
+        });
       }
       throw error;
     }
@@ -57,24 +73,26 @@ export async function POST(request: NextRequest) {
     const forcedCategory = formData.get('forcedCategory') as string | null;
 
     if (!imageFile) {
-      return NextResponse.json({ error: 'No image provided' }, { status: 400 });
+      throw new ValidationError('Image is required', { field: 'image' });
     }
 
     // Validate file size (10MB limit)
     if (imageFile.size > 10 * 1024 * 1024) {
-      return NextResponse.json(
-        { error: 'File too large. Maximum file size is 10MB.' },
-        { status: 413 }
-      );
+      throw new ValidationError('File too large. Maximum file size is 10MB.', {
+        field: 'image',
+        maxSize: '10MB',
+        actualSize: `${(imageFile.size / (1024 * 1024)).toFixed(2)}MB`,
+      });
     }
 
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
     if (!allowedTypes.includes(imageFile.type)) {
-      return NextResponse.json(
-        { error: `Invalid file type. Allowed types: ${allowedTypes.join(', ')}` },
-        { status: 400 }
-      );
+      throw new ValidationError(`Invalid file type. Allowed types: ${allowedTypes.join(', ')}`, {
+        field: 'image',
+        allowedTypes,
+        actualType: imageFile.type,
+      });
     }
 
     // 4. Handle session
@@ -119,7 +137,7 @@ export async function POST(request: NextRequest) {
       preview: responseText.substring(0, 500),
     });
 
-    let analysisData: any;
+    let analysisData: AnalysisResult;
     try {
       analysisData = JSON.parse(responseText);
       requestLogger.info('Analysis data parsed successfully', { userId });
@@ -184,11 +202,7 @@ export async function POST(request: NextRequest) {
           }
         : null,
     });
-  } catch (error: any) {
-    requestLogger.error('Image analysis failed', { error, message: error.message });
-    return NextResponse.json(
-      { error: error.message || 'Failed to analyze image' },
-      { status: 500 }
-    );
+  } catch (err: unknown) {
+    return handleApiError(err);
   }
 }

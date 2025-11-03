@@ -38,7 +38,7 @@ export class PerformanceMonitor {
   /**
    * Add metadata to the performance report
    */
-  addMetadata(key: string, value: any): void {
+  addMetadata(key: string, value: string | number | boolean | null): void {
     this.metadata[key] = value;
   }
 

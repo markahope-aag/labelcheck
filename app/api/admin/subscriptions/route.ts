@@ -2,6 +2,12 @@ import { auth } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { logger, createRequestLogger } from '@/lib/logger';
+import {
+  handleApiError,
+  AuthenticationError,
+  AuthorizationError,
+  handleSupabaseError,
+} from '@/lib/error-handler';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,22 +18,21 @@ export async function GET(request: NextRequest) {
     const { userId } = await auth();
 
     if (!userId) {
-      requestLogger.warn('Unauthorized subscriptions fetch attempt');
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      throw new AuthenticationError();
     }
 
-    requestLogger.info('Admin subscriptions fetch started', { userId });
-
-    // Check if user is system admin in database
-    const { data: currentUser } = await supabaseAdmin
+    // Check if user is admin
+    const { data: user } = await supabaseAdmin
       .from('users')
       .select('is_system_admin')
       .eq('clerk_user_id', userId)
       .single();
 
-    if (!currentUser?.is_system_admin) {
-      return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 });
+    if (!user || !user.is_system_admin) {
+      throw new AuthorizationError('Admin access required');
     }
+
+    requestLogger.info('Admin subscriptions fetch started', { userId });
 
     // Get all subscriptions with user details
     const { data: subscriptions, error } = await supabaseAdmin
@@ -45,8 +50,7 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false });
 
     if (error) {
-      requestLogger.error('Failed to fetch subscriptions', { error });
-      return NextResponse.json({ error: 'Failed to fetch subscriptions' }, { status: 500 });
+      throw handleSupabaseError(error, 'fetch subscriptions');
     }
 
     // Calculate stats
@@ -65,8 +69,7 @@ export async function GET(request: NextRequest) {
       subscriptions: subscriptions || [],
       stats,
     });
-  } catch (error: any) {
-    requestLogger.error('Admin subscriptions fetch failed', { error, message: error.message });
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err: unknown) {
+    return handleApiError(err);
   }
 }

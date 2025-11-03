@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { requireAdmin } from '@/lib/auth-helpers';
 import { logger, createRequestLogger } from '@/lib/logger';
+import {
+  handleApiError,
+  AuthenticationError,
+  AuthorizationError,
+  handleSupabaseError,
+} from '@/lib/error-handler';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,8 +15,23 @@ export async function GET(request: NextRequest) {
   const requestLogger = createRequestLogger({ endpoint: '/api/admin/users' });
 
   try {
-    // Require admin access (throws if not admin)
-    await requireAdmin();
+    const { userId } = await auth();
+
+    if (!userId) {
+      throw new AuthenticationError();
+    }
+
+    // Check if user is admin
+    const { data: user } = await supabaseAdmin
+      .from('users')
+      .select('is_system_admin')
+      .eq('clerk_user_id', userId)
+      .single();
+
+    if (!user || !user.is_system_admin) {
+      throw new AuthorizationError('Admin access required');
+    }
+
     requestLogger.info('Admin users fetch started');
 
     // Get all users with their subscriptions using a single query
@@ -28,8 +49,7 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false });
 
     if (usersError) {
-      requestLogger.error('Failed to fetch users', { error: usersError });
-      return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 });
+      throw handleSupabaseError(usersError, 'fetch users');
     }
 
     // Get analysis counts for all users in a single aggregated query (fixes N+1 problem)
@@ -38,8 +58,7 @@ export async function GET(request: NextRequest) {
       .select('user_id');
 
     if (countsError) {
-      requestLogger.error('Failed to fetch analysis counts', { error: countsError });
-      return NextResponse.json({ error: 'Failed to fetch analysis counts' }, { status: 500 });
+      throw handleSupabaseError(countsError, 'fetch analysis counts');
     }
 
     // Build a map of user_id -> count for O(1) lookup
@@ -59,17 +78,7 @@ export async function GET(request: NextRequest) {
 
     requestLogger.debug('Users fetched successfully', { count: usersWithCounts.length });
     return NextResponse.json(usersWithCounts);
-  } catch (error: any) {
-    requestLogger.error('Admin users fetch failed', { error, message: error.message });
-
-    // Handle auth errors with appropriate status codes
-    if (error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    if (error.message.includes('Forbidden')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+  } catch (err: unknown) {
+    return handleApiError(err);
   }
 }

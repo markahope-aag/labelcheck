@@ -110,7 +110,7 @@ export const logger = new FlexibleLogger(pinoLogger);
 export function createRequestLogger(context: {
   userId?: string;
   requestId?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }): FlexibleLogger {
   return logger.child(context);
 }

@@ -5,6 +5,12 @@ import { Resend } from 'resend';
 import { generateInvitationEmail } from '@/lib/email-templates';
 import crypto from 'crypto';
 import { logger, createRequestLogger } from '@/lib/logger';
+import {
+  handleApiError,
+  ValidationError,
+  AuthorizationError,
+  handleSupabaseError,
+} from '@/lib/error-handler';
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
@@ -45,11 +51,7 @@ export async function GET(req: NextRequest) {
       .eq('organization_id', membership.organization_id);
 
     if (membersError) {
-      requestLogger.error('Failed to fetch organization members', {
-        error: membersError,
-        organizationId: membership.organization_id,
-      });
-      return NextResponse.json({ error: 'Failed to fetch members' }, { status: 500 });
+      throw handleSupabaseError(membersError, 'fetch organization members');
     }
 
     requestLogger.debug('Members fetched', {
@@ -83,18 +85,8 @@ export async function GET(req: NextRequest) {
       },
       { status: 200 }
     );
-  } catch (error: any) {
-    requestLogger.error('Organization members fetch failed', { error, message: error.message });
-
-    // Handle auth errors with appropriate status codes
-    if (error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    if (error.message === 'User not found') {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+  } catch (err: unknown) {
+    return handleApiError(err);
   }
 }
 
@@ -110,11 +102,8 @@ export async function POST(req: NextRequest) {
 
     const { organizationId, email, role } = await req.json();
 
-    if (!organizationId || !email || !role) {
-      return NextResponse.json(
-        { error: 'Organization ID, email, and role are required' },
-        { status: 400 }
-      );
+    if (!email) {
+      throw new ValidationError('Email is required', { field: 'email' });
     }
 
     // Check if current user is an owner or admin of the organization
@@ -125,11 +114,9 @@ export async function POST(req: NextRequest) {
       .eq('user_id', currentUser.id)
       .single();
 
-    if (!membership || !['owner', 'admin'].includes(membership.role)) {
-      return NextResponse.json(
-        { error: 'Only organization owners and admins can invite members' },
-        { status: 403 }
-      );
+    const userRole = membership?.role;
+    if (!membership || !['owner', 'admin'].includes(userRole)) {
+      throw new AuthorizationError('Only owners and admins can manage members');
     }
 
     // Find the user to invite by email
@@ -140,12 +127,7 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
 
     if (invitedUserError) {
-      requestLogger.error('Failed to lookup invited user', {
-        error: invitedUserError,
-        email,
-        organizationId,
-      });
-      return NextResponse.json({ error: 'Error looking up user' }, { status: 500 });
+      throw handleSupabaseError(invitedUserError, 'lookup invited user');
     }
 
     // Get organization details for email
@@ -190,12 +172,7 @@ export async function POST(req: NextRequest) {
         .single();
 
       if (insertError) {
-        requestLogger.error('Failed to add member to organization', {
-          error: insertError,
-          userId: invitedUser.id,
-          organizationId,
-        });
-        return NextResponse.json({ error: 'Failed to add member' }, { status: 500 });
+        throw handleSupabaseError(insertError, 'add member to organization');
       }
 
       requestLogger.info('Member added immediately to organization', {
@@ -243,12 +220,7 @@ export async function POST(req: NextRequest) {
         .single();
 
       if (invitationError) {
-        requestLogger.error('Failed to create pending invitation', {
-          error: invitationError,
-          email,
-          organizationId,
-        });
-        return NextResponse.json({ error: 'Failed to create invitation' }, { status: 500 });
+        throw handleSupabaseError(invitationError, 'create pending invitation');
       }
 
       // Send invitation email
@@ -274,11 +246,11 @@ export async function POST(req: NextRequest) {
             organizationId,
             invitationId: pendingInvitation.id,
           });
-        } catch (emailError: any) {
+        } catch (err: unknown) {
+          const emailError = err instanceof Error ? err : new Error(String(err));
           requestLogger.error('Failed to send invitation email', {
             error: emailError,
-            message: emailError?.message,
-            statusCode: emailError?.statusCode,
+            message: emailError.message,
             email,
             organizationId,
           });
@@ -296,17 +268,7 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({ ...pendingInvitation, type: 'pending' }, { status: 201 });
     }
-  } catch (error: any) {
-    requestLogger.error('Organization member invitation failed', { error, message: error.message });
-
-    // Handle auth errors with appropriate status codes
-    if (error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    if (error.message === 'User not found') {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+  } catch (err: unknown) {
+    return handleApiError(err);
   }
 }

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
+import { supabaseAdmin } from '@/lib/supabase';
 import { getDocumentsWithCategories } from '@/lib/regulatory-documents';
 import { logger, createRequestLogger } from '@/lib/logger';
+import { handleApiError, AuthenticationError, AuthorizationError } from '@/lib/error-handler';
 
 /**
  * GET /api/admin/documents/categories
@@ -28,8 +30,7 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json(documentsWithCategories);
-  } catch (error: any) {
-    requestLogger.error('Document categories fetch failed', { error, message: error.message });
-    return NextResponse.json({ error: 'Failed to fetch document categories' }, { status: 500 });
+  } catch (err: unknown) {
+    return handleApiError(err);
   }
 }

@@ -67,7 +67,17 @@ export default function ReportsPage() {
 
       if (error) throw error;
 
-      const monthlyData: { [key: string]: any } = {};
+      const monthlyData: Record<
+        string,
+        {
+          month: string;
+          monthNum: number;
+          total_analyses: number;
+          total_health_score: number;
+          compliant_count: number;
+          total_issues: number;
+        }
+      > = {};
       const monthNames = [
         'January',
         'February',
@@ -99,7 +109,7 @@ export default function ReportsPage() {
       let yearCompliant = 0;
       let yearIssues = 0;
 
-      (analyses || []).forEach((analysis: any) => {
+      (analyses || []).forEach((analysis) => {
         const date = new Date(analysis.created_at);
         const monthName = monthNames[date.getMonth()];
         const result = analysis.analysis_result || {};
@@ -118,7 +128,7 @@ export default function ReportsPage() {
         if (analysis.compliance_status === 'compliant') yearCompliant++;
       });
 
-      const statsArray: MonthlyStats[] = Object.values(monthlyData).map((m: any) => ({
+      const statsArray: MonthlyStats[] = Object.values(monthlyData).map((m) => ({
         month: m.month,
         total_analyses: m.total_analyses,
         avg_health_score:

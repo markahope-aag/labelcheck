@@ -1,6 +1,7 @@
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { Webhook } from 'svix';
+import type { WebhookEvent } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
 
@@ -27,14 +28,14 @@ export async function POST(req: Request) {
 
   const wh = new Webhook(WEBHOOK_SECRET);
 
-  let evt: any;
+  let evt: WebhookEvent;
 
   try {
     evt = wh.verify(body, {
       'svix-id': svix_id,
       'svix-timestamp': svix_timestamp,
       'svix-signature': svix_signature,
-    }) as any;
+    }) as WebhookEvent;
   } catch (err) {
     logger.error('Clerk webhook verification failed', { error: err });
     return new Response('Error occurred', {
@@ -43,13 +44,18 @@ export async function POST(req: Request) {
   }
 
   const eventType = evt.type;
-  const { id, email_addresses, primary_email_address_id } = evt.data;
 
   try {
     if (eventType === 'user.created') {
-      const primaryEmail = email_addresses?.find(
-        (email: any) => email.id === primary_email_address_id
-      );
+      // Type guard: user.created events have UserJSON data
+      const userData = evt.data as {
+        id: string;
+        email_addresses?: Array<{ id: string; email_address: string }>;
+        primary_email_address_id?: string;
+      };
+      const { id, email_addresses, primary_email_address_id } = userData;
+
+      const primaryEmail = email_addresses?.find((email) => email.id === primary_email_address_id);
 
       const { data: newUser, error } = await supabaseAdmin
         .from('users')
@@ -82,9 +88,15 @@ export async function POST(req: Request) {
     }
 
     if (eventType === 'user.updated') {
-      const primaryEmail = email_addresses?.find(
-        (email: any) => email.id === primary_email_address_id
-      );
+      // Type guard: user.updated events have UserJSON data
+      const userData = evt.data as {
+        id: string;
+        email_addresses?: Array<{ id: string; email_address: string }>;
+        primary_email_address_id?: string;
+      };
+      const { id, email_addresses, primary_email_address_id } = userData;
+
+      const primaryEmail = email_addresses?.find((email) => email.id === primary_email_address_id);
 
       const { error } = await supabaseAdmin
         .from('users')
@@ -103,6 +115,10 @@ export async function POST(req: Request) {
     }
 
     if (eventType === 'user.deleted') {
+      // Type guard: user.deleted events have DeletedObjectJSON data
+      const deletedData = evt.data as { id: string };
+      const { id } = deletedData;
+
       const { error } = await supabaseAdmin.from('users').delete().eq('clerk_user_id', id);
 
       if (error) {
@@ -114,7 +130,8 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ message: 'Webhook processed successfully' }, { status: 200 });
-  } catch (error: any) {
+  } catch (err: unknown) {
+    const error = err instanceof Error ? err : new Error(String(err));
     logger.error('Clerk webhook processing failed', { error, message: error.message });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

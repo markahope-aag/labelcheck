@@ -67,7 +67,11 @@ export default function AdminSettingsPage() {
     setTimeout(() => setSaveMessage(''), 3000);
   };
 
-  const updateSetting = (section: keyof typeof settings, key: string, value: any) => {
+  const updateSetting = (
+    section: keyof typeof settings,
+    key: string,
+    value: string | number | boolean
+  ) => {
     setSettings((prev) => ({
       ...prev,
       [section]: {

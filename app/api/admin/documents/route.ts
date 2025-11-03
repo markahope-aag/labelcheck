@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { requireAdmin } from '@/lib/auth-helpers';
 import { logger, createRequestLogger } from '@/lib/logger';
+import {
+  handleApiError,
+  AuthenticationError,
+  AuthorizationError,
+  ValidationError,
+  handleSupabaseError,
+} from '@/lib/error-handler';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,8 +16,23 @@ export async function GET(request: NextRequest) {
   const requestLogger = createRequestLogger({ endpoint: '/api/admin/documents' });
 
   try {
-    // Require admin access (throws if not admin)
-    await requireAdmin();
+    const { userId } = await auth();
+
+    if (!userId) {
+      throw new AuthenticationError();
+    }
+
+    // Check if user is admin
+    const { data: user } = await supabaseAdmin
+      .from('users')
+      .select('is_system_admin')
+      .eq('clerk_user_id', userId)
+      .single();
+
+    if (!user || !user.is_system_admin) {
+      throw new AuthorizationError('Admin access required');
+    }
+
     requestLogger.info('Admin documents fetch started');
 
     // Admin routes should use supabaseAdmin to bypass RLS
@@ -20,8 +42,7 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false });
 
     if (error) {
-      requestLogger.error('Failed to fetch documents', { error });
-      return NextResponse.json({ error: 'Failed to fetch documents' }, { status: 500 });
+      throw handleSupabaseError(error, 'fetch documents');
     }
 
     requestLogger.debug('Documents fetched successfully', {
@@ -30,18 +51,8 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json(documents);
-  } catch (error: any) {
-    requestLogger.error('Admin documents fetch failed', { error, message: error.message });
-
-    // Handle auth errors with appropriate status codes
-    if (error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    if (error.message.includes('Forbidden')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+  } catch (err: unknown) {
+    return handleApiError(err);
   }
 }
 
@@ -49,11 +60,34 @@ export async function POST(request: NextRequest) {
   const requestLogger = createRequestLogger({ endpoint: '/api/admin/documents' });
 
   try {
-    // Require admin access (throws if not admin)
-    await requireAdmin();
+    const { userId } = await auth();
+
+    if (!userId) {
+      throw new AuthenticationError();
+    }
+
+    // Check if user is admin
+    const { data: user } = await supabaseAdmin
+      .from('users')
+      .select('is_system_admin')
+      .eq('clerk_user_id', userId)
+      .single();
+
+    if (!user || !user.is_system_admin) {
+      throw new AuthorizationError('Admin access required');
+    }
+
     requestLogger.info('Admin document creation started');
 
     const body = await request.json();
+
+    if (!body.title) {
+      throw new ValidationError('Title is required', { field: 'title' });
+    }
+
+    if (!body.content) {
+      throw new ValidationError('Content is required', { field: 'content' });
+    }
 
     const { data: document, error } = await supabaseAdmin
       .from('regulatory_documents')
@@ -62,8 +96,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      requestLogger.error('Failed to create document', { error, body });
-      return NextResponse.json({ error: 'Failed to create document' }, { status: 500 });
+      throw handleSupabaseError(error, 'create regulatory document');
     }
 
     requestLogger.info('Document created successfully', {
@@ -72,17 +105,7 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json(document);
-  } catch (error: any) {
-    requestLogger.error('Admin document creation failed', { error, message: error.message });
-
-    // Handle auth errors with appropriate status codes
-    if (error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    if (error.message.includes('Forbidden')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+  } catch (err: unknown) {
+    return handleApiError(err);
   }
 }

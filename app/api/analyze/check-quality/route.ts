@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { analyzeImageQuality } from '@/lib/image-quality';
 import { logger, createRequestLogger } from '@/lib/logger';
+import { handleApiError, ValidationError, AuthenticationError } from '@/lib/error-handler';
 
 export async function POST(request: NextRequest) {
   const requestLogger = createRequestLogger({ endpoint: '/api/analyze/check-quality' });
@@ -10,7 +11,7 @@ export async function POST(request: NextRequest) {
     requestLogger.debug('Image quality check started', { bufferSize: buffer.length });
 
     if (!buffer || buffer.length === 0) {
-      return NextResponse.json({ error: 'No image data provided' }, { status: 400 });
+      throw new ValidationError('Image is required', { field: 'image' });
     }
 
     // Get original file size from buffer
@@ -21,11 +22,7 @@ export async function POST(request: NextRequest) {
 
     requestLogger.debug('Image quality check completed', { metrics });
     return NextResponse.json(metrics);
-  } catch (error: any) {
-    requestLogger.error('Image quality check failed', { error, message: error.message });
-    return NextResponse.json(
-      { error: error.message || 'Failed to check image quality' },
-      { status: 500 }
-    );
+  } catch (err: unknown) {
+    return handleApiError(err);
   }
 }

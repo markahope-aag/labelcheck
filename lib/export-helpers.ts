@@ -1,7 +1,9 @@
+import type { AnalysisResult, Recommendation, ComplianceTableRow } from '@/types';
+
 interface AnalysisData {
   id: string;
   image_name: string;
-  analysis_result: any; // New regulatory analysis schema
+  analysis_result: AnalysisResult;
   compliance_status: string;
   issues_found: number;
   created_at: string;
@@ -22,8 +24,9 @@ export function generateCSV(analyses: AnalysisData[]): string {
   const rows = analyses.map((analysis) => {
     const result = analysis.analysis_result;
     const criticalIssues =
-      result.recommendations?.filter((r: any) => r.priority === 'critical' || r.priority === 'high')
-        .length || 0;
+      result.recommendations?.filter(
+        (r: Recommendation) => r.priority === 'critical' || r.priority === 'high'
+      ).length || 0;
     const keyFindings = result.overall_assessment?.key_findings?.join('; ') || '';
 
     return [
@@ -107,7 +110,7 @@ export async function exportAnalysesAsPDF(analyses: AnalysisData[]) {
       const result = analysis.analysis_result;
       const criticalIssues =
         result.recommendations?.filter(
-          (r: any) => r.priority === 'critical' || r.priority === 'high'
+          (r: Recommendation) => r.priority === 'critical' || r.priority === 'high'
         ).length || 0;
       const status =
         result.overall_assessment?.primary_compliance_status || analysis.compliance_status;
@@ -149,7 +152,7 @@ export async function exportAnalysesAsPDF(analyses: AnalysisData[]) {
     doc.text(`Critical Issues: ${analysis.issues_found}`, 14, yPos);
     yPos += 8;
 
-    const summary = result.overall_assessment?.summary || result.summary;
+    const summary = result.overall_assessment?.summary;
     if (summary) {
       doc.setFontSize(9);
       const summaryLines = doc.splitTextToSize(summary, 180);
@@ -162,7 +165,7 @@ export async function exportAnalysesAsPDF(analyses: AnalysisData[]) {
       doc.text('Top Recommendations:', 14, yPos);
       yPos += 5;
       doc.setFontSize(9);
-      result.recommendations.slice(0, 3).forEach((rec: any) => {
+      result.recommendations.slice(0, 3).forEach((rec: Recommendation) => {
         if (yPos > 270) {
           doc.addPage();
           yPos = 20;
@@ -276,7 +279,11 @@ export async function exportSingleAnalysisAsPDF(analysis: AnalysisData) {
     autoTable(doc, {
       startY: yPos,
       head: [['Labeling Element', 'Status', 'Rationale']],
-      body: result.compliance_table.map((row: any) => [row.element, row.status, row.rationale]),
+      body: result.compliance_table.map((row: ComplianceTableRow) => [
+        row.element,
+        row.status,
+        row.rationale,
+      ]),
       theme: 'striped',
       headStyles: { fillColor: [37, 99, 235], textColor: [255, 255, 255] },
       styles: { fontSize: 8, cellPadding: 3 },
@@ -306,16 +313,18 @@ export async function exportSingleAnalysisAsPDF(analysis: AnalysisData) {
     doc.setTextColor(0, 0, 0);
     yPos += 7;
 
-    ['statement_of_identity', 'net_quantity', 'manufacturer_address'].forEach((key) => {
-      if (result.general_labeling[key]) {
-        const section = result.general_labeling[key];
+    // Process general labeling sections with type-safe access
+    const sections = [
+      { key: 'Statement of Identity', section: result.general_labeling.statement_of_identity },
+      { key: 'Net Quantity', section: result.general_labeling.net_quantity },
+      { key: 'Manufacturer Address', section: result.general_labeling.manufacturer_address },
+    ];
+
+    sections.forEach(({ key, section }) => {
+      if (section) {
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
-        doc.text(
-          `${key.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}: ${section.status}`,
-          14,
-          yPos
-        );
+        doc.text(`${key}: ${section.status}`, 14, yPos);
         doc.setFont('helvetica', 'normal');
         yPos += 5;
 
@@ -468,7 +477,7 @@ export async function exportSingleAnalysisAsPDF(analysis: AnalysisData) {
     doc.text('Recommendations', 14, yPos);
     yPos += 10;
 
-    result.recommendations.forEach((rec: any, index: number) => {
+    result.recommendations.forEach((rec: Recommendation, index: number) => {
       if (yPos > 260) {
         doc.addPage();
         yPos = 20;

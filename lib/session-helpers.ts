@@ -1,5 +1,7 @@
 import { supabase, supabaseAdmin } from './supabase';
 import type { AnalysisSession, AnalysisIteration, SessionStatus, IterationType } from './supabase';
+import type { AnalysisResult, Recommendation } from '@/types';
+import type { PostgrestError } from '@supabase/supabase-js';
 
 /**
  * Create a new analysis session for iterative compliance improvement
@@ -8,7 +10,7 @@ export async function createSession(
   userId: string,
   title?: string,
   useAdmin: boolean = false
-): Promise<{ data: AnalysisSession | null; error: any }> {
+): Promise<{ data: AnalysisSession | null; error: PostgrestError | null }> {
   const client = useAdmin ? supabaseAdmin : supabase;
 
   const { data, error } = await client
@@ -33,7 +35,7 @@ export async function getSessionWithIterations(
 ): Promise<{
   session: AnalysisSession | null;
   iterations: AnalysisIteration[];
-  error: any;
+  error: PostgrestError | null;
 }> {
   const client = useAdmin ? supabaseAdmin : supabase;
 
@@ -69,7 +71,7 @@ export async function getUserSessions(
   userId: string,
   status?: SessionStatus,
   useAdmin: boolean = false
-): Promise<{ data: AnalysisSession[]; error: any }> {
+): Promise<{ data: AnalysisSession[]; error: PostgrestError | null }> {
   const client = useAdmin ? supabaseAdmin : supabase;
 
   let query = client
@@ -93,12 +95,26 @@ export async function getUserSessions(
 export async function addIteration(
   sessionId: string,
   iterationType: IterationType,
-  inputData: any,
-  resultData?: any,
+  inputData: {
+    message?: string;
+    image?: string;
+    text?: string;
+    category?: string;
+    timestamp?: string;
+    inputType?: string;
+    textContent?: string;
+    pdfFileName?: string;
+    pdfSize?: number;
+    image_name?: string;
+    file_size?: number;
+    media_type?: string;
+    [key: string]: unknown; // Allow additional fields for flexibility
+  },
+  resultData?: AnalysisResult | { response: string; timestamp?: string } | null,
   analysisId?: string,
   parentIterationId?: string,
   useAdmin: boolean = false
-): Promise<{ data: AnalysisIteration | null; error: any }> {
+): Promise<{ data: AnalysisIteration | null; error: PostgrestError | null }> {
   const client = useAdmin ? supabaseAdmin : supabase;
 
   const { data, error } = await client
@@ -132,7 +148,7 @@ export async function updateSessionStatus(
   sessionId: string,
   status: SessionStatus,
   useAdmin: boolean = false
-): Promise<{ error: any }> {
+): Promise<{ error: PostgrestError | null }> {
   const client = useAdmin ? supabaseAdmin : supabase;
 
   const { error } = await client.from('analysis_sessions').update({ status }).eq('id', sessionId);
@@ -147,7 +163,7 @@ export async function updateSessionTitle(
   sessionId: string,
   title: string,
   useAdmin: boolean = false
-): Promise<{ error: any }> {
+): Promise<{ error: PostgrestError | null }> {
   const client = useAdmin ? supabaseAdmin : supabase;
 
   const { error } = await client.from('analysis_sessions').update({ title }).eq('id', sessionId);
@@ -161,7 +177,7 @@ export async function updateSessionTitle(
 export async function getLatestIteration(
   sessionId: string,
   useAdmin: boolean = false
-): Promise<{ data: AnalysisIteration | null; error: any }> {
+): Promise<{ data: AnalysisIteration | null; error: PostgrestError | null }> {
   const client = useAdmin ? supabaseAdmin : supabase;
 
   const { data, error } = await client
@@ -182,7 +198,7 @@ export async function getIterationsByType(
   sessionId: string,
   iterationType: IterationType,
   useAdmin: boolean = false
-): Promise<{ data: AnalysisIteration[]; error: any }> {
+): Promise<{ data: AnalysisIteration[]; error: PostgrestError | null }> {
   const client = useAdmin ? supabaseAdmin : supabase;
 
   const { data, error } = await client
@@ -238,22 +254,26 @@ export async function getSessionComplianceProgress(
 /**
  * Helper function to count issues in an analysis result
  */
-function countIssuesInResult(result: any): number {
+function countIssuesInResult(result: AnalysisResult | { response: string } | null): number {
   if (!result) return 0;
+
+  // Type guard: Chat responses don't have issues to count
+  if ('response' in result) return 0;
 
   let issueCount = 0;
 
   // Count critical and high priority recommendations
   if (result.recommendations && Array.isArray(result.recommendations)) {
     issueCount += result.recommendations.filter(
-      (rec: any) => rec.priority === 'critical' || rec.priority === 'high'
+      (rec: Recommendation) => rec.priority === 'critical' || rec.priority === 'high'
     ).length;
   }
 
   // Count non-compliant items
-  const checkCompliance = (item: any) => {
-    if (item && typeof item === 'object') {
-      if (item.status === 'non_compliant' || item.status === 'potentially_non_compliant') {
+  const checkCompliance = (item: unknown) => {
+    if (item && typeof item === 'object' && 'status' in item) {
+      const status = (item as { status?: string }).status;
+      if (status === 'non_compliant' || status === 'potentially_non_compliant') {
         issueCount++;
       }
     }
@@ -281,7 +301,7 @@ function countIssuesInResult(result: any): number {
 export async function deleteSession(
   sessionId: string,
   useAdmin: boolean = false
-): Promise<{ error: any }> {
+): Promise<{ error: PostgrestError | null }> {
   const client = useAdmin ? supabaseAdmin : supabase;
 
   // Cascade delete will handle iterations

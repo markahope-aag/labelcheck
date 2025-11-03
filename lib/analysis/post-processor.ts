@@ -12,6 +12,7 @@ import { checkGRASCompliance } from '@/lib/gras-helpers';
 import { checkNDICompliance } from '@/lib/ndi-helpers';
 import { checkIngredientsForAllergens } from '@/lib/allergen-helpers';
 import { logger } from '@/lib/logger';
+import type { GRASCompliance, AllergenDatabase } from '@/types';
 
 export interface AnalysisData {
   product_name?: string;
@@ -37,9 +38,21 @@ export interface AnalysisData {
     details?: string;
     regulation?: string;
   }>;
-  gras_compliance?: any;
-  ndi_compliance?: any;
-  allergen_database_check?: any;
+  gras_compliance?: GRASCompliance;
+  ndi_compliance?: {
+    summary: {
+      totalIngredients: number;
+      withNDI: number;
+      withoutNDI: number;
+      requiresNotification: number;
+    };
+    results?: Array<{
+      ingredient: string;
+      requiresNDI: boolean;
+      complianceNote: string;
+    }>;
+  };
+  allergen_database_check?: AllergenDatabase;
 }
 
 /**
@@ -73,13 +86,23 @@ export async function processGRASCompliance(analysisData: AnalysisData): Promise
       });
 
       // Add GRAS compliance info to analysis data
+      // Transform GRASComplianceReport to GRASCompliance type
       analysisData.gras_compliance = {
-        status: grasCompliance.overallCompliant ? 'compliant' : 'non_compliant',
         total_ingredients: grasCompliance.totalIngredients,
         gras_compliant_count: grasCompliance.grasCompliant,
         non_gras_ingredients: grasCompliance.nonGRASIngredients,
-        gras_ingredients: grasCompliance.grasIngredients,
-        detailed_results: grasCompliance.detailedResults,
+        gras_ingredients: grasCompliance.detailedResults
+          .filter((r) => r.isGRAS && r.matchedEntry)
+          .map((r) => ({
+            ingredient: r.ingredient,
+            ingredient_name: r.matchedEntry?.ingredient_name,
+            match_type: r.matchType || 'none',
+            matched_name: r.matchedEntry?.ingredient_name,
+            gras_notice_number: r.matchedEntry?.gras_notice_number || undefined,
+            is_gras: r.isGRAS,
+          })),
+        overall_compliant: grasCompliance.overallCompliant,
+        critical_issues: grasCompliance.criticalIssues,
       };
 
       // If non-GRAS ingredients found, add critical recommendations
@@ -202,7 +225,20 @@ export async function processNDICompliance(analysisData: AnalysisData): Promise<
       });
 
       // Add NDI compliance info to analysis data
-      analysisData.ndi_compliance = ndiCompliance;
+      // Transform NDI check result to match expected structure
+      analysisData.ndi_compliance = {
+        summary: {
+          totalIngredients: ndiCompliance.summary.totalChecked,
+          withNDI: ndiCompliance.summary.withNDI,
+          withoutNDI: ndiCompliance.summary.withoutNDI,
+          requiresNotification: ndiCompliance.summary.requiresNotification,
+        },
+        results: ndiCompliance.results.map((r) => ({
+          ingredient: r.ingredient,
+          requiresNDI: r.requiresNDI,
+          complianceNote: r.complianceNote,
+        })),
+      };
 
       // Add recommendations for ingredients requiring NDI verification
       if (ndiCompliance.summary.requiresNotification > 0 && ndiCompliance.results) {
@@ -211,8 +247,8 @@ export async function processNDICompliance(analysisData: AnalysisData): Promise<
         }
 
         ndiCompliance.results
-          .filter((result: any) => result.requiresNDI)
-          .forEach((result: any) => {
+          .filter((result) => result.requiresNDI)
+          .forEach((result) => {
             analysisData.recommendations!.push({
               priority: 'medium',
               recommendation: `Verify NDI compliance for ingredient "${result.ingredient}". ${result.complianceNote}`,
@@ -261,10 +297,16 @@ export async function processAllergenCompliance(analysisData: AnalysisData): Pro
       });
 
       // Add allergen database check results
+      // Transform to AllergenDatabase type structure
       analysisData.allergen_database_check = {
-        allergens_detected: allergenResults.allergensDetected,
-        ingredients_with_allergens: allergenResults.ingredientsWithAllergens,
-        summary: allergenResults.summary,
+        allergens_detected: allergenResults.allergensDetected.map((a) => a.allergen_name),
+        ingredients_with_allergens: allergenResults.ingredientsWithAllergens.map((item) => ({
+          ingredient: item.ingredient,
+          allergens: item.allergens.filter((a) => a.allergen).map((a) => a.allergen!.allergen_name),
+          match_type: item.allergens[0]?.matchType || 'exact',
+        })),
+        has_contains_statement: false, // Not tracked in current implementation
+        is_compliant: allergenResults.allergensDetected.length === 0, // Simplified for now
       };
 
       // Check AI analysis for allergen compliance
@@ -277,9 +319,7 @@ export async function processAllergenCompliance(analysisData: AnalysisData): Pro
         aiAllergenStatus === 'non_compliant'
       ) {
         // AI detected missing allergen declarations - validate with database
-        const detectedAllergenNames = allergenResults.allergensDetected.map(
-          (a: any) => a.allergen_name
-        );
+        const detectedAllergenNames = allergenResults.allergensDetected.map((a) => a.allergen_name);
 
         if (!analysisData.recommendations) {
           analysisData.recommendations = [];

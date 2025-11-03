@@ -73,8 +73,9 @@ export default function AdminUsersPage() {
       }
       const data = await response.json();
       setUsers(data);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      setError(error.message);
     } finally {
       setLoading(false);
     }
@@ -103,8 +104,9 @@ export default function AdminUsersPage() {
 
       // Reload users to reflect the change
       await loadUsers();
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      alert(error.message);
     }
   };
 
@@ -126,8 +128,9 @@ export default function AdminUsersPage() {
       setUsers(users.filter((u) => u.id !== userToDelete.id));
       setDeleteDialogOpen(false);
       setUserToDelete(null);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      setError(error.message);
     } finally {
       setDeleting(false);
     }

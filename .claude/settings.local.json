@@ -64,7 +64,14 @@
       "Bash(npm run pre-switch:*)",
       "Bash(npx husky init)",
       "Bash(npm run format:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(for file in \"app/analysis/[id]/page.tsx\" \"components/ComplianceResults.tsx\" \"components/RecommendationsPanel.tsx\" \"components/ComplianceTable.tsx\" \"components/IngredientList.tsx\" \"app/share/[token]/page.tsx\" \"app/history/page.tsx\")",
+      "Bash(done)",
+      "Bash(for file in \"app/api/analyze/route.ts\" \"app/api/analyze/select-category/route.ts\" \"app/api/share/route.ts\" \"app/api/webhooks/clerk/route.ts\" \"app/api/webhooks/stripe/route.ts\")",
+      "Bash(do:*)",
+      "Bash(echo:*)",
+      "Bash(for file in \"lib/analysis/orchestrator.ts\" \"lib/export-helpers.ts\" \"lib/email-templates.ts\")",
+      "Bash(nul)"
     ],
     "deny": [],
     "ask": []

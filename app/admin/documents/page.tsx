@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import type { RegulatoryDocument } from '@/types';
 import {
   Dialog,
   DialogContent,
@@ -38,7 +39,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { RegulatoryDocument, ProductCategory } from '@/lib/supabase';
+import { ProductCategory } from '@/lib/supabase';
 
 export default function AdminDocumentsPage() {
   const { userId } = useAuth();
@@ -100,8 +101,9 @@ export default function AdminDocumentsPage() {
       }
       const data = await response.json();
       setDocuments(data);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      setError(error.message);
     } finally {
       setIsLoading(false);
     }
@@ -117,18 +119,22 @@ export default function AdminDocumentsPage() {
       const data = await response.json();
 
       // Convert array to Map for easy lookup
+      // data structure: Array<{ document: RegulatoryDocument; categories: string[]; isCore: boolean }>
       const categoryMap = new Map();
-      data.forEach((item: any) => {
-        categoryMap.set(item.document.id, {
-          categories: item.categories,
-          isCore: item.isCore,
-        });
-      });
+      data.forEach(
+        (item: { document: RegulatoryDocument; categories: string[]; isCore: boolean }) => {
+          categoryMap.set(item.document.id, {
+            categories: item.categories,
+            isCore: item.isCore,
+          });
+        }
+      );
 
       setDocumentCategories(categoryMap);
       setShowCategories(true);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      setError(error.message);
     } finally {
       setLoadingCategories(false);
     }
@@ -156,8 +162,9 @@ export default function AdminDocumentsPage() {
       setEditingDoc(null);
       resetForm();
       loadDocuments();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      setError(error.message);
     }
   };
 
@@ -194,8 +201,9 @@ export default function AdminDocumentsPage() {
       }
 
       loadDocuments();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      setError(error.message);
     }
   };
 
@@ -257,8 +265,9 @@ export default function AdminDocumentsPage() {
         content: data.text,
         source: prev.source || data.metadata.author || '',
       }));
-    } catch (err: any) {
-      setPdfError(err.message);
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      setPdfError(error.message);
     } finally {
       setIsProcessingPDF(false);
     }

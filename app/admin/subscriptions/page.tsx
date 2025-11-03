@@ -47,8 +47,9 @@ export default function AdminSubscriptionsPage() {
       const data = await response.json();
       setSubscriptions(data.subscriptions || []);
       setStats(data.stats || { active: 0, canceled: 0, total: 0 });
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      setError(error.message);
     } finally {
       setLoading(false);
     }

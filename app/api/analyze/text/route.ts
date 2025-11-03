@@ -7,6 +7,7 @@ import { getActiveRegulatoryDocuments, buildRegulatoryContext } from '@/lib/regu
 import { processPdfForAnalysis } from '@/lib/pdf-helpers';
 import { TEXT_LIMITS } from '@/lib/constants';
 import { logger, createRequestLogger } from '@/lib/logger';
+import { handleApiError, ValidationError, AuthenticationError } from '@/lib/error-handler';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -20,7 +21,7 @@ export async function POST(request: NextRequest) {
 
     if (!userId) {
       requestLogger.warn('Unauthorized text analysis attempt');
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      throw new AuthenticationError();
     }
 
     requestLogger.info('Text analysis request started', { userId });
@@ -41,10 +42,12 @@ export async function POST(request: NextRequest) {
       isPdfMode = true;
 
       if (!sessionId || !pdfFile) {
-        return NextResponse.json(
-          { error: 'Session ID and PDF file are required' },
-          { status: 400 }
-        );
+        if (!pdfFile) {
+          throw new ValidationError('Either text or PDF is required', {
+            fields: ['text', 'pdf'],
+          });
+        }
+        throw new ValidationError('Session ID is required', { field: 'sessionId' });
       }
     } else {
       // Text mode
@@ -53,10 +56,12 @@ export async function POST(request: NextRequest) {
       textContent = body.textContent;
 
       if (!sessionId || !textContent) {
-        return NextResponse.json(
-          { error: 'Session ID and text content are required' },
-          { status: 400 }
-        );
+        if (!textContent) {
+          throw new ValidationError('Either text or PDF is required', {
+            fields: ['text', 'pdf'],
+          });
+        }
+        throw new ValidationError('Session ID is required', { field: 'sessionId' });
       }
     }
 
@@ -311,11 +316,7 @@ Additionally, include a "comparison" field if original analysis exists:
       analysisType: 'text_check',
       timestamp: new Date().toISOString(),
     });
-  } catch (error: any) {
-    requestLogger.error('Text analysis failed', { error, message: error.message });
-    return NextResponse.json(
-      { error: error.message || 'Failed to analyze text content' },
-      { status: 500 }
-    );
+  } catch (err: unknown) {
+    return handleApiError(err);
   }
 }

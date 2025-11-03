@@ -124,14 +124,18 @@ export async function convertPdfToJpgViaCloudConvert(buffer: Buffer): Promise<Bu
     });
 
     // Upload the PDF
-    const uploadTask = job.tasks.filter((task: any) => task.name === 'import-pdf')[0];
+    // CloudConvert task type - using type assertion since SDK doesn't export types cleanly
+    const uploadTask = job.tasks.filter((task: { name: string }) => task.name === 'import-pdf')[0];
     await cloudConvert.tasks.upload(uploadTask, buffer, 'label.pdf');
 
     // Wait for job completion
     const completedJob = await cloudConvert.jobs.wait(job.id);
 
     // Download the converted JPG
-    const exportTask = completedJob.tasks.filter((task: any) => task.name === 'export-jpg')[0];
+    // CloudConvert task type - using type assertion since SDK doesn't export types cleanly
+    const exportTask = completedJob.tasks.filter(
+      (task: { name: string }) => task.name === 'export-jpg'
+    )[0];
     const file = exportTask.result.files[0];
 
     // CloudConvert v3 API: use axios to download the file URL

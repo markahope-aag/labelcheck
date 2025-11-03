@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
+import { supabaseAdmin } from '@/lib/supabase';
 import { extractTextFromPDF, extractPDFMetadata, cleanExtractedText } from '@/lib/pdf-helpers';
-import { requireAdmin } from '@/lib/auth-helpers';
 import { logger, createRequestLogger } from '@/lib/logger';
+import {
+  handleApiError,
+  AuthenticationError,
+  AuthorizationError,
+  ValidationError,
+} from '@/lib/error-handler';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,8 +16,22 @@ export async function POST(request: NextRequest) {
   const requestLogger = createRequestLogger({ endpoint: '/api/admin/documents/extract-pdf' });
 
   try {
-    // Require admin access (throws if not admin)
-    await requireAdmin();
+    const { userId } = await auth();
+
+    if (!userId) {
+      throw new AuthenticationError();
+    }
+
+    // Check if user is admin
+    const { data: user } = await supabaseAdmin
+      .from('users')
+      .select('is_system_admin')
+      .eq('clerk_user_id', userId)
+      .single();
+
+    if (!user || !user.is_system_admin) {
+      throw new AuthorizationError('Admin access required');
+    }
 
     // Get the uploaded PDF file
     const formData = await request.formData();
@@ -19,12 +40,11 @@ export async function POST(request: NextRequest) {
     requestLogger.info('PDF extraction started', { fileName: file?.name, fileSize: file?.size });
 
     if (!file) {
-      requestLogger.warn('PDF extraction request missing file');
-      return NextResponse.json({ error: 'No PDF file provided' }, { status: 400 });
+      throw new ValidationError('PDF data is required', { field: 'pdf' });
     }
 
     if (file.type !== 'application/pdf') {
-      return NextResponse.json({ error: 'File must be a PDF' }, { status: 400 });
+      throw new ValidationError('File must be a PDF', { field: 'pdf', actualType: file.type });
     }
 
     // Convert file to buffer
@@ -56,17 +76,7 @@ export async function POST(request: NextRequest) {
         creator: metadata.creator,
       },
     });
-  } catch (error: any) {
-    requestLogger.error('PDF extraction failed', { error, message: error.message });
-
-    // Handle auth errors with appropriate status codes
-    if (error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    if (error.message.includes('Forbidden')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    return NextResponse.json({ error: error.message || 'Failed to process PDF' }, { status: 500 });
+  } catch (err: unknown) {
+    return handleApiError(err);
   }
 }

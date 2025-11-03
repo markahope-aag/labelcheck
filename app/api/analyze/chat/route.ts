@@ -5,6 +5,13 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { getSessionWithIterations, addIteration } from '@/lib/session-helpers';
 import { getActiveRegulatoryDocuments, buildRegulatoryContext } from '@/lib/regulatory-documents';
 import { logger, createRequestLogger } from '@/lib/logger';
+import {
+  handleApiError,
+  ValidationError,
+  AuthenticationError,
+  NotFoundError,
+  ExternalServiceError,
+} from '@/lib/error-handler';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -18,15 +25,18 @@ export async function POST(request: NextRequest) {
 
     if (!userId) {
       requestLogger.warn('Unauthorized chat request');
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      throw new AuthenticationError();
     }
 
     requestLogger.info('Chat request started', { userId });
 
     const { sessionId, message, parentIterationId } = await request.json();
 
-    if (!sessionId || !message) {
-      return NextResponse.json({ error: 'Session ID and message are required' }, { status: 400 });
+    if (!message) {
+      throw new ValidationError('Message is required', { field: 'message' });
+    }
+    if (!sessionId) {
+      throw new ValidationError('Analysis ID is required', { field: 'analysisId' });
     }
 
     // Get user from database (use admin client to bypass RLS)
@@ -37,7 +47,7 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      throw new NotFoundError('User', userId);
     }
 
     // Get session with all iterations to build context
@@ -50,7 +60,7 @@ export async function POST(request: NextRequest) {
 
     if (sessionError || !session) {
       requestLogger.error('Session fetch failed', { error: sessionError, sessionId });
-      return NextResponse.json({ error: 'Session not found or access denied' }, { status: 404 });
+      throw new NotFoundError('Analysis', sessionId);
     }
 
     // Verify session belongs to user
@@ -136,38 +146,40 @@ export async function POST(request: NextRequest) {
         // Include claims analysis if available
         if (resultData.claims) {
           cachedContext += 'Label Claims Analysis:\n';
-          cachedContext += `- Status: ${resultData.claims.status || 'unknown'}\n`;
 
           if (
-            resultData.claims.structure_function_claims &&
-            resultData.claims.structure_function_claims.length > 0
+            resultData.claims.structure_function_claims?.claims_present &&
+            resultData.claims.structure_function_claims.claims_found.length > 0
           ) {
-            cachedContext += `- Structure/Function Claims Found: ${resultData.claims.structure_function_claims.join('; ')}\n`;
+            cachedContext += `- Structure/Function Claims Found: ${resultData.claims.structure_function_claims.claims_found.map((c) => c.claim_text).join('; ')}\n`;
           }
 
           if (
-            resultData.claims.nutrient_content_claims &&
-            resultData.claims.nutrient_content_claims.length > 0
+            resultData.claims.nutrient_content_claims?.claims_present &&
+            resultData.claims.nutrient_content_claims.claims_found.length > 0
           ) {
-            cachedContext += `- Nutrient Content Claims Found: ${resultData.claims.nutrient_content_claims.join('; ')}\n`;
-          }
-
-          if (resultData.claims.health_claims && resultData.claims.health_claims.length > 0) {
-            cachedContext += `- Health Claims Found: ${resultData.claims.health_claims.join('; ')}\n`;
+            cachedContext += `- Nutrient Content Claims Found: ${resultData.claims.nutrient_content_claims.claims_found.map((c) => c.claim_text).join('; ')}\n`;
           }
 
           if (
-            resultData.claims.prohibited_claims &&
-            resultData.claims.prohibited_claims.length > 0
+            resultData.claims.health_claims?.claims_present &&
+            resultData.claims.health_claims.claims_found.length > 0
           ) {
-            cachedContext += `- PROHIBITED Claims Detected: ${resultData.claims.prohibited_claims.join('; ')}\n`;
+            cachedContext += `- Health Claims Found: ${resultData.claims.health_claims.claims_found.map((c) => c.claim_text).join('; ')}\n`;
           }
 
           if (
-            !resultData.claims.structure_function_claims?.length &&
-            !resultData.claims.nutrient_content_claims?.length &&
-            !resultData.claims.health_claims?.length &&
-            !resultData.claims.prohibited_claims?.length
+            resultData.claims.prohibited_claims?.claims_present &&
+            resultData.claims.prohibited_claims.claims_found.length > 0
+          ) {
+            cachedContext += `- PROHIBITED Claims Detected: ${resultData.claims.prohibited_claims.claims_found.map((c) => c.claim_text).join('; ')}\n`;
+          }
+
+          if (
+            !resultData.claims.structure_function_claims?.claims_present &&
+            !resultData.claims.nutrient_content_claims?.claims_present &&
+            !resultData.claims.health_claims?.claims_present &&
+            !resultData.claims.prohibited_claims?.claims_present
           ) {
             cachedContext += '- No claims detected on the label\n';
           }
@@ -227,7 +239,7 @@ export async function POST(request: NextRequest) {
 
     const aiResponse = completion.choices[0]?.message?.content;
     if (!aiResponse) {
-      throw new Error('No text response from AI');
+      throw new ExternalServiceError('OpenAI Chat', 'No text response from AI');
     }
 
     // Save chat iteration to database
@@ -264,11 +276,7 @@ export async function POST(request: NextRequest) {
       iterationId: iteration?.id || null,
       timestamp: new Date().toISOString(),
     });
-  } catch (error: any) {
-    requestLogger.error('Chat endpoint failed', { error, message: error.message });
-    return NextResponse.json(
-      { error: error.message || 'Failed to process chat message' },
-      { status: 500 }
-    );
+  } catch (err: unknown) {
+    return handleApiError(err);
   }
 }

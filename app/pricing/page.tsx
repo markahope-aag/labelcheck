@@ -93,7 +93,8 @@ export default function PricingPage() {
 
       // Redirect to Stripe checkout
       window.location.href = data.url;
-    } catch (error: any) {
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error(String(err));
       clientLogger.error('Checkout session creation failed', { error, tier });
       toast({
         title: 'Error',

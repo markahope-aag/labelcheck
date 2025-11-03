@@ -18,6 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import { Users, Plus, Mail, Shield, Trash2, Building2 } from 'lucide-react';
 import { clientLogger } from '@/lib/client-logger';
+import type { OrganizationMember } from '@/types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -139,10 +140,17 @@ export default function TeamPage() {
         invitationCount: data.pendingInvitations?.length || 0,
       });
 
-      const formattedMembers = (data.members || []).map((item: any) => ({
-        ...item,
-        users: Array.isArray(item.users) ? item.users[0] : item.users,
-      }));
+      // API returns members with joined user data, so we need to handle the extended structure
+      const formattedMembers = (data.members || []).map(
+        (
+          item: OrganizationMember & {
+            users?: Array<{ id: string; email: string }> | { id: string; email: string };
+          }
+        ) => ({
+          ...item,
+          users: Array.isArray(item.users) ? item.users[0] : item.users,
+        })
+      );
 
       setMembers(formattedMembers);
       setPendingInvitations(data.pendingInvitations || []);
@@ -188,7 +196,8 @@ export default function TeamPage() {
 
       setShowCreateOrg(false);
       loadOrganization();
-    } catch (error: any) {
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error(String(err));
       clientLogger.error('Failed to create organization', { error, orgName, orgSlug });
       toast({
         title: 'Error',
@@ -227,7 +236,8 @@ export default function TeamPage() {
 
       setInviteEmail('');
       loadMembers(organization.id);
-    } catch (error: any) {
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error(String(err));
       clientLogger.error('Failed to invite member', {
         error,
         organizationId: organization.id,
@@ -282,7 +292,8 @@ export default function TeamPage() {
       });
 
       loadMembers(organization!.id);
-    } catch (error: any) {
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error(String(err));
       clientLogger.error('Failed to cancel invitation', { error, invitationId });
       toast({
         title: 'Error',
@@ -409,7 +420,12 @@ export default function TeamPage() {
                       onChange={(e) => setInviteEmail(e.target.value)}
                     />
                   </div>
-                  <Select value={inviteRole} onValueChange={(value: any) => setInviteRole(value)}>
+                  <Select
+                    value={inviteRole}
+                    onValueChange={(value: string) =>
+                      setInviteRole(value as 'admin' | 'member' | 'viewer')
+                    }
+                  >
                     <SelectTrigger className="w-32">
                       <SelectValue />
                     </SelectTrigger>

@@ -23,7 +23,8 @@ async function getOldDietaryIngredients(): Promise<Set<string>> {
 
   try {
     // Fetch ALL rows from database (Supabase limits to 1000 by default, so we need pagination)
-    let allData: any[] = [];
+    // Note: old_dietary_ingredients has different structure than ndi_ingredients
+    let allData: Array<{ ingredient_name: string; synonyms: string[] | null }> = [];
     let page = 0;
     const pageSize = 1000;
     let hasMore = true;
@@ -372,7 +373,7 @@ export async function checkNDICompliance(ingredients: string[]): Promise<{
   }
 
   // Fetch ALL NDI ingredients for matching (with pagination since we have 1,253 rows)
-  let ndiIngredients: any[] = [];
+  let ndiIngredients: NDIIngredient[] = [];
   let page = 0;
   const pageSize = 1000;
   let hasMore = true;

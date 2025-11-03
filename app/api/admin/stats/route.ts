@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { requireAdmin } from '@/lib/auth-helpers';
 import { logger, createRequestLogger } from '@/lib/logger';
+import { handleApiError, AuthenticationError, AuthorizationError } from '@/lib/error-handler';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,8 +10,23 @@ export async function GET(request: NextRequest) {
   const requestLogger = createRequestLogger({ endpoint: '/api/admin/stats' });
 
   try {
-    // Require admin access (throws if not admin)
-    await requireAdmin();
+    const { userId } = await auth();
+
+    if (!userId) {
+      throw new AuthenticationError();
+    }
+
+    // Check if user is admin
+    const { data: user } = await supabaseAdmin
+      .from('users')
+      .select('is_system_admin')
+      .eq('clerk_user_id', userId)
+      .single();
+
+    if (!user || !user.is_system_admin) {
+      throw new AuthorizationError('Admin access required');
+    }
+
     requestLogger.info('Admin stats fetch started');
 
     const currentDate = new Date();
@@ -79,17 +95,7 @@ export async function GET(request: NextRequest) {
       newUsersThisMonth: newUsersThisMonth || 0,
       analysesThisMonth: analysesThisMonth || 0,
     });
-  } catch (error: any) {
-    requestLogger.error('Admin stats fetch failed', { error, message: error.message });
-
-    // Handle auth errors with appropriate status codes
-    if (error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    if (error.message.includes('Forbidden')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+  } catch (err: unknown) {
+    return handleApiError(err);
   }
 }

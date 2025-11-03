@@ -1,18 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { requireAdmin } from '@/lib/auth-helpers';
 import { logger, createRequestLogger } from '@/lib/logger';
+import {
+  handleApiError,
+  AuthenticationError,
+  AuthorizationError,
+  NotFoundError,
+  handleSupabaseError,
+} from '@/lib/error-handler';
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   const requestLogger = createRequestLogger({ endpoint: '/api/admin/documents/[id]' });
 
   try {
-    // Require admin access (throws if not admin)
-    await requireAdmin();
-    requestLogger.info('Admin document update started');
+    const { userId } = await auth();
+
+    if (!userId) {
+      throw new AuthenticationError();
+    }
+
+    // Check if user is admin
+    const { data: user } = await supabaseAdmin
+      .from('users')
+      .select('is_system_admin')
+      .eq('clerk_user_id', userId)
+      .single();
+
+    if (!user || !user.is_system_admin) {
+      throw new AuthorizationError('Admin access required');
+    }
 
     const body = await request.json();
     const { id } = params;
+
+    requestLogger.info('Admin document update started');
 
     // Sanitize data: convert empty strings to null for date fields
     const sanitizedBody = {
@@ -28,8 +50,11 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       .single();
 
     if (error) {
-      requestLogger.error('Failed to update document', { error, documentId: id });
-      return NextResponse.json({ error: 'Failed to update document' }, { status: 500 });
+      throw handleSupabaseError(error, 'update regulatory document');
+    }
+
+    if (!document) {
+      throw new NotFoundError('Document', id);
     }
 
     requestLogger.info('Document updated successfully', {
@@ -38,18 +63,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     });
 
     return NextResponse.json(document);
-  } catch (error: any) {
-    requestLogger.error('Admin document update failed', { error, message: error.message });
-
-    // Handle auth errors with appropriate status codes
-    if (error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    if (error.message.includes('Forbidden')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+  } catch (err: unknown) {
+    return handleApiError(err);
   }
 }
 
@@ -57,34 +72,49 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
   const requestLogger = createRequestLogger({ endpoint: '/api/admin/documents/[id]' });
 
   try {
-    // Require admin access (throws if not admin)
-    await requireAdmin();
-    requestLogger.info('Admin document deletion started');
+    const { userId } = await auth();
+
+    if (!userId) {
+      throw new AuthenticationError();
+    }
+
+    // Check if user is admin
+    const { data: user } = await supabaseAdmin
+      .from('users')
+      .select('is_system_admin')
+      .eq('clerk_user_id', userId)
+      .single();
+
+    if (!user || !user.is_system_admin) {
+      throw new AuthorizationError('Admin access required');
+    }
 
     const { id } = params;
+
+    requestLogger.info('Admin document deletion started');
+
+    // Check if document exists before deleting
+    const { data: existingDoc } = await supabaseAdmin
+      .from('regulatory_documents')
+      .select('id')
+      .eq('id', id)
+      .single();
+
+    if (!existingDoc) {
+      throw new NotFoundError('Document', id);
+    }
 
     // Actually delete the document from the database
     const { error } = await supabaseAdmin.from('regulatory_documents').delete().eq('id', id);
 
     if (error) {
-      requestLogger.error('Failed to delete document', { error, documentId: id });
-      return NextResponse.json({ error: 'Failed to delete document' }, { status: 500 });
+      throw handleSupabaseError(error, 'delete regulatory document');
     }
 
     requestLogger.info('Document deleted successfully', { documentId: id });
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    requestLogger.error('Admin document deletion failed', { error, message: error.message });
-
-    // Handle auth errors with appropriate status codes
-    if (error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    if (error.message.includes('Forbidden')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+  } catch (err: unknown) {
+    return handleApiError(err);
   }
 }

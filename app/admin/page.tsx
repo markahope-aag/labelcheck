@@ -32,8 +32,9 @@ export default function AdminDashboardPage() {
       }
       const data = await response.json();
       setStats(data);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      setError(error.message);
     } finally {
       setLoading(false);
     }
