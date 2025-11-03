@@ -191,7 +191,7 @@ describe('POST /api/analyze/chat', () => {
       const request = new NextRequest('http://localhost:3000/api/analyze/chat', {
         method: 'POST',
         body: JSON.stringify({
-          sessionId: 'non-existent-session-id',
+          sessionId: '123e4567-e89b-12d3-a456-426614174000', // Valid UUID format
           question: 'Is this compliant?',
         }),
         headers: { 'Content-Type': 'application/json' },
@@ -205,8 +205,19 @@ describe('POST /api/analyze/chat', () => {
     });
 
     it('should return 403 if session belongs to different user', async () => {
+      (supabaseAdmin.from as jest.Mock).mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            maybeSingle: jest.fn().mockResolvedValue({
+              data: { id: 'user-internal-id', email: 'test@example.com' },
+              error: null,
+            }),
+          }),
+        }),
+      });
+
       (getSessionWithIterations as jest.Mock).mockResolvedValue({
-        session: { id: 'session-id', user_id: 'different-user-id' },
+        session: { id: '123e4567-e89b-12d3-a456-426614174000', user_id: 'different-user-id' },
         iterations: [],
         error: null,
       });
@@ -214,7 +225,7 @@ describe('POST /api/analyze/chat', () => {
       const request = new NextRequest('http://localhost:3000/api/analyze/chat', {
         method: 'POST',
         body: JSON.stringify({
-          sessionId: 'session-id',
+          sessionId: '123e4567-e89b-12d3-a456-426614174000',
           question: 'Is this compliant?',
         }),
         headers: { 'Content-Type': 'application/json' },
