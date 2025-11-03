@@ -28,7 +28,7 @@ describe('POST /api/analyze/select-category', () => {
 
   describe('Authentication', () => {
     it('should return 401 if user is not authenticated', async () => {
-      (auth as jest.Mock).mockResolvedValue({ userId: null });
+      (auth as unknown as jest.Mock).mockResolvedValue({ userId: null });
 
       const request = new NextRequest('http://localhost:3000/api/analyze/select-category', {
         method: 'POST',
@@ -49,7 +49,7 @@ describe('POST /api/analyze/select-category', () => {
 
   describe('Input Validation', () => {
     beforeEach(() => {
-      (auth as jest.Mock).mockResolvedValue({ userId: 'test-user-id' });
+      (auth as unknown as jest.Mock).mockResolvedValue({ userId: 'test-user-id' });
     });
 
     it('should return 500 if analysisId is missing (database error)', async () => {
@@ -119,7 +119,7 @@ describe('POST /api/analyze/select-category', () => {
 
   describe('Success Scenarios', () => {
     beforeEach(() => {
-      (auth as jest.Mock).mockResolvedValue({ userId: 'test-user-id' });
+      (auth as unknown as jest.Mock).mockResolvedValue({ userId: 'test-user-id' });
     });
 
     it('should successfully update analysis category', async () => {
@@ -194,7 +194,7 @@ describe('POST /api/analyze/select-category', () => {
 
   describe('Error Handling', () => {
     beforeEach(() => {
-      (auth as jest.Mock).mockResolvedValue({ userId: 'test-user-id' });
+      (auth as unknown as jest.Mock).mockResolvedValue({ userId: 'test-user-id' });
     });
 
     it('should handle database errors', async () => {

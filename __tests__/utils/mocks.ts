@@ -9,8 +9,8 @@ import type {
   GRASIngredient,
   NDIIngredient,
   OldDietaryIngredient,
-  MajorAllergen,
   AnalysisResult,
+  GRASStatus,
 } from '@/types';
 
 // ============================================================================
@@ -24,10 +24,16 @@ export function createMockGRASIngredient(overrides?: Partial<GRASIngredient>): G
   return {
     id: '123e4567-e89b-12d3-a456-426614174000',
     ingredient_name: 'Test Ingredient',
+    cas_number: null,
     gras_notice_number: 'GRN 000123',
-    notifier: 'Test Company',
-    date_of_notice: '2024-01-01',
+    gras_status: 'affirmed' as GRASStatus,
+    source_reference: null,
+    category: null,
+    approved_uses: null,
+    limitations: null,
     synonyms: ['Test Synonym'],
+    common_name: null,
+    technical_name: null,
     is_active: true,
     created_at: '2024-01-01T00:00:00Z',
     updated_at: '2024-01-01T00:00:00Z',
@@ -41,7 +47,7 @@ export function createMockGRASIngredient(overrides?: Partial<GRASIngredient>): G
 export function createMockNDIIngredient(overrides?: Partial<NDIIngredient>): NDIIngredient {
   return {
     id: '123e4567-e89b-12d3-a456-426614174001',
-    notification_number: 'NDI 001',
+    notification_number: 1,
     report_number: 'Report 001',
     ingredient_name: 'Test NDI Ingredient',
     firm: 'Test Firm',
@@ -63,23 +69,9 @@ export function createMockODIIngredient(
     id: '123e4567-e89b-12d3-a456-426614174002',
     ingredient_name: 'Test ODI Ingredient',
     synonyms: ['ODI Synonym'],
-    source_organization: 'AHPA',
+    source: 'AHPA',
+    notes: null,
     is_active: true,
-    created_at: '2024-01-01T00:00:00Z',
-    updated_at: '2024-01-01T00:00:00Z',
-    ...overrides,
-  };
-}
-
-/**
- * Create a mock allergen
- */
-export function createMockAllergen(overrides?: Partial<MajorAllergen>): MajorAllergen {
-  return {
-    id: '123e4567-e89b-12d3-a456-426614174003',
-    allergen_name: 'Milk',
-    derivatives: ['whey', 'casein', 'lactose'],
-    regulation: 'FALCPA',
     created_at: '2024-01-01T00:00:00Z',
     updated_at: '2024-01-01T00:00:00Z',
     ...overrides,
@@ -94,45 +86,77 @@ export function createMockAnalysisResult(overrides?: Partial<AnalysisResult>): A
     product_name: 'Test Product',
     product_type: 'CONVENTIONAL_FOOD',
     product_category: 'CONVENTIONAL_FOOD',
+    category_rationale: 'Product is a conventional food item based on ingredients and label format',
+    category_confidence: 'high',
     general_labeling: {
       statement_of_identity: {
         status: 'compliant',
-        detail: 'Product identity clearly stated',
+        details: 'Product identity clearly stated',
+        regulation_citation: '21 CFR 101.3',
       },
-      net_quantity_declaration: {
+      net_quantity: {
         status: 'compliant',
-        detail: 'Net quantity properly declared',
+        details: 'Net quantity properly declared',
+        regulation_citation: '21 CFR 101.105',
       },
-      manufacturer_info: {
+      manufacturer_address: {
         status: 'compliant',
-        detail: 'Manufacturer information complete',
+        details: 'Manufacturer information complete',
+        regulation_citation: '21 CFR 101.5',
       },
     },
     ingredient_labeling: {
       ingredients_list: ['Water', 'Sugar', 'Salt'],
       status: 'compliant',
-      detail: 'Ingredients properly listed',
+      details: 'Ingredients properly listed',
+      regulation_citation: '21 CFR 101.4',
     },
     allergen_labeling: {
       status: 'not_applicable',
-      detail: 'No major allergens present',
+      details: 'No major allergens present',
+      regulation_citation: '21 USC 343(w)',
     },
     nutrition_labeling: {
       status: 'compliant',
-      detail: 'Nutrition facts properly formatted',
+      details: 'Nutrition facts properly formatted',
+      regulation_citation: '21 CFR 101.9',
     },
     claims: {
-      status: 'compliant',
-      detail: 'No claims made',
+      structure_function_claims: {
+        claims_present: false,
+        claims_found: [],
+        status: 'compliant',
+        regulation_citation: '21 USC 343(r)(6)',
+      },
+      nutrient_content_claims: {
+        claims_present: false,
+        claims_found: [],
+        status: 'compliant',
+        regulation_citation: '21 CFR 101.13',
+      },
+      health_claims: {
+        claims_present: false,
+        claims_found: [],
+        status: 'compliant',
+        regulation_citation: '21 CFR 101.14',
+      },
+      prohibited_claims: {
+        claims_present: false,
+        claims_found: [],
+        status: 'compliant',
+        regulation_citation: '21 USC 343',
+      },
+      details: 'No claims made',
+      regulation_citation: '21 CFR 101.13',
     },
     overall_assessment: {
       primary_compliance_status: 'compliant',
+      confidence_level: 'high',
       summary: 'Product label is compliant',
-      key_strengths: ['Clear labeling', 'Proper formatting'],
-      priority_concerns: [],
+      key_findings: ['Clear labeling', 'Proper formatting'],
     },
     recommendations: [],
-    regulatory_framework: 'FDA',
+    compliance_table: [],
     ...overrides,
   };
 }
@@ -238,11 +262,11 @@ export const testGRASIngredients: GRASIngredient[] = [
 export const testNDIIngredients: NDIIngredient[] = [
   createMockNDIIngredient({
     ingredient_name: 'Astaxanthin',
-    notification_number: 'NDI 001',
+    notification_number: 1,
   }),
   createMockNDIIngredient({
     ingredient_name: 'Beta-glucan',
-    notification_number: 'NDI 002',
+    notification_number: 2,
   }),
 ];
 
@@ -253,29 +277,11 @@ export const testODIIngredients: OldDietaryIngredient[] = [
   createMockODIIngredient({
     ingredient_name: 'Ginseng',
     synonyms: ['Panax ginseng', 'Korean ginseng'],
-    source_organization: 'AHPA',
+    source: 'AHPA',
   }),
   createMockODIIngredient({
     ingredient_name: 'Echinacea',
     synonyms: ['Purple coneflower'],
-    source_organization: 'UNPA',
-  }),
-];
-
-/**
- * Collection of test allergens
- */
-export const testAllergens: MajorAllergen[] = [
-  createMockAllergen({
-    allergen_name: 'Milk',
-    derivatives: ['whey', 'casein', 'lactose', 'butter'],
-  }),
-  createMockAllergen({
-    allergen_name: 'Eggs',
-    derivatives: ['albumin', 'ovalbumin', 'egg white', 'egg yolk'],
-  }),
-  createMockAllergen({
-    allergen_name: 'Soy',
-    derivatives: ['soybean', 'tofu', 'edamame', 'soy lecithin'],
+    source: 'UNPA',
   }),
 ];
