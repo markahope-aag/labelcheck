@@ -103,18 +103,15 @@ export default function AnalyzePage() {
     // If user selects the same category that was already detected, just show results
     if (category === analysis.analysisData.product_category) {
       analysis.setResult(analysis.analysisData);
-      // TODO: Need to expose method to hide category selector
-      // setShowCategorySelector(false);
+      analysis.hideCategorySelectorUI();
       session.closeComparison();
       return;
     }
 
     // User selected a different category - need to re-analyze with forced category
     try {
-      // TODO: These state manipulations should be in the analysis hook
-      // setIsAnalyzing(true);
-      // setError('');
-      // setErrorCode('');
+      analysis.setAnalyzingState(true);
+      analysis.setErrorState('');
 
       const formData = new FormData();
       formData.append('image', fileUpload.selectedFile);
@@ -165,10 +162,9 @@ export default function AnalyzePage() {
 
       // Show the new analysis results
       analysis.setResult(responseData);
-      // TODO: Need to expose methods to control category selector and analysisData
-      // setShowCategorySelector(false);
+      analysis.hideCategorySelectorUI();
+      analysis.updateAnalysisData(responseData);
       session.closeComparison();
-      // setAnalysisData(responseData); // Update analysis.analysisData with new results
 
       toast({
         title: 'Re-analysis Complete',
@@ -177,8 +173,7 @@ export default function AnalyzePage() {
     } catch (err: unknown) {
       const error =
         err instanceof Error ? err : new Error('Failed to re-analyze with selected category');
-      // TODO: Need to expose setError method
-      // setError(error.message);
+      analysis.setErrorState(error.message);
       clientLogger.error('Category re-analysis failed', { error, category });
       toast({
         title: 'Re-analysis Failed',
@@ -186,28 +181,24 @@ export default function AnalyzePage() {
         variant: 'destructive',
       });
     } finally {
-      // TODO: Need to expose setIsAnalyzing method
-      // setIsAnalyzing(false);
+      analysis.setAnalyzingState(false);
     }
   };
 
   const handleChangeCategoryClick = () => {
     // Go back to category selector to try a different classification
-    // TODO: Need to expose method to show category selector from analysis hook
-    // setShowCategorySelector(true);
+    analysis.showCategorySelectorUI();
     session.closeComparison();
   };
 
   const handleCompare = () => {
     session.openComparison();
-    // TODO: Need to expose method to hide category selector from analysis hook
-    // setShowCategorySelector(false);
+    analysis.hideCategorySelectorUI();
   };
 
   const handleBackToSelector = () => {
     session.closeComparison();
-    // TODO: Need to expose method to show category selector from analysis hook
-    // setShowCategorySelector(true);
+    analysis.showCategorySelectorUI();
   };
 
   const handleDownloadPDF = async () => {
@@ -556,7 +547,7 @@ export default function AnalyzePage() {
                           <ImageQualityWarning
                             metrics={fileUpload.imageQuality}
                             onProceed={() => {
-                              // TODO: Need to expose method to hide quality warning
+                              fileUpload.dismissQualityWarning();
                             }}
                             onReupload={() => {
                               fileUpload.resetFile();

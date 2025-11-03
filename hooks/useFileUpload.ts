@@ -26,6 +26,7 @@ interface UseFileUploadReturn {
   handleDrop: (e: React.DragEvent<HTMLDivElement>) => void;
   resetFile: () => void;
   clearError: () => void;
+  dismissQualityWarning: () => void;
 }
 
 export function useFileUpload(): UseFileUploadReturn {
@@ -203,6 +204,14 @@ export function useFileUpload(): UseFileUploadReturn {
     setError('');
   }, []);
 
+  /**
+   * Dismiss quality warning
+   * Allows user to proceed with analysis despite quality issues
+   */
+  const dismissQualityWarning = useCallback(() => {
+    setShowQualityWarning(false);
+  }, []);
+
   return {
     selectedFile,
     previewUrl,
@@ -218,5 +227,6 @@ export function useFileUpload(): UseFileUploadReturn {
     handleDrop,
     resetFile,
     clearError,
+    dismissQualityWarning,
   };
 }

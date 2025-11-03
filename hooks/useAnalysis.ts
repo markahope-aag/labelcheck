@@ -35,6 +35,12 @@ interface UseAnalysisReturn {
   handleCategorySelection: () => void;
   clearError: () => void;
   reset: () => void;
+  // Manual state control methods for complex orchestration flows
+  showCategorySelectorUI: () => void;
+  hideCategorySelectorUI: () => void;
+  updateAnalysisData: (data: AnalyzeImageResponse | null) => void;
+  setAnalyzingState: (isAnalyzing: boolean) => void;
+  setErrorState: (error: string, errorCode?: string) => void;
 }
 
 export function useAnalysis({ userId, onSuccess, onError }: UseAnalysisProps): UseAnalysisReturn {
@@ -237,6 +243,33 @@ export function useAnalysis({ userId, onSuccess, onError }: UseAnalysisProps): U
     setAnalysisData(null);
   }, []);
 
+  /**
+   * Manual state control methods for complex orchestration flows
+   * These methods allow the page to directly manipulate internal state
+   * when the hook's automatic state management isn't sufficient
+   */
+
+  const showCategorySelectorUI = useCallback(() => {
+    setShowCategorySelector(true);
+  }, []);
+
+  const hideCategorySelectorUI = useCallback(() => {
+    setShowCategorySelector(false);
+  }, []);
+
+  const updateAnalysisData = useCallback((data: AnalyzeImageResponse | null) => {
+    setAnalysisData(data);
+  }, []);
+
+  const setAnalyzingState = useCallback((analyzing: boolean) => {
+    setIsAnalyzing(analyzing);
+  }, []);
+
+  const setErrorState = useCallback((errorMessage: string, code: string = '') => {
+    setError(errorMessage);
+    setErrorCode(code);
+  }, []);
+
   return {
     isAnalyzing,
     analysisProgress,
@@ -257,5 +290,10 @@ export function useAnalysis({ userId, onSuccess, onError }: UseAnalysisProps): U
     handleCategorySelection,
     clearError,
     reset,
+    showCategorySelectorUI,
+    hideCategorySelectorUI,
+    updateAnalysisData,
+    setAnalyzingState,
+    setErrorState,
   };
 }
