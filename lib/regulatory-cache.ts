@@ -18,7 +18,8 @@ interface CacheEntry {
 let documentCache: CacheEntry | null = null;
 
 // Cache configuration
-const CACHE_TTL_MS = 1000 * 60 * 60; // 1 hour (can adjust as needed)
+// Extended to 24 hours (Quick Win #4) - regulatory documents change infrequently
+const CACHE_TTL_MS = 1000 * 60 * 60 * 24; // 24 hours (was 1 hour)
 
 /**
  * Check if cache is still valid based on TTL
