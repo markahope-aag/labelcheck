@@ -12,6 +12,7 @@ import {
   NotFoundError,
   ExternalServiceError,
 } from '@/lib/error-handler';
+import { chatRequestSchema, createValidationErrorResponse } from '@/lib/validation';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -30,14 +31,18 @@ export async function POST(request: NextRequest) {
 
     requestLogger.info('Chat request started', { userId });
 
-    const { sessionId, message, parentIterationId } = await request.json();
+    // Parse and validate request body with Zod
+    const body = await request.json();
+    const validationResult = chatRequestSchema.safeParse(body);
 
-    if (!message) {
-      throw new ValidationError('Message is required', { field: 'message' });
+    if (!validationResult.success) {
+      requestLogger.warn('Chat validation failed', { errors: validationResult.error.errors });
+      const errorResponse = createValidationErrorResponse(validationResult.error);
+      return NextResponse.json(errorResponse, { status: 400 });
     }
-    if (!sessionId) {
-      throw new ValidationError('Analysis ID is required', { field: 'analysisId' });
-    }
+
+    const { sessionId, question: message } = validationResult.data;
+    const { parentIterationId } = body; // Optional field, not in schema
 
     // Get user from database (use admin client to bypass RLS)
     const { data: user } = await supabaseAdmin

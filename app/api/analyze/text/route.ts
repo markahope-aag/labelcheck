@@ -8,6 +8,11 @@ import { processPdfForAnalysis } from '@/lib/pdf-helpers';
 import { TEXT_LIMITS } from '@/lib/constants';
 import { logger, createRequestLogger } from '@/lib/logger';
 import { handleApiError, ValidationError, AuthenticationError } from '@/lib/error-handler';
+import {
+  validateFormData,
+  textCheckerRequestSchema,
+  createValidationErrorResponse,
+} from '@/lib/validation';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -26,7 +31,7 @@ export async function POST(request: NextRequest) {
 
     requestLogger.info('Text analysis request started', { userId });
 
-    let sessionId: string;
+    let sessionId: string | undefined;
     let textContent: string | undefined;
     let pdfFile: File | undefined;
     let isPdfMode = false;
@@ -35,34 +40,47 @@ export async function POST(request: NextRequest) {
     const contentType = request.headers.get('content-type') || '';
 
     if (contentType.includes('multipart/form-data')) {
-      // PDF upload mode
+      // PDF upload mode - validate with Zod
       const formData = await request.formData();
-      sessionId = formData.get('sessionId') as string;
-      pdfFile = formData.get('pdf') as File;
-      isPdfMode = true;
+      const validationResult = validateFormData(formData, textCheckerRequestSchema);
 
-      if (!sessionId || !pdfFile) {
-        if (!pdfFile) {
-          throw new ValidationError('Either text or PDF is required', {
-            fields: ['text', 'pdf'],
-          });
-        }
-        throw new ValidationError('Session ID is required', { field: 'sessionId' });
+      if (!validationResult.success) {
+        requestLogger.warn('Text checker PDF validation failed', {
+          errors: validationResult.error.errors,
+        });
+        const errorResponse = createValidationErrorResponse(validationResult.error);
+        return NextResponse.json(errorResponse, { status: 400 });
+      }
+
+      // Check if PDF mode (has 'pdf' field)
+      if ('pdf' in validationResult.data) {
+        sessionId = validationResult.data.sessionId;
+        pdfFile = validationResult.data.pdf;
+        isPdfMode = true;
       }
     } else {
-      // Text mode
+      // Text mode - validate with Zod
       const body = await request.json();
-      sessionId = body.sessionId;
-      textContent = body.textContent;
+      const validationResult = textCheckerRequestSchema.safeParse(body);
 
-      if (!sessionId || !textContent) {
-        if (!textContent) {
-          throw new ValidationError('Either text or PDF is required', {
-            fields: ['text', 'pdf'],
-          });
-        }
-        throw new ValidationError('Session ID is required', { field: 'sessionId' });
+      if (!validationResult.success) {
+        requestLogger.warn('Text checker text validation failed', {
+          errors: validationResult.error.errors,
+        });
+        const errorResponse = createValidationErrorResponse(validationResult.error);
+        return NextResponse.json(errorResponse, { status: 400 });
       }
+
+      // Check if text mode (has 'text' field)
+      if ('text' in validationResult.data) {
+        sessionId = validationResult.data.sessionId;
+        textContent = validationResult.data.text;
+      }
+    }
+
+    // Ensure sessionId is defined (should always be true after validation)
+    if (!sessionId) {
+      throw new ValidationError('Session ID is required', { field: 'sessionId' });
     }
 
     // Get user from database (use admin client to bypass RLS)

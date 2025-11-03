@@ -10,6 +10,7 @@ import {
   NotFoundError,
   handleSupabaseError,
 } from '@/lib/error-handler';
+import { shareRequestSchema, createValidationErrorResponse } from '@/lib/validation';
 
 export async function POST(request: NextRequest) {
   const requestLogger = createRequestLogger({ endpoint: '/api/share' });
@@ -24,12 +25,17 @@ export async function POST(request: NextRequest) {
 
     requestLogger.info('Share link generation requested', { userId });
 
+    // Parse and validate request body with Zod
     const body = await request.json();
-    const { analysisId } = body;
+    const validationResult = shareRequestSchema.safeParse(body);
 
-    if (!analysisId) {
-      throw new ValidationError('Analysis ID is required', { field: 'analysisId' });
+    if (!validationResult.success) {
+      requestLogger.warn('Share validation failed', { errors: validationResult.error.errors });
+      const errorResponse = createValidationErrorResponse(validationResult.error);
+      return NextResponse.json(errorResponse, { status: 400 });
     }
+
+    const { analysisId } = validationResult.data;
 
     // Get user's internal ID (use admin client to bypass RLS)
     const { data: user } = await supabaseAdmin

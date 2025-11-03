@@ -26,6 +26,11 @@ import {
   ExternalServiceError,
   handleSupabaseError,
 } from '@/lib/error-handler';
+import {
+  validateFormData,
+  analyzeRequestSchema,
+  createValidationErrorResponse,
+} from '@/lib/validation';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -65,38 +70,29 @@ export async function POST(request: NextRequest) {
       throw error;
     }
 
-    // 3. Parse form data
+    // 3. Parse and validate form data with Zod
     const formData = await request.formData();
-    const imageFile = formData.get('image') as File;
-    const existingSessionId = formData.get('sessionId') as string | null;
-    const labelName = formData.get('labelName') as string | null;
-    const forcedCategory = formData.get('forcedCategory') as string | null;
+    const validationResult = validateFormData(formData, analyzeRequestSchema);
 
-    if (!imageFile) {
-      throw new ValidationError('Image is required', { field: 'image' });
+    if (!validationResult.success) {
+      requestLogger.warn('Validation failed', { errors: validationResult.error.errors });
+      const errorResponse = createValidationErrorResponse(validationResult.error);
+      return NextResponse.json(errorResponse, { status: 400 });
     }
 
-    // Validate file size (10MB limit)
-    if (imageFile.size > 10 * 1024 * 1024) {
-      throw new ValidationError('File too large. Maximum file size is 10MB.', {
-        field: 'image',
-        maxSize: '10MB',
-        actualSize: `${(imageFile.size / (1024 * 1024)).toFixed(2)}MB`,
-      });
-    }
-
-    // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
-    if (!allowedTypes.includes(imageFile.type)) {
-      throw new ValidationError(`Invalid file type. Allowed types: ${allowedTypes.join(', ')}`, {
-        field: 'image',
-        allowedTypes,
-        actualType: imageFile.type,
-      });
-    }
+    const {
+      image: imageFile,
+      sessionId: existingSessionId,
+      labelName,
+      forcedCategory,
+    } = validationResult.data;
 
     // 4. Handle session
-    const { sessionId, session } = await handleSession(user.id, existingSessionId, imageFile);
+    const { sessionId, session } = await handleSession(
+      user.id,
+      existingSessionId || null,
+      imageFile
+    );
 
     // 5. Process file (image or PDF)
     const { isPdf, base64Data, pdfTextContent, mediaType } = await processFile(imageFile);
@@ -156,7 +152,7 @@ export async function POST(request: NextRequest) {
     const analysis = await saveAnalysis(
       user.id,
       imageFile,
-      labelName,
+      labelName || null,
       analysisData,
       base64Data,
       pdfTextContent,
