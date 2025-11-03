@@ -5,6 +5,10 @@
  * This contains the comprehensive prompt for analyzing food/beverage/supplement labels.
  */
 
+import { ProductCategory } from '../supabase';
+import { getCategorySpecificAnalysisPrompt } from '../analysis-prompts';
+import { logger } from '../logger';
+
 export interface AnalysisPromptParams {
   isPdf: boolean;
   forcedCategory?: string | null;
@@ -12,9 +16,44 @@ export interface AnalysisPromptParams {
 
 /**
  * Builds the complete analysis prompt for the AI
+ *
+ * When USE_CATEGORY_SPECIFIC_PROMPTS=true and forcedCategory is provided,
+ * uses focused category-specific prompts from external markdown files.
+ * Otherwise, uses the comprehensive generic prompt.
  */
 export function buildAnalysisPrompt(params: AnalysisPromptParams): string {
   const { isPdf, forcedCategory } = params;
+
+  // Check feature flag: use category-specific prompts if enabled
+  const useCategoryPrompts = process.env.USE_CATEGORY_SPECIFIC_PROMPTS === 'true';
+
+  if (useCategoryPrompts && forcedCategory) {
+    // Validate category
+    const validCategories: ProductCategory[] = [
+      'DIETARY_SUPPLEMENT',
+      'CONVENTIONAL_FOOD',
+      'ALCOHOLIC_BEVERAGE',
+      'NON_ALCOHOLIC_BEVERAGE',
+    ];
+
+    if (validCategories.includes(forcedCategory as ProductCategory)) {
+      logger.info('Using category-specific prompt', {
+        category: forcedCategory,
+        featureFlag: true,
+      });
+
+      return getCategorySpecificAnalysisPrompt(forcedCategory as ProductCategory, isPdf);
+    } else {
+      logger.warn('Invalid category for external prompts, falling back to generic', {
+        category: forcedCategory,
+      });
+    }
+  }
+
+  // Default: use comprehensive generic prompt
+  if (useCategoryPrompts) {
+    logger.info('Using generic prompt (no category provided)', { featureFlag: true });
+  }
 
   return `
 You are a labeling regulatory compliance expert. Analyze this label ${isPdf ? 'PDF document' : 'image'} and provide a comprehensive evaluation of its compliance with FDA and USDA labeling requirements based on the regulatory documents provided above.
