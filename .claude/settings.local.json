@@ -72,7 +72,22 @@
       "Bash(echo:*)",
       "Bash(for file in \"lib/analysis/orchestrator.ts\" \"lib/export-helpers.ts\" \"lib/email-templates.ts\")",
       "Bash(nul)",
-      "Bash(npm test:*)"
+      "Bash(npm test:*)",
+      "Bash(npx jest:*)",
+      "Bash(npx playwright:*)",
+      "Bash(del e2echeck-quality.spec.ts)",
+      "Bash(del __tests__appapianalyzeroute.test.ts)",
+      "Bash(del __tests__appapianalyzechatroute.test.ts)",
+      "Bash(del __tests__appapianalyzetextroute.test.ts)",
+      "Bash(del __tests__appapianalyzecheck-qualityroute.test.ts)",
+      "Bash(cmd /c \"del __tests__\\app\\api\\analyze\\route.test.ts\")",
+      "Bash(cmd /c \"del __tests__\\app\\api\\analyze\\chat\\route.test.ts\")",
+      "Bash(cmd /c \"del __tests__\\app\\api\\analyze\\text\\route.test.ts\")",
+      "Bash(cmd /c \"del __tests__\\app\\api\\analyze\\check-quality\\route.test.ts\")",
+      "Bash(npm run test:unit:*)",
+      "Bash(npm run test:e2e:*)",
+      "Bash(.env.local)",
+      "Bash(cmd /c \"timeout /t 10\")"
     ],
     "deny": [],
     "ask": []

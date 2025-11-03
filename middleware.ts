@@ -20,6 +20,12 @@ export default clerkMiddleware(async (auth, request) => {
   // Generate nonce for CSP
   const nonce = generateNonce();
 
+  // Allow test bypass for E2E testing
+  // Only works in non-production environments
+  const testBypass = request.headers.get('X-Test-Bypass');
+  const isTestMode =
+    process.env.NODE_ENV !== 'production' && testBypass === process.env.TEST_BYPASS_TOKEN;
+
   // Protect admin routes - require System Admin role from database
   if (isAdminRoute(request)) {
     const { userId } = await auth();
@@ -52,7 +58,7 @@ export default clerkMiddleware(async (auth, request) => {
   }
 
   // Protect all other authenticated routes
-  if (!isPublicRoute(request)) {
+  if (!isPublicRoute(request) && !isTestMode) {
     await auth.protect();
   }
 

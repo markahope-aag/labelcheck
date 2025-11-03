@@ -20,21 +20,33 @@ import pino from 'pino';
  *
  * Development: Pretty-printed, colorized output
  * Production: JSON output for log aggregation services
+ * Test: Simple console output (no worker threads)
  */
+
+// Check if we're in a test environment (Playwright, Jest, etc.)
+const isTestEnvironment =
+  process.env.NODE_ENV === 'test' ||
+  process.env.PLAYWRIGHT_TEST === '1' ||
+  !!process.env.JEST_WORKER_ID;
+
 const pinoLogger = pino({
   level: process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'info' : 'debug'),
 
   // Pretty print in development for better readability
-  ...(process.env.NODE_ENV === 'development' && {
-    transport: {
-      target: 'pino-pretty',
-      options: {
-        colorize: true,
-        translateTime: 'HH:MM:ss',
-        ignore: 'pid,hostname',
+  // Disable in test mode to avoid worker thread issues
+  ...(process.env.NODE_ENV === 'development' &&
+    !process.env.CI &&
+    !isTestEnvironment && {
+      transport: {
+        target: 'pino-pretty',
+        options: {
+          colorize: true,
+          translateTime: 'HH:MM:ss',
+          ignore: 'pid,hostname',
+          sync: true, // Use synchronous mode to avoid worker thread issues
+        },
       },
-    },
-  }),
+    }),
 
   // Add base fields to all logs
   base: {
