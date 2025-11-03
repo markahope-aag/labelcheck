@@ -419,18 +419,53 @@ export function addMonitoringRecommendation(analysisData: AnalysisData): void {
 
 /**
  * Run all post-processing steps
+ * Uses parallel execution for compliance checks to improve performance
  */
 export async function postProcessAnalysis(analysisData: AnalysisData): Promise<AnalysisData> {
-  // Run compliance checks in sequence (they modify analysisData)
-  await processGRASCompliance(analysisData);
-  await processNDICompliance(analysisData);
-  await processAllergenCompliance(analysisData);
+  logger.info('Starting post-processing', {
+    productType: analysisData.product_category,
+    ingredientCount: analysisData.ingredient_labeling?.ingredients_list?.length || 0,
+  });
+
+  const startTime = performance.now();
+
+  // Run compliance checks in parallel for better performance
+  // Using Promise.allSettled to ensure all checks complete even if one fails
+  const [grasResult, ndiResult, allergenResult] = await Promise.allSettled([
+    processGRASCompliance(analysisData),
+    processNDICompliance(analysisData),
+    processAllergenCompliance(analysisData),
+  ]);
+
+  // Log any failures (checks already modify analysisData on success)
+  if (grasResult.status === 'rejected') {
+    logger.error('GRAS compliance check failed', { error: grasResult.reason });
+  }
+  if (ndiResult.status === 'rejected') {
+    logger.error('NDI compliance check failed', { error: ndiResult.reason });
+  }
+  if (allergenResult.status === 'rejected') {
+    logger.error('Allergen compliance check failed', { error: allergenResult.reason });
+  }
+
+  const complianceTime = performance.now() - startTime;
+  logger.info('Compliance checks completed', {
+    durationMs: Math.round(complianceTime),
+    grasStatus: grasResult.status,
+    ndiStatus: ndiResult.status,
+    allergenStatus: allergenResult.status,
+  });
 
   // Add monitoring recommendation
   addMonitoringRecommendation(analysisData);
 
   // Enforce status consistency (must be last)
   enforceStatusConsistency(analysisData);
+
+  const totalTime = performance.now() - startTime;
+  logger.info('Post-processing completed', {
+    totalDurationMs: Math.round(totalTime),
+  });
 
   return analysisData;
 }
