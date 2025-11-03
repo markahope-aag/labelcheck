@@ -41,3 +41,7 @@ nul
 
 # sample product labels (for testing)
 /sample-labels/
+
+# Test results
+test-results/
+playwright-report/
