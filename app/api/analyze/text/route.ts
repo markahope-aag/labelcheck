@@ -1,18 +1,15 @@
-import { auth } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
-import { supabaseAdmin } from '@/lib/supabase';
-import { getSessionWithIterations, addIteration } from '@/lib/session-helpers';
+import { addIteration } from '@/lib/session-helpers';
 import { getActiveRegulatoryDocuments, buildRegulatoryContext } from '@/lib/regulatory-documents';
 import { processPdfForAnalysis } from '@/lib/pdf-helpers';
 import { TEXT_LIMITS } from '@/lib/constants';
 import { logger, createRequestLogger } from '@/lib/logger';
-import { handleApiError, ValidationError, AuthenticationError } from '@/lib/error-handler';
-import {
-  validateFormData,
-  textCheckerRequestSchema,
-  createValidationErrorResponse,
-} from '@/lib/validation';
+import { handleApiError, ValidationError } from '@/lib/error-handler';
+import { textCheckerRequestSchema, createValidationErrorResponse } from '@/lib/validation';
+import { authenticateRequest } from '@/lib/auth-helpers';
+import { parseRequest, isTestMode } from '@/lib/services/request-parser';
+import { getSessionWithAccess } from '@/lib/services/session-service';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -22,202 +19,143 @@ export async function POST(request: NextRequest) {
   const requestLogger = createRequestLogger({ endpoint: '/api/analyze/text' });
 
   try {
-    // Check for test bypass - if present, validate before auth (for E2E tests)
-    const testBypass = request.headers.get('X-Test-Bypass');
-    const isTestMode =
-      process.env.NODE_ENV !== 'production' && testBypass === process.env.TEST_BYPASS_TOKEN;
-
-    let sessionId: string | undefined;
-    let textContent: string | undefined;
-    let pdfFile: File | undefined;
-    let isPdfMode = false;
-
-    // Check if this is a FormData request (PDF upload) or JSON (text)
+    const inTestMode = isTestMode(request);
     const contentType = request.headers.get('content-type') || '';
+    const isPdfMode = contentType.includes('multipart/form-data');
 
-    // Parse request once - store for reuse
-    let formData: FormData | undefined;
-    let jsonBody: any;
-    let validationResult:
-      | ReturnType<typeof validateFormData>
-      | ReturnType<typeof textCheckerRequestSchema.safeParse>
-      | undefined;
+    // Test mode: validate first, then auth
+    // Normal mode: auth first, then validate
+    if (inTestMode) {
+      // Parse and validate in test mode (validation before auth)
+      const parseResult = await parseRequest(request, textCheckerRequestSchema);
 
-    // If test mode, validate first before auth
-    if (isTestMode) {
-      if (contentType.includes('multipart/form-data')) {
-        // PDF upload mode
-        formData = await request.formData();
-        validationResult = validateFormData(formData, textCheckerRequestSchema);
-
-        if (!validationResult.success) {
-          requestLogger.warn('Text checker PDF validation failed (test mode)', {
-            errors: (validationResult as any).error.errors,
-          });
-          const errorResponse = createValidationErrorResponse((validationResult as any).error);
-          return NextResponse.json(errorResponse, { status: 400 });
-        }
-
-        // Validation passed - extract data
-        if (validationResult.success && 'pdf' in (validationResult as any).data) {
-          sessionId = (validationResult as any).data.sessionId;
-          pdfFile = (validationResult as any).data.pdf;
-          isPdfMode = true;
-        }
-      } else {
-        // Text mode - JSON (clone to avoid consuming stream)
-        jsonBody = await request.clone().json();
-        validationResult = textCheckerRequestSchema.safeParse(jsonBody);
-
-        if (!validationResult.success) {
-          requestLogger.warn('Text checker text validation failed (test mode)', {
-            errors: (validationResult as any).error.errors,
-          });
-          const errorResponse = createValidationErrorResponse((validationResult as any).error);
-          return NextResponse.json(errorResponse, { status: 400 });
-        }
-
-        // Validation passed - extract data
-        if (validationResult.success && 'text' in (validationResult as any).data) {
-          sessionId = (validationResult as any).data.sessionId;
-          textContent = (validationResult as any).data.text;
-        }
+      if (!parseResult.success) {
+        requestLogger.warn('Text checker validation failed (test mode)', {
+          errors: parseResult.error.errors,
+        });
+        const errorResponse = createValidationErrorResponse(parseResult.error);
+        return NextResponse.json(errorResponse, { status: 400 });
       }
-    }
 
-    // Auth check
-    const { userId } = await auth();
+      // Validation passed, now authenticate
+      const authResult = await authenticateRequest(request, false);
 
-    if (!userId) {
-      requestLogger.warn('Unauthorized text analysis attempt');
-      throw new AuthenticationError();
-    }
-
-    requestLogger.info('Text analysis request started', { userId });
-
-    // Parse and validate in normal mode (or re-parse in test mode for processing)
-    if (!isTestMode) {
-      // Normal mode: parse after auth
-      if (contentType.includes('multipart/form-data')) {
-        formData = await request.formData();
-        validationResult = validateFormData(formData, textCheckerRequestSchema);
-
-        if (!validationResult.success) {
-          requestLogger.warn('Text checker PDF validation failed', {
-            errors: (validationResult as any).error.errors,
-          });
-          const errorResponse = createValidationErrorResponse((validationResult as any).error);
-          return NextResponse.json(errorResponse, { status: 400 });
-        }
-
-        if (validationResult.success && 'pdf' in (validationResult as any).data) {
-          sessionId = (validationResult as any).data.sessionId;
-          pdfFile = (validationResult as any).data.pdf;
-          isPdfMode = true;
-        }
-      } else {
-        jsonBody = await request.json();
-        validationResult = textCheckerRequestSchema.safeParse(jsonBody);
-
-        if (!validationResult.success) {
-          requestLogger.warn('Text checker text validation failed', {
-            errors: (validationResult as any).error.errors,
-          });
-          const errorResponse = createValidationErrorResponse((validationResult as any).error);
-          return NextResponse.json(errorResponse, { status: 400 });
-        }
-
-        if (validationResult.success && 'text' in (validationResult as any).data) {
-          sessionId = (validationResult as any).data.sessionId;
-          textContent = (validationResult as any).data.text;
-        }
-      }
-    } else {
-      // Test mode: re-parse original request for processing (already validated)
-      if (!contentType.includes('multipart/form-data')) {
-        jsonBody = await request.json();
-        validationResult = textCheckerRequestSchema.safeParse(jsonBody);
-        if (validationResult.success && 'text' in (validationResult as any).data) {
-          sessionId = (validationResult as any).data.sessionId;
-          textContent = (validationResult as any).data.text;
-        }
-      }
-      // FormData already parsed and validated above
-    }
-
-    // Ensure sessionId is defined (should always be true after validation)
-    if (!sessionId) {
-      throw new ValidationError('Session ID is required', { field: 'sessionId' });
-    }
-
-    // Get user from database (use admin client to bypass RLS)
-    const { data: user } = await supabaseAdmin
-      .from('users')
-      .select('id, email')
-      .eq('clerk_user_id', userId)
-      .maybeSingle();
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    // Get session with all iterations to find original analysis
-    // Use admin client to bypass RLS since sessions are created with admin
-    const {
-      session,
-      iterations,
-      error: sessionError,
-    } = await getSessionWithIterations(sessionId, true);
-
-    if (sessionError || !session) {
-      requestLogger.error('Failed to fetch session for text analysis', {
-        error: sessionError,
-        sessionId,
+      requestLogger.info('Text analysis request started (test mode)', {
+        userId: authResult.userId,
       });
-      return NextResponse.json({ error: 'Session not found or access denied' }, { status: 404 });
+
+      // Extract data from parsed result
+      const data = parseResult.data as any;
+      const sessionId = data.sessionId;
+      const textContent = 'text' in data ? data.text : undefined;
+      const pdfFile = 'pdf' in data ? data.pdf : undefined;
+
+      return await processTextAnalysisRequest(
+        sessionId,
+        textContent,
+        pdfFile,
+        isPdfMode,
+        authResult.userInternalId,
+        requestLogger
+      );
+    } else {
+      // Normal mode: auth first, then validate
+      const authResult = await authenticateRequest(request, false);
+
+      requestLogger.info('Text analysis request started', { userId: authResult.userId });
+
+      // Parse and validate request
+      const parseResult = await parseRequest(request, textCheckerRequestSchema);
+
+      if (!parseResult.success) {
+        requestLogger.warn('Text checker validation failed', {
+          errors: parseResult.error.errors,
+        });
+        const errorResponse = createValidationErrorResponse(parseResult.error);
+        return NextResponse.json(errorResponse, { status: 400 });
+      }
+
+      // Extract data from parsed result
+      const data = parseResult.data as any;
+      const sessionId = data.sessionId;
+      const textContent = 'text' in data ? data.text : undefined;
+      const pdfFile = 'pdf' in data ? data.pdf : undefined;
+
+      return await processTextAnalysisRequest(
+        sessionId,
+        textContent,
+        pdfFile,
+        isPdfMode,
+        authResult.userInternalId,
+        requestLogger
+      );
     }
+  } catch (err: unknown) {
+    return handleApiError(err);
+  }
+}
 
-    // Verify session belongs to user
-    if (session.user_id !== user.id) {
-      return NextResponse.json({ error: 'Access denied to this session' }, { status: 403 });
-    }
+async function processTextAnalysisRequest(
+  sessionId: string,
+  textContent: string | undefined,
+  pdfFile: File | undefined,
+  isPdfMode: boolean,
+  userId: string,
+  requestLogger: ReturnType<typeof createRequestLogger>
+) {
+  // Validate sessionId
+  if (!sessionId) {
+    throw new ValidationError('Session ID is required', { field: 'sessionId' });
+  }
 
-    // Find the original image analysis
-    const originalAnalysis = iterations.find((iter) => iter.iteration_type === 'image_analysis');
+  // Get session with access verification
+  const sessionResult = await getSessionWithAccess(sessionId, userId, true);
 
-    let originalContext = '';
-    if (originalAnalysis?.result_data) {
-      const resultData = originalAnalysis.result_data;
+  if (!sessionResult.hasAccess) {
+    return NextResponse.json(
+      { error: sessionResult.error },
+      { status: sessionResult.session ? 403 : 404 }
+    );
+  }
 
-      // Type guard: Check if result_data is an AnalysisResult (not a chat response)
-      if ('product_name' in resultData) {
-        originalContext += '\n\n## Original Label Analysis (For Comparison)\n\n';
-        originalContext += `**Product:** ${resultData.product_name || 'Unknown'}\n`;
-        originalContext += `**Overall Status:** ${resultData.overall_assessment?.primary_compliance_status || 'Unknown'}\n`;
+  const { session, iterations } = sessionResult;
 
-        if (resultData.recommendations) {
-          originalContext += '\n**Original Issues Found:**\n';
-          resultData.recommendations.forEach((rec, idx: number) => {
-            originalContext += `${idx + 1}. [${rec.priority.toUpperCase()}] ${rec.recommendation}\n`;
-          });
-        }
+  // Find the original image analysis
+  const originalAnalysis = iterations.find((iter) => iter.iteration_type === 'image_analysis');
+
+  let originalContext = '';
+  if (originalAnalysis?.result_data) {
+    const resultData = originalAnalysis.result_data;
+
+    // Type guard: Check if result_data is an AnalysisResult (not a chat response)
+    if ('product_name' in resultData) {
+      originalContext += '\n\n## Original Label Analysis (For Comparison)\n\n';
+      originalContext += `**Product:** ${resultData.product_name || 'Unknown'}\n`;
+      originalContext += `**Overall Status:** ${resultData.overall_assessment?.primary_compliance_status || 'Unknown'}\n`;
+
+      if (resultData.recommendations) {
+        originalContext += '\n**Original Issues Found:**\n';
+        resultData.recommendations.forEach((rec, idx: number) => {
+          originalContext += `${idx + 1}. [${rec.priority.toUpperCase()}] ${rec.recommendation}\n`;
+        });
       }
     }
+  }
 
-    // Get regulatory documents
-    const regulatoryDocuments = await getActiveRegulatoryDocuments();
-    const regulatoryContext = buildRegulatoryContext(regulatoryDocuments);
+  // Get regulatory documents
+  const regulatoryDocuments = await getActiveRegulatoryDocuments();
+  const regulatoryContext = buildRegulatoryContext(regulatoryDocuments);
 
-    // Create AI prompt for text/PDF analysis
-    let completion;
+  // Create AI prompt for text/PDF analysis
+  let completion;
 
-    if (isPdfMode && pdfFile) {
-      // PDF mode - hybrid processing (text extraction first, CloudConvert fallback)
-      const bytes = await pdfFile.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-      const pdfResult = await processPdfForAnalysis(buffer);
+  if (isPdfMode && pdfFile) {
+    // PDF mode - hybrid processing (text extraction first, CloudConvert fallback)
+    const bytes = await pdfFile.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    const pdfResult = await processPdfForAnalysis(buffer);
 
-      const analysisInstructions = `You are a labeling regulatory compliance expert. A user has uploaded a PDF of their prospective label design to check compliance BEFORE finalizing it.
+    const analysisInstructions = `You are a labeling regulatory compliance expert. A user has uploaded a PDF of their prospective label design to check compliance BEFORE finalizing it.
 
 ${originalContext}
 
@@ -234,56 +172,56 @@ IMPORTANT:
 
 Return your response as a JSON object with the same structure used for image analysis.`;
 
-      if (pdfResult.type === 'text') {
-        // Text extraction successful
-        const pdfText = pdfResult.content as string;
-        completion = await openai.chat.completions.create({
-          model: 'gpt-4o',
-          max_completion_tokens: 8192,
-          messages: [
-            {
-              role: 'user',
-              content:
-                regulatoryContext +
-                '\n\n' +
-                analysisInstructions +
-                '\n\n## Extracted PDF Text:\n\n' +
-                pdfText,
-            },
-          ],
-          response_format: { type: 'json_object' },
-        });
-      } else {
-        // CloudConvert converted to image
-        const imageBuffer = pdfResult.content as Buffer;
-        const base64Image = imageBuffer.toString('base64');
-        completion = await openai.chat.completions.create({
-          model: 'gpt-4o',
-          max_completion_tokens: 8192,
-          messages: [
-            {
-              role: 'user',
-              content: [
-                {
-                  type: 'text',
-                  text: regulatoryContext + '\n\n' + analysisInstructions,
-                },
-                {
-                  type: 'image_url',
-                  image_url: {
-                    url: `data:image/jpeg;base64,${base64Image}`,
-                    detail: 'high',
-                  },
-                },
-              ],
-            },
-          ],
-          response_format: { type: 'json_object' },
-        });
-      }
+    if (pdfResult.type === 'text') {
+      // Text extraction successful
+      const pdfText = pdfResult.content as string;
+      completion = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        max_completion_tokens: 8192,
+        messages: [
+          {
+            role: 'user',
+            content:
+              regulatoryContext +
+              '\n\n' +
+              analysisInstructions +
+              '\n\n## Extracted PDF Text:\n\n' +
+              pdfText,
+          },
+        ],
+        response_format: { type: 'json_object' },
+      });
     } else {
-      // Text mode - analyze plain text
-      const analysisInstructions = `You are a labeling regulatory compliance expert. A user is testing prospective label content (text-only, not an image) to check compliance BEFORE creating a physical label.
+      // CloudConvert converted to image
+      const imageBuffer = pdfResult.content as Buffer;
+      const base64Image = imageBuffer.toString('base64');
+      completion = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        max_completion_tokens: 8192,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: regulatoryContext + '\n\n' + analysisInstructions,
+              },
+              {
+                type: 'image_url',
+                image_url: {
+                  url: `data:image/jpeg;base64,${base64Image}`,
+                  detail: 'high',
+                },
+              },
+            ],
+          },
+        ],
+        response_format: { type: 'json_object' },
+      });
+    }
+  } else {
+    // Text mode - analyze plain text
+    const analysisInstructions = `You are a labeling regulatory compliance expert. A user is testing prospective label content (text-only, not an image) to check compliance BEFORE creating a physical label.
 
 ${originalContext}
 
@@ -330,78 +268,75 @@ Additionally, include a "comparison" field if original analysis exists:
   }
 }`;
 
-      completion = await openai.chat.completions.create({
-        model: 'gpt-4o',
-        max_completion_tokens: 8192,
-        messages: [
-          {
-            role: 'user',
-            content: regulatoryContext + '\n\n' + analysisInstructions,
-          },
-        ],
-        response_format: { type: 'json_object' },
-      });
-    }
-
-    const responseText = completion.choices[0]?.message?.content;
-    if (!responseText) {
-      throw new Error('No text response from AI');
-    }
-
-    requestLogger.debug('AI response received', {
-      responseLength: responseText.length,
-      preview: responseText.substring(0, 200),
+    completion = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      max_completion_tokens: 8192,
+      messages: [
+        {
+          role: 'user',
+          content: regulatoryContext + '\n\n' + analysisInstructions,
+        },
+      ],
+      response_format: { type: 'json_object' },
     });
-
-    let analysisData;
-    try {
-      analysisData = JSON.parse(responseText);
-      requestLogger.info('Text analysis data parsed successfully', { userId });
-    } catch (parseError) {
-      requestLogger.error('Failed to parse AI response', {
-        error: parseError,
-        responsePreview: responseText.substring(0, 1000),
-      });
-      throw new Error('Failed to parse AI response');
-    }
-
-    // Save text check iteration to database
-    const { data: iteration, error: iterationError } = await addIteration(
-      sessionId,
-      'text_check',
-      {
-        inputType: isPdfMode ? 'pdf' : 'text',
-        textContent: isPdfMode
-          ? undefined
-          : textContent?.substring(0, TEXT_LIMITS.MAX_STORED_TEXT_LENGTH), // Limit stored text length
-        pdfFileName: isPdfMode && pdfFile ? pdfFile.name : undefined,
-        pdfSize: isPdfMode && pdfFile ? pdfFile.size : undefined,
-        timestamp: new Date().toISOString(),
-      },
-      analysisData,
-      undefined,
-      undefined,
-      true // Use admin client to bypass RLS
-    );
-
-    if (iterationError) {
-      requestLogger.error('Failed to save text check iteration', { error: iterationError });
-      // Don't fail the request if we can't save the iteration
-    }
-
-    requestLogger.info('Text analysis completed successfully', {
-      userId,
-      iterationId: iteration?.id,
-      analysisType: 'text_check',
-    });
-
-    return NextResponse.json({
-      ...analysisData,
-      iterationId: iteration?.id || null,
-      analysisType: 'text_check',
-      timestamp: new Date().toISOString(),
-    });
-  } catch (err: unknown) {
-    return handleApiError(err);
   }
+
+  const responseText = completion.choices[0]?.message?.content;
+  if (!responseText) {
+    throw new Error('No text response from AI');
+  }
+
+  requestLogger.debug('AI response received', {
+    responseLength: responseText.length,
+    preview: responseText.substring(0, 200),
+  });
+
+  let analysisData;
+  try {
+    analysisData = JSON.parse(responseText);
+    requestLogger.info('Text analysis data parsed successfully', { userId });
+  } catch (parseError) {
+    requestLogger.error('Failed to parse AI response', {
+      error: parseError,
+      responsePreview: responseText.substring(0, 1000),
+    });
+    throw new Error('Failed to parse AI response');
+  }
+
+  // Save text check iteration to database
+  const { data: iteration, error: iterationError } = await addIteration(
+    sessionId,
+    'text_check',
+    {
+      inputType: isPdfMode ? 'pdf' : 'text',
+      textContent: isPdfMode
+        ? undefined
+        : textContent?.substring(0, TEXT_LIMITS.MAX_STORED_TEXT_LENGTH), // Limit stored text length
+      pdfFileName: isPdfMode && pdfFile ? pdfFile.name : undefined,
+      pdfSize: isPdfMode && pdfFile ? pdfFile.size : undefined,
+      timestamp: new Date().toISOString(),
+    },
+    analysisData,
+    undefined,
+    undefined,
+    true // Use admin client to bypass RLS
+  );
+
+  if (iterationError) {
+    requestLogger.error('Failed to save text check iteration', { error: iterationError });
+    // Don't fail the request if we can't save the iteration
+  }
+
+  requestLogger.info('Text analysis completed successfully', {
+    userId,
+    iterationId: iteration?.id,
+    analysisType: 'text_check',
+  });
+
+  return NextResponse.json({
+    ...analysisData,
+    iterationId: iteration?.id || null,
+    analysisType: 'text_check',
+    timestamp: new Date().toISOString(),
+  });
 }
