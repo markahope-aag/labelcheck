@@ -191,13 +191,18 @@ export async function POST(request: NextRequest) {
     }
 
     // 7. Load regulatory documents with RAG lite filtering
-    const { regulatoryContext } = await loadRegulatoryDocuments(
+    const { regulatoryContext, ragInfo } = await loadRegulatoryDocuments(
       pdfTextContent,
       extractedTextForRag
     );
 
     // 8. Build analysis prompt
-    const analysisInstructions = buildAnalysisPrompt({ isPdf, forcedCategory });
+    // Use pre-classified category from RAG lite if forcedCategory not provided
+    const categoryForPrompt = forcedCategory || ragInfo?.preClassifiedCategory || null;
+    const analysisInstructions = buildAnalysisPrompt({
+      isPdf,
+      forcedCategory: categoryForPrompt,
+    });
 
     // 9. Call AI with retry logic
     const completion = await callAIWithRetry(
