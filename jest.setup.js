@@ -7,129 +7,41 @@ import { TextEncoder, TextDecoder } from 'util';
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;
 
-// Polyfill for Web APIs needed by Next.js
-// Node.js 18+ has fetch, but may not have all Web APIs
+// Polyfill for Web APIs needed by undici/Next.js
+// Jest's environment is missing some globals
+if (typeof global.MessageChannel === 'undefined') {
+  const { MessageChannel, MessagePort } = require('worker_threads');
+  global.MessageChannel = MessageChannel;
+  global.MessagePort = MessagePort;
+}
+
 if (typeof global.ReadableStream === 'undefined') {
-  // Simple ReadableStream polyfill for Jest
-  global.ReadableStream = class ReadableStream {
-    constructor() {
-      this._data = null;
-    }
-    getReader() {
-      return {
-        read: () => Promise.resolve({ done: true, value: undefined }),
-      };
-    }
-  };
+  const { ReadableStream, WritableStream, TransformStream } = require('stream/web');
+  global.ReadableStream = ReadableStream;
+  global.WritableStream = WritableStream;
+  global.TransformStream = TransformStream;
 }
 
-if (typeof global.Request === 'undefined') {
-  // Minimal Request polyfill for Jest tests
-  global.Request = class Request {
-    constructor(input, init = {}) {
-      this.url = typeof input === 'string' ? input : input?.url || 'http://localhost:3000';
-      this.method = init.method || 'GET';
-      this.headers = new Map();
-      if (init.headers) {
-        Object.entries(init.headers).forEach(([key, value]) => {
-          this.headers.set(key.toLowerCase(), value);
-        });
-      }
-      this.body = init.body || null;
-      this.bodyUsed = false;
-    }
+// Use Node.js native fetch API (available in Node 18+)
+// Jest's testEnvironment doesn't always expose them, so we import directly
+const { fetch, Request, Response, Headers, FormData } = require('undici');
 
-    async arrayBuffer() {
-      if (this.bodyUsed) {
-        throw new Error('Body already used');
-      }
-      this.bodyUsed = true;
-      if (this.body instanceof ArrayBuffer) {
-        return this.body;
-      }
-      if (this.body instanceof Buffer) {
-        return this.body.buffer;
-      }
-      if (typeof this.body === 'string') {
-        return Buffer.from(this.body).buffer;
-      }
-      return new ArrayBuffer(0);
-    }
+global.fetch = fetch;
+global.Request = Request;
+global.Response = Response;
+global.Headers = Headers;
+global.FormData = FormData;
 
-    async json() {
-      const buffer = await this.arrayBuffer();
-      const text = Buffer.from(buffer).toString();
-      return JSON.parse(text);
-    }
-
-    async formData() {
-      // Minimal FormData mock
-      return new Map();
-    }
-
-    clone() {
-      return new Request(this.url, {
-        method: this.method,
-        headers: Object.fromEntries(this.headers),
-        body: this.body,
-      });
-    }
-  };
-
-  global.Response = class Response {
-    constructor(body, init = {}) {
-      this.body = body;
-      this.status = init.status || 200;
-      this.statusText = init.statusText || 'OK';
-      this.headers = new Map();
-      if (init.headers) {
-        Object.entries(init.headers).forEach(([key, value]) => {
-          this.headers.set(key.toLowerCase(), value);
-        });
-      }
-      this.ok = this.status >= 200 && this.status < 300;
-    }
-
-    async json() {
-      return typeof this.body === 'string' ? JSON.parse(this.body) : this.body;
-    }
-
-    async text() {
-      return typeof this.body === 'string' ? this.body : JSON.stringify(this.body);
-    }
-  };
-
-  global.Headers = class Headers {
-    constructor(init) {
-      this._headers = new Map();
-      if (init) {
-        Object.entries(init).forEach(([key, value]) => {
-          this._headers.set(key.toLowerCase(), value);
-        });
-      }
-    }
-
-    get(name) {
-      return this._headers.get(name.toLowerCase()) || null;
-    }
-
-    set(name, value) {
-      this._headers.set(name.toLowerCase(), value);
-    }
-
-    has(name) {
-      return this._headers.has(name.toLowerCase());
-    }
-
-    delete(name) {
-      this._headers.delete(name.toLowerCase());
-    }
-
-    forEach(callback) {
-      this._headers.forEach((value, key) => callback(value, key, this));
-    }
-  };
-}
+// Mock OpenAI globally to prevent initialization issues
+jest.mock('openai', () => {
+  return jest.fn().mockImplementation(() => ({
+    chat: {
+      completions: {
+        create: jest.fn(),
+      },
+    },
+  }));
+});
 
 // Mock environment variables for tests
 process.env.OPENAI_API_KEY = 'test-openai-key';
@@ -139,6 +51,56 @@ process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
 process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = 'test-clerk-publishable-key';
 process.env.CLERK_SECRET_KEY = 'test-clerk-secret-key';
 process.env.NEXT_PUBLIC_APP_URL = 'http://localhost:3000';
+
+// Mock Clerk authentication globally to prevent ESM parsing issues
+// This must be done BEFORE any modules import @clerk/nextjs
+jest.mock('@clerk/nextjs/server', () => ({
+  auth: jest.fn().mockResolvedValue({
+    userId: 'test-clerk-user-id',
+    sessionId: 'test-session-id',
+    orgId: null,
+  }),
+  clerkClient: jest.fn(() => ({
+    users: {
+      getUser: jest.fn().mockResolvedValue({
+        id: 'test-clerk-user-id',
+        emailAddresses: [{ emailAddress: 'test@example.com' }],
+      }),
+    },
+  })),
+  currentUser: jest.fn().mockResolvedValue({
+    id: 'test-clerk-user-id',
+    emailAddresses: [{ emailAddress: 'test@example.com' }],
+  }),
+}));
+
+// Mock Supabase client creation globally to prevent connection attempts
+// This must be done BEFORE any modules import @supabase/supabase-js
+jest.mock('@supabase/supabase-js', () => {
+  const mockSelect = jest.fn().mockReturnThis();
+  const mockInsert = jest.fn().mockReturnThis();
+  const mockUpdate = jest.fn().mockReturnThis();
+  const mockDelete = jest.fn().mockReturnThis();
+  const mockEq = jest.fn().mockReturnThis();
+  const mockSingle = jest.fn().mockResolvedValue({ data: null, error: null });
+  const mockMaybeSingle = jest.fn().mockResolvedValue({ data: null, error: null });
+
+  const mockFrom = jest.fn().mockReturnValue({
+    select: mockSelect,
+    insert: mockInsert,
+    update: mockUpdate,
+    delete: mockDelete,
+    eq: mockEq,
+    single: mockSingle,
+    maybeSingle: mockMaybeSingle,
+  });
+
+  return {
+    createClient: jest.fn(() => ({
+      from: mockFrom,
+    })),
+  };
+});
 
 // Mock Next.js router (used by many components)
 jest.mock('next/navigation', () => ({

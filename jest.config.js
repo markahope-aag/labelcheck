@@ -61,16 +61,37 @@ const customJestConfig = {
         },
       },
     ],
+    '^.+\\.mjs$': [
+      '@swc/jest',
+      {
+        jsc: {
+          parser: {
+            syntax: 'ecmascript',
+          },
+          target: 'es2020',
+          module: {
+            type: 'commonjs',
+          },
+          transform: {
+            react: {
+              runtime: 'automatic',
+            },
+          },
+        },
+      },
+    ],
   },
 
   // Module file extensions
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node', 'mjs'],
 
   // Ignore patterns
   testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/.next/'],
 
-  // Transform ignore patterns
-  transformIgnorePatterns: ['node_modules/(?!(@clerk|@supabase)/)'],
+  // Transform ignore patterns - allow transforming ESM modules from various packages
+  // This tells Jest to NOT ignore these packages, so they get transformed
+  // The pattern matches: transform everything EXCEPT node_modules, BUT DO transform these specific packages
+  transformIgnorePatterns: ['node_modules/(?!(@clerk|@supabase|@babel|@jest|uuid|nanoid)/)'],
 
   // Verbose output
   verbose: true,
