@@ -102,7 +102,7 @@ export async function getAuthenticatedUser(): Promise<{
   const { userId } = await auth();
 
   if (!userId) {
-    throw new Error('Unauthorized');
+    throw new AuthenticationError('Authentication required');
   }
 
   // Get user from database
@@ -118,7 +118,7 @@ export async function getAuthenticatedUser(): Promise<{
   }
 
   if (!user) {
-    throw new Error('User not found');
+    throw new NotFoundError('User not found');
   }
 
   return {
