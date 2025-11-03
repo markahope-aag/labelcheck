@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Loader2, Send, X, MessageCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { clientLogger } from '@/lib/client-logger';
+import { ErrorAlert } from '@/components/ErrorAlert';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -33,6 +34,8 @@ export function AnalysisChat({
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string>('');
+  const [errorCode, setErrorCode] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -53,6 +56,9 @@ export function AnalysisChat({
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return;
+
+    setError('');
+    setErrorCode('');
 
     const userMessage: Message = {
       role: 'user',
@@ -77,7 +83,12 @@ export function AnalysisChat({
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to get response');
+        setError(data.error || 'Failed to send message');
+        setErrorCode(data.code || '');
+        setIsLoading(false);
+        // Remove the user message if the request failed
+        setMessages((prev) => prev.slice(0, -1));
+        return;
       }
 
       const assistantMessage: Message = {
@@ -90,12 +101,8 @@ export function AnalysisChat({
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (error: any) {
       clientLogger.error('Failed to send chat message', { error, sessionId });
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to send message',
-        variant: 'destructive',
-      });
-
+      setError(error.message || 'Failed to send message');
+      setErrorCode('');
       // Remove the user message if the request failed
       setMessages((prev) => prev.slice(0, -1));
     } finally {
@@ -142,6 +149,7 @@ export function AnalysisChat({
       </CardHeader>
 
       <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
+        {error && <ErrorAlert message={error} code={errorCode} />}
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <div className="p-4 bg-blue-100 rounded-full mb-4">

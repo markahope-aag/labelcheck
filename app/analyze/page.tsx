@@ -34,6 +34,7 @@ import { PrintReadyCertification } from '@/components/PrintReadyCertification';
 import CategorySelector from '@/components/CategorySelector';
 import CategoryComparison from '@/components/CategoryComparison';
 import { ImageQualityWarning } from '@/components/ImageQualityWarning';
+import { ErrorAlert } from '@/components/ErrorAlert';
 import { ProductCategory } from '@/lib/supabase';
 import type { ImageQualityMetrics } from '@/lib/image-quality';
 import type {
@@ -79,6 +80,7 @@ export default function AnalyzePage() {
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string>('');
+  const [errorCode, setErrorCode] = useState<string>('');
   const [result, setResult] = useState<AnalyzeImageResponse | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
@@ -225,6 +227,7 @@ export default function AnalyzePage() {
 
     setIsAnalyzing(true);
     setError('');
+    setErrorCode('');
     setAnalysisProgress(0);
     setAnalysisStep('Uploading file...');
 
@@ -297,8 +300,20 @@ export default function AnalyzePage() {
       const data: AnalyzeImageResponse | APIError = await response.json();
 
       if (!response.ok) {
-        const errorData = data as APIError;
-        throw new Error(errorData.error || 'Failed to analyze image');
+        const errorData = data as APIError & { metadata?: { current?: number; limit?: number } };
+        setError(errorData.error || 'Failed to analyze label');
+        setErrorCode(errorData.code || '');
+
+        // Handle specific error codes with enhanced messages
+        if (errorData.code === 'RATE_LIMIT' && errorData.metadata) {
+          const { current, limit } = errorData.metadata;
+          if (current !== undefined && limit !== undefined) {
+            setError(`${errorData.error} (${current}/${limit} analyses used)`);
+          }
+        }
+
+        setIsAnalyzing(false);
+        return;
       }
 
       const responseData = data as AnalyzeImageResponse;
@@ -328,6 +343,7 @@ export default function AnalyzePage() {
       const error =
         err instanceof Error ? err : new Error('An error occurred while analyzing the image');
       setError(error.message);
+      setErrorCode('');
       clientLogger.error('Analysis failed', { error });
     } finally {
       setIsAnalyzing(false);
@@ -339,6 +355,7 @@ export default function AnalyzePage() {
     setPreviewUrl('');
     setResult(null);
     setError('');
+    setErrorCode('');
     setSessionId(null);
     setShowCategorySelector(false);
     setShowComparison(false);
@@ -361,6 +378,7 @@ export default function AnalyzePage() {
     try {
       setIsAnalyzing(true);
       setError('');
+      setErrorCode('');
 
       const formData = new FormData();
       formData.append('image', selectedFile);
@@ -674,10 +692,11 @@ export default function AnalyzePage() {
           </div>
 
           {error && (
-            <Alert variant="destructive" className="mb-6">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
+            <ErrorAlert
+              message={error}
+              code={errorCode}
+              variant={errorCode === 'RATE_LIMIT' ? 'warning' : 'destructive'}
+            />
           )}
 
           {showComparison && analysisData ? (

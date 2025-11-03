@@ -2,20 +2,27 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { supabaseAdmin } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
+import { handleApiError, ValidationError, ConfigurationError } from '@/lib/error-handler';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-02-24.acacia',
 });
 
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
-
 export async function POST(request: NextRequest) {
   try {
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    if (!webhookSecret) {
+      throw new ConfigurationError('STRIPE_WEBHOOK_SECRET');
+    }
+
     const body = await request.text();
     const signature = request.headers.get('stripe-signature');
 
     if (!signature) {
-      return NextResponse.json({ error: 'No signature' }, { status: 400 });
+      throw new ValidationError('Stripe signature header is required', {
+        field: 'stripe-signature',
+      });
     }
 
     let event: Stripe.Event;
@@ -23,9 +30,10 @@ export async function POST(request: NextRequest) {
     try {
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
     } catch (err: unknown) {
-      const error = err instanceof Error ? err : new Error(String(err));
-      logger.error('Stripe webhook signature verification failed', { error: error.message });
-      return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
+      if (err instanceof Error && err.message.includes('signature')) {
+        throw new ValidationError('Invalid webhook signature');
+      }
+      throw err;
     }
 
     switch (event.type) {
@@ -181,8 +189,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ received: true });
   } catch (err: unknown) {
-    const error = err instanceof Error ? err : new Error(String(err));
-    logger.error('Stripe webhook processing failed', { error: error.message });
-    return NextResponse.json({ error: 'Webhook processing failed' }, { status: 500 });
+    return handleApiError(err);
   }
 }

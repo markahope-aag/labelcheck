@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Loader2, FileText, X, Upload, CheckCircle, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { clientLogger } from '@/lib/client-logger';
+import { ErrorAlert } from '@/components/ErrorAlert';
 
 interface TextCheckerProps {
   sessionId: string;
@@ -20,6 +21,8 @@ export function TextChecker({ sessionId, isOpen, onClose, onAnalysisComplete }: 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [uploadMode, setUploadMode] = useState<'text' | 'pdf'>('text');
   const [selectedPdf, setSelectedPdf] = useState<File | null>(null);
+  const [error, setError] = useState<string>('');
+  const [errorCode, setErrorCode] = useState<string>('');
   const { toast } = useToast();
 
   const handleAnalyze = async () => {
@@ -27,6 +30,8 @@ export function TextChecker({ sessionId, isOpen, onClose, onAnalysisComplete }: 
     if (uploadMode === 'pdf' && !selectedPdf) return;
     if (isAnalyzing) return;
 
+    setError('');
+    setErrorCode('');
     setIsAnalyzing(true);
 
     try {
@@ -57,7 +62,10 @@ export function TextChecker({ sessionId, isOpen, onClose, onAnalysisComplete }: 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to analyze content');
+        setError(data.error || 'Failed to check text');
+        setErrorCode(data.code || '');
+        setIsAnalyzing(false);
+        return;
       }
 
       toast({
@@ -72,11 +80,8 @@ export function TextChecker({ sessionId, isOpen, onClose, onAnalysisComplete }: 
       onClose();
     } catch (error: any) {
       clientLogger.error('Content analysis failed', { error, sessionId, uploadMode });
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to analyze content',
-        variant: 'destructive',
-      });
+      setError(error.message || 'Failed to analyze content');
+      setErrorCode('');
     } finally {
       setIsAnalyzing(false);
     }
@@ -134,6 +139,7 @@ export function TextChecker({ sessionId, isOpen, onClose, onAnalysisComplete }: 
         </CardHeader>
 
         <CardContent className="flex-1 overflow-y-auto p-6 space-y-4">
+          {error && <ErrorAlert message={error} code={errorCode} />}
           {/* Mode Selector */}
           <div className="flex gap-2 p-1 bg-slate-100 rounded-lg">
             <button

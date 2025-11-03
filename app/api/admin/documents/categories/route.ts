@@ -16,8 +16,18 @@ export async function GET(req: NextRequest) {
     const { userId } = await auth();
 
     if (!userId) {
-      requestLogger.warn('Unauthorized document categories fetch attempt');
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      throw new AuthenticationError();
+    }
+
+    // Check if user is admin
+    const { data: user } = await supabaseAdmin
+      .from('users')
+      .select('is_system_admin')
+      .eq('clerk_user_id', userId)
+      .single();
+
+    if (!user || !user.is_system_admin) {
+      throw new AuthorizationError('Admin access required');
     }
 
     requestLogger.info('Document categories fetch started', { userId });

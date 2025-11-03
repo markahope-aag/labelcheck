@@ -4,12 +4,18 @@ import { Webhook } from 'svix';
 import type { WebhookEvent } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
+import {
+  handleApiError,
+  ValidationError,
+  ConfigurationError,
+  handleSupabaseError,
+} from '@/lib/error-handler';
 
 export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
 
   if (!WEBHOOK_SECRET) {
-    throw new Error('Please add CLERK_WEBHOOK_SECRET to .env');
+    throw new ConfigurationError('CLERK_WEBHOOK_SECRET');
   }
 
   const headerPayload = await headers();
@@ -36,11 +42,11 @@ export async function POST(req: Request) {
       'svix-timestamp': svix_timestamp,
       'svix-signature': svix_signature,
     }) as WebhookEvent;
-  } catch (err) {
-    logger.error('Clerk webhook verification failed', { error: err });
-    return new Response('Error occurred', {
-      status: 400,
-    });
+  } catch (err: unknown) {
+    if (err instanceof Error && err.message.includes('signature')) {
+      throw new ValidationError('Invalid webhook signature');
+    }
+    throw err;
   }
 
   const eventType = evt.type;
@@ -67,8 +73,7 @@ export async function POST(req: Request) {
         .single();
 
       if (error) {
-        logger.error('Failed to create user from Clerk webhook', { error, clerkUserId: id });
-        return NextResponse.json({ error: 'Database error' }, { status: 500 });
+        throw handleSupabaseError(error, 'create user from Clerk webhook');
       }
 
       if (newUser) {
@@ -107,8 +112,7 @@ export async function POST(req: Request) {
         .eq('clerk_user_id', id);
 
       if (error) {
-        logger.error('Failed to update user from Clerk webhook', { error, clerkUserId: id });
-        return NextResponse.json({ error: 'Database error' }, { status: 500 });
+        throw handleSupabaseError(error, 'update user from Clerk webhook');
       }
 
       logger.info('User updated from Clerk webhook', { clerkUserId: id });
@@ -122,8 +126,7 @@ export async function POST(req: Request) {
       const { error } = await supabaseAdmin.from('users').delete().eq('clerk_user_id', id);
 
       if (error) {
-        logger.error('Failed to delete user from Clerk webhook', { error, clerkUserId: id });
-        return NextResponse.json({ error: 'Database error' }, { status: 500 });
+        throw handleSupabaseError(error, 'delete user from Clerk webhook');
       }
 
       logger.info('User deleted from Clerk webhook', { clerkUserId: id });
@@ -131,8 +134,6 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ message: 'Webhook processed successfully' }, { status: 200 });
   } catch (err: unknown) {
-    const error = err instanceof Error ? err : new Error(String(err));
-    logger.error('Clerk webhook processing failed', { error, message: error.message });
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return handleApiError(err);
   }
 }
