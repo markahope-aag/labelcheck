@@ -63,7 +63,7 @@ describe('Auth Helpers', () => {
     });
 
     it('should authenticate successfully in normal mode', async () => {
-      process.env.NODE_ENV = 'development';
+      (process.env as any).NODE_ENV = 'development';
       (auth as unknown as jest.Mock).mockResolvedValue({ userId: 'clerk-user-123' });
 
       const request = new NextRequest('http://localhost:3000/api/test');
@@ -77,7 +77,7 @@ describe('Auth Helpers', () => {
     });
 
     it('should skip authentication in test mode when skipAuthInTestMode is true', async () => {
-      process.env.NODE_ENV = 'development';
+      (process.env as any).NODE_ENV = 'development';
       process.env.TEST_BYPASS_TOKEN = 'test-secret-123';
 
       const request = new NextRequest('http://localhost:3000/api/test', {
@@ -95,7 +95,7 @@ describe('Auth Helpers', () => {
     });
 
     it('should still authenticate in test mode when skipAuthInTestMode is false', async () => {
-      process.env.NODE_ENV = 'development';
+      (process.env as any).NODE_ENV = 'development';
       process.env.TEST_BYPASS_TOKEN = 'test-secret-123';
       (auth as unknown as jest.Mock).mockResolvedValue({ userId: 'clerk-user-123' });
 
@@ -157,7 +157,7 @@ describe('Auth Helpers', () => {
     });
 
     it('should not authenticate in test mode with wrong bypass token', async () => {
-      process.env.NODE_ENV = 'development';
+      (process.env as any).NODE_ENV = 'development';
       process.env.TEST_BYPASS_TOKEN = 'test-secret-123';
       (auth as unknown as jest.Mock).mockResolvedValue({ userId: 'clerk-user-123' });
 

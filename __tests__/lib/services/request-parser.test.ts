@@ -41,7 +41,7 @@ describe('Request Parser Service', () => {
 
   describe('isTestMode', () => {
     it('should return true when test bypass header matches and not in production', () => {
-      process.env.NODE_ENV = 'development';
+      (process.env as any).NODE_ENV = 'development';
       process.env.TEST_BYPASS_TOKEN = 'test-secret-123';
 
       const request = new NextRequest('http://localhost:3000/api/test', {
@@ -52,7 +52,7 @@ describe('Request Parser Service', () => {
     });
 
     it('should return false when test bypass header is missing', () => {
-      process.env.NODE_ENV = 'development';
+      (process.env as any).NODE_ENV = 'development';
       process.env.TEST_BYPASS_TOKEN = 'test-secret-123';
 
       const request = new NextRequest('http://localhost:3000/api/test');
@@ -61,7 +61,7 @@ describe('Request Parser Service', () => {
     });
 
     it('should return false when test bypass header does not match', () => {
-      process.env.NODE_ENV = 'development';
+      (process.env as any).NODE_ENV = 'development';
       process.env.TEST_BYPASS_TOKEN = 'test-secret-123';
 
       const request = new NextRequest('http://localhost:3000/api/test', {
@@ -72,7 +72,7 @@ describe('Request Parser Service', () => {
     });
 
     it('should return false in production even with valid test bypass header', () => {
-      process.env.NODE_ENV = 'production';
+      (process.env as any).NODE_ENV = 'production';
       process.env.TEST_BYPASS_TOKEN = 'test-secret-123';
 
       const request = new NextRequest('http://localhost:3000/api/test', {
@@ -83,7 +83,7 @@ describe('Request Parser Service', () => {
     });
 
     it('should return false when TEST_BYPASS_TOKEN is not set', () => {
-      process.env.NODE_ENV = 'development';
+      (process.env as any).NODE_ENV = 'development';
       delete process.env.TEST_BYPASS_TOKEN;
 
       const request = new NextRequest('http://localhost:3000/api/test', {
@@ -207,7 +207,7 @@ describe('Request Parser Service', () => {
     });
 
     it('should parse JSON request when content-type is application/json', async () => {
-      process.env.NODE_ENV = 'development';
+      (process.env as any).NODE_ENV = 'development';
       const body = { name: 'Test', value: 42 };
       const request = new NextRequest('http://localhost:3000/api/test', {
         method: 'POST',
@@ -226,7 +226,7 @@ describe('Request Parser Service', () => {
     });
 
     it('should parse FormData request when content-type is multipart/form-data', async () => {
-      process.env.NODE_ENV = 'development';
+      (process.env as any).NODE_ENV = 'development';
       const formSchema = z.object({
         name: z.string(),
       });
@@ -250,7 +250,7 @@ describe('Request Parser Service', () => {
     });
 
     it('should detect test mode correctly', async () => {
-      process.env.NODE_ENV = 'development';
+      (process.env as any).NODE_ENV = 'development';
       process.env.TEST_BYPASS_TOKEN = 'test-secret-123';
 
       const body = { name: 'Test', value: 42 };
