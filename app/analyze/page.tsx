@@ -846,6 +846,7 @@ export default function AnalyzePage() {
                             <img
                               src={previewUrl}
                               alt="Preview"
+                              loading="lazy"
                               className="w-full h-auto max-h-96 object-contain bg-slate-50"
                             />
                           )}
