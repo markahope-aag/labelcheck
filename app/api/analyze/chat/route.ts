@@ -8,6 +8,13 @@ import { chatRequestSchema, createValidationErrorResponse } from '@/lib/validati
 import { authenticateRequest } from '@/lib/auth-helpers';
 import { parseRequest, isTestMode } from '@/lib/services/request-parser';
 import { getSessionWithAccess } from '@/lib/services/session-service';
+import type {
+  Recommendation,
+  StructureFunctionClaim,
+  NutrientContentClaim,
+  HealthClaim,
+  ProhibitedClaim,
+} from '@/types';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -140,7 +147,7 @@ async function processChatRequest(
 
       if (resultData.recommendations) {
         cachedContext += '**Key Recommendations:**\n';
-        resultData.recommendations.forEach((rec, idx: number) => {
+        resultData.recommendations.forEach((rec: Recommendation, idx: number) => {
           cachedContext += `${idx + 1}. [${rec.priority.toUpperCase()}] ${rec.recommendation} (${rec.regulation})\n`;
         });
         cachedContext += '\n';
@@ -188,28 +195,28 @@ async function processChatRequest(
           resultData.claims.structure_function_claims?.claims_present &&
           resultData.claims.structure_function_claims.claims_found.length > 0
         ) {
-          cachedContext += `- Structure/Function Claims Found: ${resultData.claims.structure_function_claims.claims_found.map((c) => c.claim_text).join('; ')}\n`;
+          cachedContext += `- Structure/Function Claims Found: ${resultData.claims.structure_function_claims.claims_found.map((c: StructureFunctionClaim) => c.claim_text).join('; ')}\n`;
         }
 
         if (
           resultData.claims.nutrient_content_claims?.claims_present &&
           resultData.claims.nutrient_content_claims.claims_found.length > 0
         ) {
-          cachedContext += `- Nutrient Content Claims Found: ${resultData.claims.nutrient_content_claims.claims_found.map((c) => c.claim_text).join('; ')}\n`;
+          cachedContext += `- Nutrient Content Claims Found: ${resultData.claims.nutrient_content_claims.claims_found.map((c: NutrientContentClaim) => c.claim_text).join('; ')}\n`;
         }
 
         if (
           resultData.claims.health_claims?.claims_present &&
           resultData.claims.health_claims.claims_found.length > 0
         ) {
-          cachedContext += `- Health Claims Found: ${resultData.claims.health_claims.claims_found.map((c) => c.claim_text).join('; ')}\n`;
+          cachedContext += `- Health Claims Found: ${resultData.claims.health_claims.claims_found.map((c: HealthClaim) => c.claim_text).join('; ')}\n`;
         }
 
         if (
           resultData.claims.prohibited_claims?.claims_present &&
           resultData.claims.prohibited_claims.claims_found.length > 0
         ) {
-          cachedContext += `- PROHIBITED Claims Detected: ${resultData.claims.prohibited_claims.claims_found.map((c) => c.claim_text).join('; ')}\n`;
+          cachedContext += `- PROHIBITED Claims Detected: ${resultData.claims.prohibited_claims.claims_found.map((c: ProhibitedClaim) => c.claim_text).join('; ')}\n`;
         }
 
         if (

@@ -10,6 +10,7 @@ import { textCheckerRequestSchema, createValidationErrorResponse } from '@/lib/v
 import { authenticateRequest } from '@/lib/auth-helpers';
 import { parseRequest, isTestMode } from '@/lib/services/request-parser';
 import { getSessionWithAccess } from '@/lib/services/session-service';
+import type { Recommendation } from '@/types';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -135,7 +136,7 @@ async function processTextAnalysisRequest(
 
       if (resultData.recommendations) {
         originalContext += '\n**Original Issues Found:**\n';
-        resultData.recommendations.forEach((rec, idx: number) => {
+        resultData.recommendations.forEach((rec: Recommendation, idx: number) => {
           originalContext += `${idx + 1}. [${rec.priority.toUpperCase()}] ${rec.recommendation}\n`;
         });
       }
