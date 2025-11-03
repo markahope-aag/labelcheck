@@ -1,5 +1,6 @@
 import { supabase, supabaseAdmin } from './supabase';
 import { logger } from './logger';
+import { getCachedGRASIngredients } from './ingredient-cache';
 
 export interface GRASIngredient {
   id: string;
@@ -81,31 +82,9 @@ async function checkSingleIngredient(ingredientName: string): Promise<GRASCheckR
     };
   }
 
-  // Strategy 2: Check synonyms array
-  // Fetch all active ingredients and check synonyms in JavaScript
-  // (PostgreSQL TEXT[] array matching is complex with Supabase client)
-  // IMPORTANT: Supabase has a hard 1000-row server limit, so we need pagination
-  let allIngredients: GRASIngredient[] = [];
-  let page = 0;
-  const pageSize = 1000;
-  let hasMore = true;
-
-  while (hasMore) {
-    const { data: pageData } = await supabaseAdmin
-      .from('gras_ingredients')
-      .select('*')
-      .eq('is_active', true)
-      .not('synonyms', 'is', null)
-      .range(page * pageSize, (page + 1) * pageSize - 1);
-
-    if (pageData && pageData.length > 0) {
-      allIngredients = [...allIngredients, ...pageData];
-      hasMore = pageData.length === pageSize;
-      page++;
-    } else {
-      hasMore = false;
-    }
-  }
+  // Strategy 2: Check synonyms array using cached ingredients
+  // This eliminates pagination queries - cache is loaded once per 24 hours
+  const allIngredients = await getCachedGRASIngredients();
 
   if (allIngredients) {
     for (const ing of allIngredients) {

@@ -1,55 +1,15 @@
 import { supabase, supabaseAdmin } from './supabase';
 import { logger } from './logger';
+import { getCachedNDIIngredients, getCachedODIIngredients } from './ingredient-cache';
 
 /**
- * Cache for old dietary ingredients from database
- * This avoids hitting the database on every ingredient check
- */
-let oldDietaryIngredientsCache: Set<string> | null = null;
-let cacheTimestamp = 0;
-const CACHE_DURATION = 1000 * 60 * 60; // 1 hour
-
-/**
- * Fetch old dietary ingredients from database
- * Results are cached for 1 hour to improve performance
+ * Fetch old dietary ingredients from centralized cache
+ * Results are cached for 24 hours via ingredient-cache.ts
  */
 async function getOldDietaryIngredients(): Promise<Set<string>> {
-  const now = Date.now();
-
-  // Return cached data if still fresh
-  if (oldDietaryIngredientsCache && now - cacheTimestamp < CACHE_DURATION) {
-    return oldDietaryIngredientsCache;
-  }
-
   try {
-    // Fetch ALL rows from database (Supabase limits to 1000 by default, so we need pagination)
-    // Note: old_dietary_ingredients has different structure than ndi_ingredients
-    let allData: Array<{ ingredient_name: string; synonyms: string[] | null }> = [];
-    let page = 0;
-    const pageSize = 1000;
-    let hasMore = true;
-
-    while (hasMore) {
-      const { data, error } = await supabaseAdmin
-        .from('old_dietary_ingredients')
-        .select('ingredient_name, synonyms')
-        .eq('is_active', true)
-        .range(page * pageSize, (page + 1) * pageSize - 1);
-
-      if (error) {
-        logger.error('Failed to fetch old dietary ingredients', { error, page });
-        // Return fallback list on error
-        return getFallbackPre1994Ingredients();
-      }
-
-      if (data && data.length > 0) {
-        allData = allData.concat(data);
-        hasMore = data.length === pageSize; // Continue if we got a full page
-        page++;
-      } else {
-        hasMore = false;
-      }
-    }
+    // Use centralized cache with 24-hour TTL
+    const allData = await getCachedODIIngredients();
 
     // Build set with ingredient names and synonyms
     const ingredientSet = new Set<string>();
@@ -66,14 +26,10 @@ async function getOldDietaryIngredients(): Promise<Set<string>> {
       }
     });
 
-    logger.info('Old dietary ingredients loaded into cache', {
+    logger.debug('Old dietary ingredients processed from cache', {
       ingredientCount: allData.length,
       totalEntriesWithSynonyms: ingredientSet.size,
     });
-
-    // Update cache
-    oldDietaryIngredientsCache = ingredientSet;
-    cacheTimestamp = now;
 
     return ingredientSet;
   } catch (error) {
@@ -372,49 +328,12 @@ export async function checkNDICompliance(ingredients: string[]): Promise<{
     };
   }
 
-  // Fetch ALL NDI ingredients for matching (with pagination since we have 1,253 rows)
-  let ndiIngredients: NDIIngredient[] = [];
-  let page = 0;
-  const pageSize = 1000;
-  let hasMore = true;
+  // Fetch ALL NDI ingredients from centralized cache (24-hour TTL)
+  const ndiIngredients = await getCachedNDIIngredients();
 
-  while (hasMore) {
-    const { data, error } = await supabaseAdmin
-      .from('ndi_ingredients')
-      .select('*')
-      .order('ingredient_name')
-      .range(page * pageSize, (page + 1) * pageSize - 1);
-
-    if (error) {
-      logger.error('Failed to fetch NDI ingredients', { error, page });
-      return {
-        results: ingredients.map((ing) => ({
-          ingredient: ing,
-          hasNDI: false,
-          ndiMatch: null,
-          matchType: null,
-          requiresNDI: false,
-          complianceNote: 'Unable to check NDI database',
-        })),
-        summary: {
-          totalChecked: ingredients.length,
-          withNDI: 0,
-          withoutNDI: 0,
-          requiresNotification: 0,
-        },
-      };
-    }
-
-    if (data && data.length > 0) {
-      ndiIngredients = ndiIngredients.concat(data);
-      hasMore = data.length === pageSize;
-      page++;
-    } else {
-      hasMore = false;
-    }
-  }
-
-  logger.debug('NDI ingredients loaded for matching', { ingredientCount: ndiIngredients.length });
+  logger.debug('NDI ingredients loaded from cache for matching', {
+    ingredientCount: ndiIngredients.length,
+  });
 
   const results: NDICheckResult[] = [];
   let withNDI = 0;

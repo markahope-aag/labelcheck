@@ -217,8 +217,8 @@ export interface NDIIngredient {
 export interface OldDietaryIngredient {
   id: string;
   ingredient_name: string;
-  source_organization: 'AHPA' | 'CRN' | 'NPA' | 'UNPA';
-  ingredient_type: string | null;
+  synonyms: string[] | null;
+  source: string | null;
   notes: string | null;
   is_active: boolean;
   created_at: string;
