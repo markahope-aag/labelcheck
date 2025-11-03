@@ -94,12 +94,14 @@
     "sonner": "^1.5.0",
     "stripe": "^17.6.0",
     "svix": "^1.40.0",
+    "swagger-ui-react": "^5.30.1",
     "tailwind-merge": "^2.5.2",
     "tailwindcss": "3.3.3",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "5.2.2",
     "vaul": "^0.9.9",
     "xlsx": "^0.18.5",
+    "yaml": "^2.8.1",
     "zod": "^3.25.76"
   },
   "devDependencies": {
@@ -110,6 +112,7 @@
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
     "@types/jest": "^30.0.0",
+    "@types/swagger-ui-react": "^5.18.0",
     "husky": "^9.1.7",
     "jest": "^30.2.0",
     "jest-environment-jsdom": "^30.2.0",

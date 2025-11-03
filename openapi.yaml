@@ -1,0 +1,726 @@
+openapi: 3.1.0
+info:
+  title: LabelCheck API
+  version: 1.0.0
+  description: |
+    FDA and USDA regulatory compliance analysis API for food, beverage, and supplement labels.
+
+    ## Features
+    - AI-powered label analysis using GPT-4o
+    - Category-specific regulatory compliance checking
+    - GRAS ingredient validation
+    - Allergen detection (FALCPA/FASTER Act)
+    - NDI compliance for dietary supplements
+    - Iterative analysis sessions with chat and text checking
+    - Team collaboration and sharing
+
+    ## Authentication
+    Most endpoints require authentication via Clerk. Include the session token in requests.
+
+  contact:
+    name: LabelCheck Support
+    url: https://labelcheck.io
+    email: support@labelcheck.io
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://labelcheck.io/api
+    description: Production server
+  - url: http://localhost:3000/api
+    description: Development server
+
+security:
+  - ClerkAuth: []
+
+tags:
+  - name: Analysis
+    description: Label analysis endpoints
+  - name: Sessions
+    description: Analysis session management
+  - name: Organizations
+    description: Team collaboration
+  - name: Share
+    description: Public sharing
+
+paths:
+  /analyze:
+    post:
+      summary: Analyze a product label
+      description: |
+        Upload a product label image or PDF for comprehensive FDA/USDA compliance analysis.
+
+        The analysis includes:
+        - Product category classification
+        - Regulatory compliance checking
+        - GRAS ingredient validation (foods/beverages)
+        - Allergen detection (FALCPA/FASTER Act)
+        - NDI compliance (dietary supplements)
+        - Marketing claims analysis
+        - Priority recommendations
+
+      tags:
+        - Analysis
+      security:
+        - ClerkAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - image
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  description: Product label image (JPEG, PNG) or PDF
+                labelName:
+                  type: string
+                  maxLength: 200
+                  description: Optional name for the label
+                  example: "Organic Protein Powder"
+                sessionId:
+                  type: string
+                  format: uuid
+                  description: Existing session ID to continue analysis
+                forcedCategory:
+                  type: string
+                  enum:
+                    - DIETARY_SUPPLEMENT
+                    - CONVENTIONAL_FOOD
+                    - ALCOHOLIC_BEVERAGE
+                    - NON_ALCOHOLIC_BEVERAGE
+                  description: Force a specific product category (for ambiguous products)
+      responses:
+        '200':
+          description: Analysis completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimitError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /analyze/chat:
+    post:
+      summary: Ask questions about an analysis
+      description: |
+        Chat with AI about a completed analysis to get clarification, suggestions, or additional insights.
+        Context-aware - knows the full analysis results and previous chat history.
+      tags:
+        - Analysis
+        - Sessions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - sessionId
+                - question
+              properties:
+                sessionId:
+                  type: string
+                  format: uuid
+                  description: Analysis session ID
+                question:
+                  type: string
+                  maxLength: 1000
+                  description: Question about the analysis
+                  example: "How can I fix the allergen labeling issue?"
+                parentIterationId:
+                  type: string
+                  format: uuid
+                  description: Parent iteration for threading
+      responses:
+        '200':
+          description: Chat response generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+                    description: AI-generated response
+                  iterationId:
+                    type: string
+                    format: uuid
+                    description: ID of this chat iteration
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /analyze/text:
+    post:
+      summary: Check alternative text or PDF
+      description: |
+        Analyze alternative text content or PDF to see how changes would affect compliance.
+        Compares to the original analysis and shows improvements/regressions.
+      tags:
+        - Analysis
+        - Sessions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - sessionId
+              properties:
+                sessionId:
+                  type: string
+                  format: uuid
+                text:
+                  type: string
+                  minLength: 10
+                  maxLength: 10000
+                  description: Alternative text content (required if not PDF mode)
+                isPdfMode:
+                  type: boolean
+                  description: Set to true when uploading a PDF
+                pdfData:
+                  type: string
+                  format: byte
+                  description: Base64-encoded PDF (required if isPdfMode=true)
+      responses:
+        '200':
+          description: Text analysis completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  comparisonResult:
+                    type: object
+                    description: Comparison with original analysis
+                  iterationId:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  /analyze/check-quality:
+    post:
+      summary: Check image quality
+      description: |
+        Validate image quality before analysis. Returns quality metrics and recommendations.
+      tags:
+        - Analysis
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - image
+              properties:
+                image:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Quality check completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  width:
+                    type: integer
+                  height:
+                    type: integer
+                  size:
+                    type: integer
+                    description: File size in bytes
+                  format:
+                    type: string
+                  recommendation:
+                    type: string
+                    enum:
+                      - excellent
+                      - good
+                      - acceptable
+                      - poor
+                  issues:
+                    type: array
+                    items:
+                      type: string
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  /analyze/select-category:
+    post:
+      summary: Select product category for ambiguous product
+      description: |
+        When analysis detects an ambiguous product, user can manually select the category.
+        Triggers a re-analysis with category-specific rules.
+      tags:
+        - Analysis
+        - Sessions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - analysisId
+                - selectedCategory
+              properties:
+                analysisId:
+                  type: string
+                  format: uuid
+                selectedCategory:
+                  type: string
+                  enum:
+                    - DIETARY_SUPPLEMENT
+                    - CONVENTIONAL_FOOD
+                    - ALCOHOLIC_BEVERAGE
+                    - NON_ALCOHOLIC_BEVERAGE
+                reason:
+                  type: string
+                  description: Optional reason for category selection
+      responses:
+        '200':
+          description: Category updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  /share:
+    post:
+      summary: Generate shareable link for analysis
+      description: |
+        Create a public shareable link for an analysis report.
+        Returns a permanent URL that can be viewed without authentication.
+      tags:
+        - Share
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - analysisId
+              properties:
+                analysisId:
+                  type: string
+                  format: uuid
+                  description: Analysis to share
+      responses:
+        '200':
+          description: Share link created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  shareUrl:
+                    type: string
+                    format: uri
+                    example: "https://labelcheck.io/share/abc123def456"
+                  shareToken:
+                    type: string
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Analysis not found
+
+  /organizations:
+    post:
+      summary: Create a new organization
+      description: Create a team workspace for collaboration
+      tags:
+        - Organizations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                description:
+                  type: string
+                  maxLength: 500
+      responses:
+        '201':
+          description: Organization created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+    get:
+      summary: List user's organizations
+      description: Get all organizations the user belongs to
+      tags:
+        - Organizations
+      responses:
+        '200':
+          description: Organizations list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Organization'
+
+  /organizations/members:
+    post:
+      summary: Invite team member
+      description: |
+        Invite a user to join the organization.
+        Sends an email invitation if user doesn't exist yet.
+      tags:
+        - Organizations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - organizationId
+                - email
+                - role
+              properties:
+                organizationId:
+                  type: string
+                  format: uuid
+                email:
+                  type: string
+                  format: email
+                role:
+                  type: string
+                  enum:
+                    - owner
+                    - admin
+                    - member
+                    - viewer
+      responses:
+        '200':
+          description: Invitation sent or member added
+    get:
+      summary: List organization members
+      description: Get all members and pending invitations for an organization
+      tags:
+        - Organizations
+      parameters:
+        - name: organizationId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Members list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  members:
+                    type: array
+                    items:
+                      type: object
+                  pendingInvitations:
+                    type: array
+                    items:
+                      type: object
+
+components:
+  securitySchemes:
+    ClerkAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Clerk session token
+
+  schemas:
+    AnalysisResult:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        product_category:
+          type: string
+          enum:
+            - DIETARY_SUPPLEMENT
+            - CONVENTIONAL_FOOD
+            - ALCOHOLIC_BEVERAGE
+            - NON_ALCOHOLIC_BEVERAGE
+        category_confidence:
+          type: string
+          enum:
+            - high
+            - medium
+            - low
+        is_ambiguous:
+          type: boolean
+          description: Whether product category is uncertain
+        general_labeling:
+          $ref: '#/components/schemas/GeneralLabeling'
+        ingredient_labeling:
+          $ref: '#/components/schemas/IngredientLabeling'
+        allergen_labeling:
+          $ref: '#/components/schemas/AllergenLabeling'
+        nutrition_labeling:
+          $ref: '#/components/schemas/NutritionLabeling'
+        claims_analysis:
+          $ref: '#/components/schemas/ClaimsAnalysis'
+        additional_requirements:
+          $ref: '#/components/schemas/AdditionalRequirements'
+        overall_assessment:
+          $ref: '#/components/schemas/OverallAssessment'
+        priority_recommendations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Recommendation'
+        sessionId:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+
+    GeneralLabeling:
+      type: object
+      properties:
+        statement_of_identity:
+          $ref: '#/components/schemas/ComplianceSection'
+        net_quantity:
+          $ref: '#/components/schemas/ComplianceSection'
+        manufacturer_info:
+          $ref: '#/components/schemas/ComplianceSection'
+
+    IngredientLabeling:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/ComplianceStatus'
+        ingredients_list:
+          type: array
+          items:
+            type: string
+        details:
+          type: string
+        gras_compliance:
+          type: object
+          description: GRAS ingredient validation results
+
+    AllergenLabeling:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/ComplianceStatus'
+        allergens_detected:
+          type: array
+          items:
+            type: string
+        details:
+          type: string
+        allergen_database_check:
+          type: object
+          description: FALCPA/FASTER Act compliance details
+
+    NutritionLabeling:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/ComplianceStatus'
+        panel_type:
+          type: string
+          enum:
+            - Nutrition Facts
+            - Supplement Facts
+        details:
+          type: string
+
+    ClaimsAnalysis:
+      type: object
+      properties:
+        structure_function_claims:
+          type: array
+          items:
+            type: string
+        nutrient_content_claims:
+          type: array
+          items:
+            type: string
+        health_claims:
+          type: array
+          items:
+            type: string
+        prohibited_claims:
+          type: array
+          items:
+            type: string
+
+    AdditionalRequirements:
+      type: object
+      properties:
+        fortification_compliance:
+          $ref: '#/components/schemas/ComplianceSection'
+        gras_status:
+          $ref: '#/components/schemas/ComplianceSection'
+        ndi_compliance:
+          $ref: '#/components/schemas/ComplianceSection'
+
+    OverallAssessment:
+      type: object
+      properties:
+        primary_compliance_status:
+          $ref: '#/components/schemas/ComplianceStatus'
+        summary:
+          type: string
+        priority_concerns:
+          type: array
+          items:
+            type: string
+
+    Recommendation:
+      type: object
+      properties:
+        issue:
+          type: string
+        severity:
+          type: string
+          enum:
+            - CRITICAL
+            - HIGH
+            - MEDIUM
+            - LOW
+        recommendation:
+          type: string
+        regulatory_reference:
+          type: string
+
+    ComplianceSection:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/ComplianceStatus'
+        details:
+          type: string
+
+    ComplianceStatus:
+      type: string
+      enum:
+        - compliant
+        - non-compliant
+        - potentially-non-compliant
+        - not_applicable
+        - needs_review
+
+    Organization:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+        plan_tier:
+          type: string
+          enum:
+            - basic
+            - pro
+            - enterprise
+        max_members:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+
+  responses:
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Validation failed"
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    field:
+                      type: string
+                    message:
+                      type: string
+
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Unauthorized"
+
+    RateLimitError:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Monthly analysis limit reached"
+              current:
+                type: integer
+              limit:
+                type: integer
+
+    ServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "An unexpected error occurred"
