@@ -69,6 +69,9 @@ const customJestConfig = {
   // Ignore patterns
   testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/.next/'],
 
+  // Transform ignore patterns
+  transformIgnorePatterns: ['node_modules/(?!(@clerk|@supabase)/)'],
+
   // Verbose output
   verbose: true,
 };

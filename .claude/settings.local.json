@@ -71,7 +71,8 @@
       "Bash(do:*)",
       "Bash(echo:*)",
       "Bash(for file in \"lib/analysis/orchestrator.ts\" \"lib/export-helpers.ts\" \"lib/email-templates.ts\")",
-      "Bash(nul)"
+      "Bash(nul)",
+      "Bash(npm test:*)"
     ],
     "deny": [],
     "ask": []
