@@ -1,18 +1,9 @@
-'use client';
-
 import { SignUp } from '@clerk/nextjs';
 
-export default function SignUpPage() {
+export default function Page() {
   return (
-    <div className="flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 min-h-screen">
-      <SignUp
-        appearance={{
-          elements: {
-            rootBox: 'mx-auto',
-            card: 'shadow-lg',
-          },
-        }}
-      />
+    <div className="flex items-center justify-center min-h-[calc(100vh-200px)] w-full">
+      <SignUp />
     </div>
   );
 }

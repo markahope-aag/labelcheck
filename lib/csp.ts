@@ -19,19 +19,35 @@ export function generateNonce(): string {
  * - See docs/SRI_IMPLEMENTATION.md for details
  */
 export function buildCSP(nonce: string): string {
+  // In development, allow unsafe-eval for Next.js React refresh
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  const scriptSrcParts = [
+    "'self'",
+    `'nonce-${nonce}'`,
+    "'unsafe-inline'",
+    ...(isDevelopment ? ["'unsafe-eval'"] : []),
+    'https://challenges.cloudflare.com',
+    'https://*.clerk.accounts.dev',
+    'https://js.stripe.com',
+  ];
+
   const directives = [
     "default-src 'self'",
     // Scripts: Allow self, nonce, unsafe-inline (for Next.js), and specific trusted domains
-    // Note: Next.js requires 'unsafe-inline' for hydration scripts. 'nonce' takes precedence in modern browsers.
-    `script-src 'self' 'nonce-${nonce}' 'unsafe-inline' https://challenges.cloudflare.com https://*.clerk.accounts.dev https://js.stripe.com https://js.stripe.com`,
-    // Styles: Allow self, nonce, unsafe-inline, and Google Fonts
-    `style-src 'self' 'nonce-${nonce}' 'unsafe-inline' https://fonts.googleapis.com`,
+    // Note: Next.js requires 'unsafe-inline' and 'unsafe-eval' (dev only) for hydration scripts and React refresh.
+    `script-src ${scriptSrcParts.join(' ')}`,
+    // Styles: Allow self, unsafe-inline (required for Clerk), and Google Fonts
+    // Note: Clerk requires unsafe-inline for styles. Nonce is not compatible with Clerk's dynamic styles.
+    `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
+    // Workers: Allow blob and self (required for Clerk's web workers)
+    "worker-src 'self' blob:",
     // Images: Allow self, data URIs, blob, and HTTPS images (needed for user uploads and external images)
     "img-src 'self' data: blob: https: https://img.clerk.com",
     // Fonts: Allow self, data URIs, and Google Fonts
     "font-src 'self' data: https://fonts.gstatic.com",
     // Connect: API calls - specific domains only (no broad https:)
-    `connect-src 'self' https://api.clerk.com https://*.clerk.accounts.dev https://clerk.com https://api.stripe.com https://*.supabase.co wss://*.supabase.co https://api.openai.com https://challenges.cloudflare.com`,
+    // Added clerk-telemetry.com for Clerk's telemetry
+    `connect-src 'self' https://api.clerk.com https://*.clerk.accounts.dev https://clerk.com https://clerk-telemetry.com https://api.stripe.com https://*.supabase.co wss://*.supabase.co https://api.openai.com https://challenges.cloudflare.com`,
     // Frames: Allow self and specific trusted domains only
     "frame-src 'self' https://challenges.cloudflare.com https://*.clerk.accounts.dev https://js.stripe.com https://hooks.stripe.com",
     // No plugins
