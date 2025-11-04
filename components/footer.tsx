@@ -38,7 +38,7 @@ export function Footer() {
             <ul className="space-y-2 text-sm text-gray-600">
               <li>
                 <a
-                  href="https://app.termly.io/policy-viewer/policy.html?policyUUID=71960714-79e6-4422-ba9a-f9d1595701af"
+                  href="https://app.termly.io/policy-viewer/policy.html?policyUUID=9b0a82ac-1ed0-4cbc-83ca-6d9941b7531c"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-gray-900"
