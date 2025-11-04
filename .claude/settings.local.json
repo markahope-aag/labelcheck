@@ -87,7 +87,10 @@
       "Bash(npm run test:unit:*)",
       "Bash(npm run test:e2e:*)",
       "Bash(.env.local)",
-      "Bash(cmd /c \"timeout /t 10\")"
+      "Bash(cmd /c \"timeout /t 10\")",
+      "Bash(npx jest --passWithNoTests)",
+      "Bash(npx jest --listTests)",
+      "Bash(npm run build)"
     ],
     "deny": [],
     "ask": []

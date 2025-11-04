@@ -31,7 +31,13 @@ export function Navigation() {
     checkAdminStatus();
   }, [isSignedIn, user]);
 
-  const navItems = isSignedIn
+  interface NavItem {
+    href: string;
+    label: string;
+    adminOnly?: boolean;
+  }
+
+  const navItems: NavItem[] = isSignedIn
     ? [
         { href: '/dashboard', label: 'Dashboard' },
         { href: '/analyze', label: 'Analyze' },
@@ -57,7 +63,7 @@ export function Navigation() {
 
             <div className="hidden md:flex items-center gap-1">
               {navItems
-                .filter((item: any) => !item.adminOnly || isAdmin)
+                .filter((item) => !item.adminOnly || isAdmin)
                 .map((item) => (
                   <Link
                     key={item.href}

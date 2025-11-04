@@ -20,15 +20,25 @@ import { useToast } from '@/hooks/use-toast';
 import { AnalysisChat } from '@/components/AnalysisChat';
 import { clientLogger } from '@/lib/client-logger';
 import { PrintReadyCertification } from '@/components/PrintReadyCertification';
+import { formatComplianceStatus } from '@/lib/formatting';
 import type {
+  Analysis,
   AnalysisIteration,
   Recommendation,
   ComplianceTableRow,
   OtherRequirement,
 } from '@/types';
 
-// Helper function to format compliance status for display
-const formatComplianceStatus = (status: string): string => {
+// Chat message type for display (matches AnalysisChat component)
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+  iterationId?: string;
+}
+
+// Note: formatComplianceStatus moved to lib/formatting.ts for reuse
+const formatComplianceStatusLegacy = (status: string): string => {
   if (!status) return '';
 
   // Handle specific cases
@@ -57,14 +67,14 @@ export default function AnalysisDetailPage() {
   const { toast } = useToast();
   const analysisId = params.id as string;
 
-  const [analysis, setAnalysis] = useState<any>(null);
+  const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
   const [copied, setCopied] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [chatHistory, setChatHistory] = useState<any[]>([]);
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
 
   useEffect(() => {
     if (userId) {
@@ -123,10 +133,10 @@ export default function AnalysisDetailPage() {
 
         if (!iterError && iterations) {
           // Convert iterations to chat message format
-          const messages = iterations.flatMap((iter: AnalysisIteration) => [
+          const messages: ChatMessage[] = iterations.flatMap((iter: AnalysisIteration) => [
             {
               role: 'user' as const,
-              content: iter.input_data?.message || '',
+              content: (iter.input_data as { message?: string })?.message || '',
               timestamp: iter.created_at,
             },
             {
@@ -572,8 +582,17 @@ export default function AnalysisDetailPage() {
                               {result.ingredient_labeling.ingredients_list.map(
                                 (ingredient: string, idx: number) => {
                                   // Find GRAS status for this ingredient
-                                  const grasStatus = result.gras_compliance?.detailed_results?.find(
-                                    (r: Recommendation) => r.ingredient === ingredient
+                                  const grasCompliance = result.gras_compliance as
+                                    | {
+                                        detailed_results?: Array<{
+                                          ingredient?: string;
+                                          isGRAS?: boolean;
+                                          matchType?: string;
+                                        }>;
+                                      }
+                                    | undefined;
+                                  const grasStatus = grasCompliance?.detailed_results?.find(
+                                    (r) => r.ingredient === ingredient
                                   );
                                   const isGRAS = grasStatus?.isGRAS;
 
@@ -801,67 +820,95 @@ export default function AnalysisDetailPage() {
                         <h4 className="font-semibold text-slate-900">Claims Compliance</h4>
                         <span
                           className={`px-2 py-1 rounded text-xs font-semibold ${
-                            result.claims.status === 'compliant'
+                            (result.claims as any).status === 'compliant' ||
+                            result.claims.prohibited_claims?.status === 'compliant'
                               ? 'bg-green-100 text-green-800'
-                              : result.claims.status === 'non_compliant'
+                              : (result.claims as any).status === 'non_compliant' ||
+                                  result.claims.prohibited_claims?.status === 'non_compliant'
                                 ? 'bg-red-100 text-red-800'
                                 : 'bg-gray-100 text-gray-800'
                           }`}
                         >
-                          {formatComplianceStatus(result.claims.status)}
+                          {formatComplianceStatus(
+                            (result.claims as any).status ||
+                              result.claims.prohibited_claims?.status ||
+                              'compliant'
+                          )}
                         </span>
                       </div>
                       {result.claims.structure_function_claims &&
-                        result.claims.structure_function_claims.length > 0 && (
+                        (Array.isArray(result.claims.structure_function_claims)
+                          ? result.claims.structure_function_claims.length > 0
+                          : (result.claims.structure_function_claims as any).claims_found?.length >
+                            0) && (
                           <div className="mb-3 p-3 bg-slate-100 border border-slate-300 rounded">
                             <p className="text-xs font-semibold text-slate-700 mb-1">
                               Structure/Function Claims:
                             </p>
                             <ul className="text-sm text-slate-800 space-y-1">
-                              {result.claims.structure_function_claims.map(
-                                (claim: string, idx: number) => (
-                                  <li key={idx}>• {claim}</li>
-                                )
-                              )}
+                              {(Array.isArray(result.claims.structure_function_claims)
+                                ? result.claims.structure_function_claims
+                                : (result.claims.structure_function_claims as any).claims_found ||
+                                  []
+                              ).map((claim: string, idx: number) => (
+                                <li key={idx}>• {claim}</li>
+                              ))}
                             </ul>
                           </div>
                         )}
                       {result.claims.nutrient_content_claims &&
-                        result.claims.nutrient_content_claims.length > 0 && (
+                        (Array.isArray(result.claims.nutrient_content_claims)
+                          ? result.claims.nutrient_content_claims.length > 0
+                          : (result.claims.nutrient_content_claims as any).claims_found?.length >
+                            0) && (
                           <div className="mb-3 p-3 bg-slate-100 border border-slate-300 rounded">
                             <p className="text-xs font-semibold text-slate-700 mb-1">
                               Nutrient Content Claims:
                             </p>
                             <ul className="text-sm text-slate-800 space-y-1">
-                              {result.claims.nutrient_content_claims.map(
-                                (claim: string, idx: number) => (
-                                  <li key={idx}>• {claim}</li>
-                                )
-                              )}
+                              {(Array.isArray(result.claims.nutrient_content_claims)
+                                ? result.claims.nutrient_content_claims
+                                : (result.claims.nutrient_content_claims as any).claims_found || []
+                              ).map((claim: string, idx: number) => (
+                                <li key={idx}>• {claim}</li>
+                              ))}
                             </ul>
                           </div>
                         )}
-                      {result.claims.health_claims && result.claims.health_claims.length > 0 && (
-                        <div className="mb-3 p-3 bg-slate-100 border border-slate-300 rounded">
-                          <p className="text-xs font-semibold text-slate-700 mb-1">
-                            Health Claims:
-                          </p>
-                          <ul className="text-sm text-slate-800 space-y-1">
-                            {result.claims.health_claims.map((claim: string, idx: number) => (
-                              <li key={idx}>• {claim}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
+                      {result.claims.health_claims &&
+                        (Array.isArray(result.claims.health_claims)
+                          ? result.claims.health_claims.length > 0
+                          : (result.claims.health_claims as any).claims_found?.length > 0) && (
+                          <div className="mb-3 p-3 bg-slate-100 border border-slate-300 rounded">
+                            <p className="text-xs font-semibold text-slate-700 mb-1">
+                              Health Claims:
+                            </p>
+                            <ul className="text-sm text-slate-800 space-y-1">
+                              {(Array.isArray(result.claims.health_claims)
+                                ? result.claims.health_claims
+                                : (result.claims.health_claims as any).claims_found || []
+                              ).map((claim: string, idx: number) => (
+                                <li key={idx}>• {claim}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                       {result.claims.prohibited_claims &&
-                        result.claims.prohibited_claims.length > 0 && (
+                        (Array.isArray(result.claims.prohibited_claims)
+                          ? result.claims.prohibited_claims.length > 0
+                          : result.claims.prohibited_claims.claims_found?.length > 0) && (
                           <div className="mb-3 p-3 bg-red-100 border border-red-300 rounded">
                             <p className="text-xs font-semibold text-red-700 mb-1">
                               ⚠️ Prohibited Claims Detected:
                             </p>
                             <ul className="text-sm text-red-800 space-y-1">
-                              {result.claims.prohibited_claims.map((claim: string, idx: number) => (
-                                <li key={idx}>• {claim}</li>
+                              {(Array.isArray(result.claims.prohibited_claims)
+                                ? result.claims.prohibited_claims
+                                : result.claims.prohibited_claims.claims_found || []
+                              ).map((claim: any, idx: number) => (
+                                <li key={idx}>
+                                  • {typeof claim === 'string' ? claim : claim.claim_text}
+                                </li>
                               ))}
                             </ul>
                           </div>

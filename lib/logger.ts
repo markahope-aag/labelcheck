@@ -70,6 +70,11 @@ class FlexibleLogger {
     this.pino = pinoInstance;
   }
 
+  /**
+   * Log info message with optional metadata
+   * @param message - Log message
+   * @param data - Optional structured data (flexible for logger compatibility)
+   */
   info(message: string, data?: Record<string, any>): void {
     if (data) {
       this.pino.info(data, message);
@@ -78,6 +83,11 @@ class FlexibleLogger {
     }
   }
 
+  /**
+   * Log error message with optional metadata
+   * @param message - Log message
+   * @param data - Optional structured data (flexible for logger compatibility)
+   */
   error(message: string, data?: Record<string, any>): void {
     if (data) {
       this.pino.error(data, message);
@@ -86,6 +96,11 @@ class FlexibleLogger {
     }
   }
 
+  /**
+   * Log warning message with optional metadata
+   * @param message - Log message
+   * @param data - Optional structured data (flexible for logger compatibility)
+   */
   warn(message: string, data?: Record<string, any>): void {
     if (data) {
       this.pino.warn(data, message);
@@ -94,6 +109,11 @@ class FlexibleLogger {
     }
   }
 
+  /**
+   * Log debug message with optional metadata
+   * @param message - Log message
+   * @param data - Optional structured data (flexible for logger compatibility)
+   */
   debug(message: string, data?: Record<string, any>): void {
     if (data) {
       this.pino.debug(data, message);
@@ -102,6 +122,10 @@ class FlexibleLogger {
     }
   }
 
+  /**
+   * Create child logger with additional context
+   * @param context - Context object to merge into all child logs (flexible for logger compatibility)
+   */
   child(context: Record<string, any>): FlexibleLogger {
     return new FlexibleLogger(this.pino.child(context));
   }

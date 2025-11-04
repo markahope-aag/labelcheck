@@ -21,7 +21,8 @@ interface AnalysisChatProps {
   isOpen?: boolean;
   onClose?: () => void;
   initialMessages?: Message[];
-  analysisData?: any;
+  /** Optional analysis data for context (can be any analysis result structure) */
+  analysisData?: unknown;
 }
 
 export function AnalysisChat({

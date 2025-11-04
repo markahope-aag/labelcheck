@@ -65,7 +65,7 @@ function HistoryContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [analyses, setAnalyses] = useState<any[]>([]);
+  const [analyses, setAnalyses] = useState<Analysis[]>([]);
   const [loading, setLoading] = useState(true);
   const [exportFormat, setExportFormat] = useState<'pdf' | 'csv' | 'json'>('pdf');
 
@@ -82,7 +82,7 @@ function HistoryContent() {
 
   // Delete states
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [analysisToDelete, setAnalysisToDelete] = useState<any>(null);
+  const [analysisToDelete, setAnalysisToDelete] = useState<Analysis | null>(null);
 
   // Load saved filters from localStorage on mount
   useEffect(() => {
@@ -539,24 +539,27 @@ function HistoryContent() {
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-4">
-                          {(result.overall_assessment?.summary || result.summary) && (
+                          {(result.overall_assessment?.summary || (result as any).summary) && (
                             <div>
                               <h4 className="text-sm font-semibold text-slate-700 mb-2">Summary</h4>
                               <p className="text-slate-600 leading-relaxed">
-                                {result.overall_assessment?.summary || result.summary}
+                                {result.overall_assessment?.summary || (result as any).summary}
                               </p>
                             </div>
                           )}
 
-                          {(result.ingredient_labeling?.ingredients_list || result.ingredients)
-                            ?.length > 0 && (
+                          {(
+                            result.ingredient_labeling?.ingredients_list ||
+                            (result as any).ingredients
+                          )?.length > 0 && (
                             <div>
                               <h4 className="text-sm font-semibold text-slate-700 mb-2">
                                 Ingredients
                               </h4>
                               <div className="flex flex-wrap gap-2">
                                 {(
-                                  result.ingredient_labeling?.ingredients_list || result.ingredients
+                                  result.ingredient_labeling?.ingredients_list ||
+                                  (result as any).ingredients
                                 )
                                   .slice(0, 8)
                                   .map((ingredient: string, index: number) => (
@@ -569,7 +572,8 @@ function HistoryContent() {
                                     </Badge>
                                   ))}
                                 {(
-                                  result.ingredient_labeling?.ingredients_list || result.ingredients
+                                  result.ingredient_labeling?.ingredients_list ||
+                                  (result as any).ingredients
                                 ).length > 8 && (
                                   <Badge
                                     variant="secondary"
@@ -578,7 +582,7 @@ function HistoryContent() {
                                     +
                                     {(
                                       result.ingredient_labeling?.ingredients_list ||
-                                      result.ingredients
+                                      (result as any).ingredients
                                     ).length - 8}{' '}
                                     more
                                   </Badge>
@@ -587,14 +591,14 @@ function HistoryContent() {
                             </div>
                           )}
 
-                          {result.nutrition_facts &&
-                            Object.keys(result.nutrition_facts).length > 0 && (
+                          {(result as any).nutrition_facts &&
+                            Object.keys((result as any).nutrition_facts).length > 0 && (
                               <div>
                                 <h4 className="text-sm font-semibold text-slate-700 mb-2">
                                   Key Nutrition Facts
                                 </h4>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                  {Object.entries(result.nutrition_facts)
+                                  {Object.entries((result as any).nutrition_facts)
                                     .slice(0, 4)
                                     .map(([key, value]) => (
                                       <div

@@ -46,10 +46,9 @@ export async function POST(request: NextRequest) {
       });
 
       // Extract data from parsed result
-      const data = parseResult.data as any;
-      const sessionId = data.sessionId;
-      const textContent = 'text' in data ? data.text : undefined;
-      const pdfFile = 'pdf' in data ? data.pdf : undefined;
+      const { sessionId } = parseResult.data;
+      const textContent = 'text' in parseResult.data ? parseResult.data.text : undefined;
+      const pdfFile = 'pdf' in parseResult.data ? parseResult.data.pdf : undefined;
 
       return await processTextAnalysisRequest(
         sessionId,
@@ -77,10 +76,9 @@ export async function POST(request: NextRequest) {
       }
 
       // Extract data from parsed result
-      const data = parseResult.data as any;
-      const sessionId = data.sessionId;
-      const textContent = 'text' in data ? data.text : undefined;
-      const pdfFile = 'pdf' in data ? data.pdf : undefined;
+      const { sessionId } = parseResult.data;
+      const textContent = 'text' in parseResult.data ? parseResult.data.text : undefined;
+      const pdfFile = 'pdf' in parseResult.data ? parseResult.data.pdf : undefined;
 
       return await processTextAnalysisRequest(
         sessionId,

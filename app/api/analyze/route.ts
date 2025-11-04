@@ -43,17 +43,13 @@ export async function POST(request: NextRequest) {
           const body = await request.clone().json();
 
           // Manual validation of JSON body
+          const validationErrors: Array<{ path: string[]; message: string }> = [];
+
           if (!body.image) {
-            const errorResponse = createValidationErrorResponse({
-              errors: [{ path: ['image'], message: 'Required' }],
-            } as any);
-            return NextResponse.json(errorResponse, { status: 400 });
+            validationErrors.push({ path: ['image'], message: 'Required' });
           }
           if (!body.productType) {
-            const errorResponse = createValidationErrorResponse({
-              errors: [{ path: ['productType'], message: 'Required' }],
-            } as any);
-            return NextResponse.json(errorResponse, { status: 400 });
+            validationErrors.push({ path: ['productType'], message: 'Required' });
           }
           if (
             body.productType &&
@@ -64,16 +60,30 @@ export async function POST(request: NextRequest) {
               'NON_ALCOHOLIC_BEVERAGE',
             ].includes(body.productType)
           ) {
-            const errorResponse = createValidationErrorResponse({
-              errors: [{ path: ['productType'], message: 'Invalid enum value' }],
-            } as any);
-            return NextResponse.json(errorResponse, { status: 400 });
+            validationErrors.push({ path: ['productType'], message: 'Invalid enum value' });
+          }
+
+          if (validationErrors.length > 0) {
+            return NextResponse.json(
+              {
+                error: 'Validation failed',
+                code: 'VALIDATION_ERROR',
+                details: validationErrors.map((e) => `${e.path.join('.')}: ${e.message}`),
+                fields: validationErrors,
+              },
+              { status: 400 }
+            );
           }
         } catch (error) {
-          const errorResponse = createValidationErrorResponse({
-            errors: [{ path: [], message: 'Invalid request format' }],
-          } as any);
-          return NextResponse.json(errorResponse, { status: 400 });
+          return NextResponse.json(
+            {
+              error: 'Validation failed',
+              code: 'VALIDATION_ERROR',
+              details: ['Invalid request format'],
+              fields: [{ path: [], message: 'Invalid request format' }],
+            },
+            { status: 400 }
+          );
         }
       }
 

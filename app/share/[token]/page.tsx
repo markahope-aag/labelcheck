@@ -9,13 +9,13 @@ import { supabase } from '@/lib/supabase';
 import { exportSingleAnalysisAsPDF } from '@/lib/export-helpers';
 import { useToast } from '@/hooks/use-toast';
 import { clientLogger } from '@/lib/client-logger';
-import type { ComplianceTableRow, Recommendation } from '@/types';
+import type { Analysis, ComplianceTableRow, Recommendation } from '@/types';
 
 export default function SharePage() {
   const params = useParams();
   const { toast } = useToast();
   const token = params.token as string;
-  const [analysis, setAnalysis] = useState<any>(null);
+  const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 

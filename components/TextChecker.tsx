@@ -13,7 +13,8 @@ interface TextCheckerProps {
   sessionId: string;
   isOpen: boolean;
   onClose: () => void;
-  onAnalysisComplete: (result: any) => void;
+  /** Callback when text/PDF analysis completes (receives analysis result object) */
+  onAnalysisComplete: (result: unknown) => void;
 }
 
 export function TextChecker({ sessionId, isOpen, onClose, onAnalysisComplete }: TextCheckerProps) {

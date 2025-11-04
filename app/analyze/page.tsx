@@ -31,6 +31,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useAnalysis } from '@/hooks/useAnalysis';
 import { useAnalysisSession } from '@/hooks/useAnalysisSession';
+import { useComparisonCalculator } from '@/hooks/useComparisonCalculator';
 import { AnalysisChat } from '@/components/AnalysisChat';
 import { TextChecker } from '@/components/TextChecker';
 import { PrintReadyCertification } from '@/components/PrintReadyCertification';
@@ -42,6 +43,7 @@ import CategoryComparison from '@/components/CategoryComparison';
 import { ImageQualityWarning } from '@/components/ImageQualityWarning';
 import { ErrorAlert } from '@/components/ErrorAlert';
 import { ProductCategory } from '@/lib/supabase';
+import { formatComplianceStatus } from '@/lib/formatting';
 import type { ImageQualityMetrics } from '@/lib/image-quality';
 import type {
   AnalysisResult,
@@ -54,29 +56,6 @@ import type {
   IngredientMatch,
   CreateShareLinkResponse,
 } from '@/types';
-
-// Helper function to format compliance status for display
-const formatComplianceStatus = (status: string): string => {
-  if (!status) return '';
-
-  // Handle specific cases
-  const statusMap: Record<string, string> = {
-    compliant: 'Compliant',
-    likely_compliant: 'Likely Compliant',
-    non_compliant: 'Non-Compliant',
-    potentially_non_compliant: 'Potentially-Non-Compliant',
-    not_applicable: 'Not Applicable',
-    warning: 'Warning',
-  };
-
-  return (
-    statusMap[status] ||
-    status
-      .split('_')
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join('-')
-  );
-};
 
 export default function AnalyzePage() {
   const { userId } = useAuth();
@@ -240,7 +219,8 @@ export default function AnalyzePage() {
     session.copyShareUrl();
   };
 
-  const handleTextAnalysisComplete = (analysisResult: AnalysisResult) => {
+  const handleTextAnalysisComplete = (result: unknown) => {
+    const analysisResult = result as AnalysisResult;
     // Update the result state with the text analysis
     analysis.setResult({
       ...analysisResult,
@@ -271,97 +251,8 @@ export default function AnalyzePage() {
     });
   };
 
-  // Calculate comparison between previous and current results
-  const calculateComparison = () => {
-    if (!analysis.previousResult || !analysis.result) return null;
-
-    const prevStatus = analysis.previousResult.overall_assessment?.primary_compliance_status || '';
-    const currStatus = analysis.result.overall_assessment?.primary_compliance_status || '';
-
-    // Count issues by severity in previous result
-    const prevIssues = {
-      critical: 0,
-      warning: 0,
-      compliant: 0,
-    };
-
-    // Count issues by severity in current result
-    const currIssues = {
-      critical: 0,
-      warning: 0,
-      compliant: 0,
-    };
-
-    // Helper to count issues from a section
-    const countIssuesInSection = (
-      section: LabelingSection | Record<string, LabelingSection | undefined> | undefined,
-      counters: { critical: number; warning: number; compliant: number }
-    ) => {
-      if (!section) return;
-
-      // Handle direct LabelingSection
-      if ('status' in section && typeof section === 'object' && !Array.isArray(section)) {
-        const status = (section as LabelingSection).status;
-        if (status === 'non_compliant') counters.critical++;
-        else if (status === 'potentially_non_compliant') counters.warning++;
-        else if (status === 'compliant') counters.compliant++;
-      } else if (typeof section === 'object') {
-        // Handle Record<string, LabelingSection | undefined>
-        Object.values(section).forEach((item) => {
-          if (item && item.status) {
-            if (item.status === 'non_compliant') counters.critical++;
-            else if (item.status === 'potentially_non_compliant') counters.warning++;
-            else if (item.status === 'compliant') counters.compliant++;
-          }
-        });
-      }
-    };
-
-    // Count issues in both results
-    [analysis.previousResult, analysis.result].forEach((res, idx) => {
-      const counters = idx === 0 ? prevIssues : currIssues;
-      // Count from general_labeling (which is an object with sub-sections)
-      if (res?.general_labeling) {
-        Object.values(res.general_labeling).forEach((section: any) => {
-          if (section && section.status) {
-            if (section.status === 'non_compliant') counters.critical++;
-            else if (section.status === 'potentially_non_compliant') counters.warning++;
-            else if (section.status === 'compliant') counters.compliant++;
-          }
-        });
-      }
-      // Count from nutrition_labeling (optional)
-      if (res.nutrition_labeling && res.nutrition_labeling.status) {
-        if (res.nutrition_labeling.status === 'non_compliant') counters.critical++;
-        else if (res.nutrition_labeling.status === 'potentially_non_compliant') counters.warning++;
-        else if (res.nutrition_labeling.status === 'compliant') counters.compliant++;
-      }
-      // Count from allergen_labeling
-      if (res.allergen_labeling && res.allergen_labeling.status) {
-        if (res.allergen_labeling.status === 'non_compliant') counters.critical++;
-        else if (res.allergen_labeling.status === 'potentially_non_compliant') counters.warning++;
-        else if (res.allergen_labeling.status === 'compliant') counters.compliant++;
-      }
-      // Claims are structured differently, skip for now
-    });
-
-    const prevTotal = prevIssues.critical + prevIssues.warning;
-    const currTotal = currIssues.critical + currIssues.warning;
-    const improvement = prevTotal - currTotal;
-
-    return {
-      prevStatus,
-      currStatus,
-      prevIssues: prevTotal,
-      currIssues: currTotal,
-      improvement,
-      statusImproved:
-        prevStatus !== currStatus &&
-        (currStatus === 'compliant' || currStatus === 'likely_compliant'),
-    };
-  };
-
-  const comparison = analysis.previousResult && analysis.result ? calculateComparison() : null;
+  // Calculate comparison between previous and current results using custom hook
+  const comparison = useComparisonCalculator(analysis.previousResult, analysis.result);
 
   useEffect(() => {
     if (userId === null) {

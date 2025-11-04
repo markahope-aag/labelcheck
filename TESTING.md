@@ -33,6 +33,7 @@ npm run test:e2e:debug
 ### What We Test
 - ✅ Business logic functions
 - ✅ Helper utilities (GRAS, NDI, allergen checking)
+- ✅ Service layer (request parsing, session management)
 - ✅ Data transformations
 - ✅ Validation schemas
 - ✅ Pure functions with no external dependencies
@@ -50,7 +51,11 @@ __tests__/
 │   ├── gras-helpers.test.ts
 │   ├── ndi-helpers.test.ts
 │   ├── allergen-helpers.test.ts
-│   └── validation.test.ts
+│   ├── auth-helpers.test.ts
+│   ├── validation.test.ts
+│   └── services/           # Service layer tests (NEW)
+│       ├── request-parser.test.ts    # 17 tests
+│       └── session-service.test.ts   # 14 tests
 └── app/
     └── api/
         └── analyze/
@@ -72,7 +77,9 @@ npm run test:unit:coverage
 ```
 
 ### Coverage Goals
-- **Current:** 100% of business logic functions (67 tests passing)
+- **Current:** 100% of business logic functions (103 tests passing)
+  - Business Logic: 72 tests (GRAS, NDI, allergens, validation, auth)
+  - Service Layer: 31 tests (request parsing, session management)
 - **Target:** Maintain 100% coverage for `lib/` directory
 
 ### Writing Unit Tests
@@ -91,6 +98,58 @@ describe('myFunction', () => {
     const input = ['apple', 'banana'];
     const result = myFunction(input);
     expect(result).toEqual(['APPLE', 'BANANA']);
+  });
+});
+```
+
+### Service Layer Tests (NEW)
+
+The service layer now has comprehensive test coverage (31 tests):
+
+#### Request Parser Service (`lib/services/request-parser.ts`)
+**17 tests covering:**
+- ✅ Test mode detection (5 tests)
+- ✅ JSON body parsing with test mode cloning (6 tests)
+- ✅ FormData parsing (1 integration test)
+- ✅ Unified request parsing with content-type detection (5 tests)
+
+**Key Features Tested:**
+- Test bypass token validation
+- Request cloning in test mode (prevents stream consumption)
+- Zod schema validation
+- Content-type routing (JSON vs FormData)
+- Error handling for malformed input
+
+#### Session Service (`lib/services/session-service.ts`)
+**14 tests covering:**
+- ✅ Session access control with ownership verification (6 tests)
+- ✅ Analysis ownership verification (4 tests)
+- ✅ Organization membership checking (4 tests)
+
+**Key Features Tested:**
+- User ownership validation
+- Access denial for unauthorized users
+- Admin client usage (RLS bypass)
+- Database query verification
+- Error handling for missing records
+
+**Example Service Test:**
+```typescript
+// __tests__/lib/services/request-parser.test.ts
+import { isTestMode, parseJsonBody } from '@/lib/services/request-parser';
+import { NextRequest } from 'next/server';
+import { z } from 'zod';
+
+describe('Request Parser Service', () => {
+  it('should detect test mode correctly', () => {
+    process.env.NODE_ENV = 'development';
+    process.env.TEST_BYPASS_TOKEN = 'test-secret-123';
+
+    const request = new NextRequest('http://localhost:3000/api/test', {
+      headers: { 'X-Test-Bypass': 'test-secret-123' },
+    });
+
+    expect(isTestMode(request)).toBe(true);
   });
 });
 ```

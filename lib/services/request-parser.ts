@@ -6,7 +6,7 @@
  */
 
 import { NextRequest } from 'next/server';
-import { ZodSchema } from 'zod';
+import { z, ZodSchema } from 'zod';
 import { logger } from '@/lib/logger';
 import { validateFormData } from '@/lib/validation';
 
@@ -26,7 +26,7 @@ export async function parseJsonBody<T>(
   request: NextRequest,
   schema: ZodSchema<T>,
   inTestMode: boolean
-): Promise<{ success: true; data: T } | { success: false; error: any }> {
+): Promise<{ success: true; data: T } | { success: false; error: z.ZodError }> {
   try {
     // In test mode, clone first to allow validation before auth
     const body = inTestMode ? await request.clone().json() : await request.json();
@@ -41,7 +41,13 @@ export async function parseJsonBody<T>(
     logger.error('Failed to parse JSON body', { error });
     return {
       success: false,
-      error: { errors: [{ path: [], message: 'Invalid JSON format' }] },
+      error: new z.ZodError([
+        {
+          code: 'custom',
+          path: [],
+          message: 'Invalid JSON format',
+        },
+      ]),
     };
   }
 }
@@ -81,7 +87,7 @@ export async function parseRequest<T>(
   schema: ZodSchema<T>
 ): Promise<
   | { success: true; data: T; formData?: FormData; isTestMode: boolean }
-  | { success: false; error: any; isTestMode: boolean }
+  | { success: false; error: z.ZodError; isTestMode: boolean }
 > {
   const inTestMode = isTestMode(request);
   const contentType = request.headers.get('content-type') || '';
@@ -104,7 +110,7 @@ export async function validateWithTestMode<T>(
   schema: ZodSchema<T>
 ): Promise<{
   isTestMode: boolean;
-  validationResult: { success: true; data: T } | { success: false; error: any };
+  validationResult: { success: true; data: T } | { success: false; error: z.ZodError | null };
   shouldReturnEarly: boolean;
 }> {
   const inTestMode = isTestMode(request);

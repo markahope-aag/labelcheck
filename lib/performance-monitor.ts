@@ -8,6 +8,7 @@ export class PerformanceMonitor {
   private startTime: number;
   private checkpoints: Map<string, number>;
   private durations: Map<string, number>;
+  /** Flexible metadata storage for performance tracking (any value type for extensibility) */
   private metadata: Record<string, any>;
 
   constructor(operation: string) {

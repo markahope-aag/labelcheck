@@ -9,10 +9,17 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { getSessionWithIterations } from '@/lib/session-helpers';
 import { logger } from '@/lib/logger';
 import { NotFoundError } from '@/lib/error-handler';
+import type {
+  AnalysisSession,
+  AnalysisIteration,
+  Analysis,
+  Organization,
+  OrganizationMember,
+} from '@/types';
 
 export interface SessionAccessResult {
-  session: any;
-  iterations: any[];
+  session: AnalysisSession | null;
+  iterations: AnalysisIteration[];
   hasAccess: boolean;
   error?: string;
 }
@@ -81,7 +88,7 @@ export async function getSessionWithAccess(
 export async function verifyAnalysisOwnership(
   analysisId: string,
   userId: string
-): Promise<{ owned: true; analysis: any } | { owned: false; error: string }> {
+): Promise<{ owned: true; analysis: Analysis } | { owned: false; error: string }> {
   const { data: analysis } = await supabaseAdmin
     .from('analyses')
     .select('*')
@@ -114,8 +121,8 @@ export async function getOrganizationWithMembership(
   organizationId: string,
   userId: string
 ): Promise<{
-  organization: any;
-  membership: any;
+  organization: Organization | null;
+  membership: OrganizationMember | null;
   hasAccess: boolean;
   role?: string;
 }> {
