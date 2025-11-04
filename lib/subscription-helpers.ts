@@ -16,7 +16,7 @@ export interface UsageInfo {
   remaining: number;
   bundle_credits?: number; // Remaining bundle analyses
   total_available?: number; // subscription limit + bundle credits
-  trial_days_remaining?: number; // Days remaining in trial (null if not on trial)
+  trial_days_remaining?: number | null; // Days remaining in trial (null if not on trial)
   trial_expired?: boolean; // Whether trial has expired
 }
 
@@ -124,7 +124,7 @@ export async function getUserUsage(userId: string): Promise<UsageInfo | null> {
     remaining: subscriptionRemaining === Infinity ? -1 : subscriptionRemaining,
     bundle_credits: bundleCredits,
     total_available: totalAvailable === Infinity ? -1 : totalAvailable,
-    trial_days_remaining: trialDaysRemaining,
+    trial_days_remaining: trialDaysRemaining ?? undefined,
     trial_expired: trialExpired,
   };
 }
