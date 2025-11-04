@@ -73,39 +73,11 @@
 }
 
 @layer base {
-  * {
+  /* Exclude Clerk components from global border styles */
+  *:not([class*='cl-']) {
     @apply border-border;
   }
   body {
     @apply bg-background text-foreground;
   }
-}
-
-/* Clerk component style fixes */
-.cl-internal-b3fm6y,
-.cl-rootBox,
-.cl-card,
-.cl-component,
-.cl-formButtonPrimary,
-.cl-footer,
-.cl-socialButtonsBlockButton,
-.cl-formFieldInput,
-.cl-button,
-.cl-userButtonPopoverCard,
-.cl-userButtonTrigger {
-  /* Reset any global styles that interfere with Clerk */
-  all: revert;
-  /* Re-apply font for consistency */
-  font-family: inherit;
-}
-
-/* Ensure Clerk components render with proper dimensions */
-.cl-rootBox {
-  width: auto;
-  min-width: 0;
-}
-
-.cl-card {
-  width: 100%;
-  max-width: 28rem;
 }
