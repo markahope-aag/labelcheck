@@ -73,7 +73,7 @@
 }
 
 @layer base {
-  /* Exclude Clerk components from global border styles */
+  /* Apply border color to all elements except Clerk components */
   *:not([class*='cl-']) {
     @apply border-border;
   }
