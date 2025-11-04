@@ -147,15 +147,29 @@ export async function checkUsageLimits(userId: string, userInternalId: string): 
       business: 200,
     };
 
-    const planTier = subscription?.plan_tier || 'starter';
-    const limit = limits[planTier] || 10;
+    // Map database plan_tier format (basic/pro/enterprise) to limits format
+    const planTierMap: Record<string, string> = {
+      basic: 'starter',
+      pro: 'professional',
+      enterprise: 'business',
+      starter: 'starter',
+      professional: 'professional',
+      business: 'business',
+    };
+
+    const dbPlanTier = subscription?.plan_tier || 'starter';
+    const mappedPlanTier = planTierMap[dbPlanTier] || 'starter';
+    const limit = limits[mappedPlanTier] || 10;
 
     // Use admin client to create usage tracking (bypass RLS)
+    // Note: This creates a NEW month record with usage reset to 0
+    // This is use-it-or-lose-it monthly - unused analyses don't carry over
+    // The limit is set to just the subscription plan limit (no trial bonus)
     const { error: usageError } = await supabaseAdmin.from('usage_tracking').insert({
       user_id: userInternalId,
       month: currentMonth,
-      analyses_used: 0,
-      analyses_limit: limit,
+      analyses_used: 0, // Reset to 0 each month (use-it-or-lose-it)
+      analyses_limit: limit, // Just subscription limit (no trial bonus in new months)
     });
 
     if (usageError) {
@@ -182,13 +196,30 @@ export async function checkUsageLimits(userId: string, userInternalId: string): 
   // Check if user is an admin - admins have unlimited access
   const isAdmin = await isUserAdmin(userId);
 
-  // Only enforce limits for non-admin users
+  // Check for bundle credits if subscription limit is reached
   if (
     !isAdmin &&
     currentUsage.analyses_limit !== -1 &&
     currentUsage.analyses_used >= currentUsage.analyses_limit
   ) {
-    throw new Error('Monthly analysis limit reached. Please upgrade your plan.');
+    // Check if user has bundle credits available
+    const { data: bundles } = await supabaseAdmin
+      .from('bundle_purchases')
+      .select('id, analyses_remaining')
+      .eq('user_id', userInternalId)
+      .gt('analyses_remaining', 0)
+      .order('purchased_at', { ascending: true }); // Use oldest bundles first
+
+    const totalBundleCredits = bundles?.reduce((sum, b) => sum + b.analyses_remaining, 0) || 0;
+
+    if (totalBundleCredits === 0) {
+      throw new Error(
+        'Monthly analysis limit reached. Purchase an analysis bundle or upgrade your plan.'
+      );
+    }
+
+    // User has bundle credits, allow the analysis
+    // Bundle credits will be consumed in updateUsage
   }
 
   return currentUsage;
@@ -522,7 +553,8 @@ export async function updateUsage(
   currentMonth: string,
   currentUsed: number
 ): Promise<void> {
-  const { error: usageUpdateError } = await supabase
+  // Always increment usage count (tracks total analyses consumed)
+  const { error: usageUpdateError } = await supabaseAdmin
     .from('usage_tracking')
     .update({ analyses_used: currentUsed + 1 })
     .eq('user_id', userInternalId)
@@ -533,6 +565,49 @@ export async function updateUsage(
       error: usageUpdateError,
       userInternalId,
     });
+    return;
+  }
+
+  // Get current usage to check if we need to consume bundle credits
+  const { data: usage } = await supabaseAdmin
+    .from('usage_tracking')
+    .select('analyses_used, analyses_limit')
+    .eq('user_id', userInternalId)
+    .eq('month', currentMonth)
+    .maybeSingle();
+
+  // If subscription limit is exceeded, consume from bundle credits
+  if (usage && usage.analyses_limit !== -1 && usage.analyses_used > usage.analyses_limit) {
+    // Get bundles with remaining credits (oldest first)
+    const { data: bundles } = await supabaseAdmin
+      .from('bundle_purchases')
+      .select('id, analyses_remaining')
+      .eq('user_id', userInternalId)
+      .gt('analyses_remaining', 0)
+      .order('purchased_at', { ascending: true });
+
+    if (bundles && bundles.length > 0) {
+      // Consume from the oldest bundle first
+      const bundleToConsume = bundles[0];
+      const newRemaining = bundleToConsume.analyses_remaining - 1;
+
+      const { error: bundleUpdateError } = await supabaseAdmin
+        .from('bundle_purchases')
+        .update({ analyses_remaining: newRemaining })
+        .eq('id', bundleToConsume.id);
+
+      if (bundleUpdateError) {
+        logger.error('Failed to update bundle purchase', {
+          error: bundleUpdateError,
+          bundleId: bundleToConsume.id,
+        });
+      } else {
+        logger.debug('Consumed bundle credit', {
+          bundleId: bundleToConsume.id,
+          remaining: newRemaining,
+        });
+      }
+    }
   }
 }
 

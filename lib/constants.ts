@@ -138,3 +138,44 @@ export const PLAN_PRICES = {
     stripePriceId: process.env.STRIPE_PRICE_ID_BUSINESS,
   },
 } as const;
+
+/**
+ * Analysis Bundle Pricing
+ * Premium pricing ($5.25 per analysis) to incentivize subscription upgrades
+ */
+export const BUNDLE_SIZES = {
+  small: {
+    analyses: 10,
+    price: 52.5, // $5.25 per analysis
+    stripePriceId: process.env.STRIPE_PRICE_ID_BUNDLE_10,
+  },
+  medium: {
+    analyses: 25,
+    price: 129, // $5.16 per analysis (rounded for cleaner pricing)
+    stripePriceId: process.env.STRIPE_PRICE_ID_BUNDLE_25,
+  },
+  large: {
+    analyses: 50,
+    price: 259, // $5.18 per analysis (rounded for cleaner pricing)
+    stripePriceId: process.env.STRIPE_PRICE_ID_BUNDLE_50,
+  },
+} as const;
+
+// Client-safe bundle options (excludes stripePriceId which is server-only)
+export const BUNDLE_OPTIONS = [
+  {
+    size: 'small' as const,
+    analyses: BUNDLE_SIZES.small.analyses,
+    price: BUNDLE_SIZES.small.price,
+  },
+  {
+    size: 'medium' as const,
+    analyses: BUNDLE_SIZES.medium.analyses,
+    price: BUNDLE_SIZES.medium.price,
+  },
+  {
+    size: 'large' as const,
+    analyses: BUNDLE_SIZES.large.analyses,
+    price: BUNDLE_SIZES.large.price,
+  },
+] as const;

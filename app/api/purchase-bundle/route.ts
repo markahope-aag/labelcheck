@@ -2,7 +2,7 @@ import { auth } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { supabaseAdmin } from '@/lib/supabase';
-import { PLAN_PRICES } from '@/lib/constants';
+import { BUNDLE_SIZES } from '@/lib/constants';
 import { logger, createRequestLogger } from '@/lib/logger';
 import {
   handleApiError,
@@ -13,17 +13,16 @@ import {
   ConfigurationError,
 } from '@/lib/error-handler';
 
-// Stripe client will be initialized after checking for key
 let stripe: Stripe | null = null;
 
 export async function POST(request: NextRequest) {
-  const requestLogger = createRequestLogger({ endpoint: '/api/create-checkout-session' });
+  const requestLogger = createRequestLogger({ endpoint: '/api/purchase-bundle' });
 
   try {
     const { userId } = await auth();
 
     if (!userId) {
-      requestLogger.warn('Unauthorized checkout session request');
+      requestLogger.warn('Unauthorized bundle purchase request');
       throw new AuthenticationError();
     }
 
@@ -37,34 +36,25 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    requestLogger.info('Checkout session creation started', { userId });
+    requestLogger.info('Bundle purchase checkout started', { userId });
 
     const formData = await request.formData();
-    const plan = formData.get('plan') as string;
+    const bundleSize = formData.get('bundleSize') as string;
 
-    // Map plan names to database format
-    // Frontend sends: 'starter' | 'professional' | 'business'
-    // Database expects: 'basic' | 'pro' | 'enterprise'
-    const planMap: Record<string, string> = {
-      starter: 'basic',
-      professional: 'pro',
-      business: 'enterprise',
-      // Also accept database format directly
-      basic: 'basic',
-      pro: 'pro',
-      enterprise: 'enterprise',
-    };
-
-    if (!plan || !planMap[plan]) {
-      throw new ValidationError('Invalid plan selected', {
-        plan,
-        validPlans: ['starter', 'professional', 'business', 'basic', 'pro', 'enterprise'],
+    const validSizes = ['small', 'medium', 'large'];
+    if (!bundleSize || !validSizes.includes(bundleSize)) {
+      throw new ValidationError('Invalid bundle size selected', {
+        bundleSize,
+        validSizes,
       });
     }
 
-    const dbPlanTier = planMap[plan];
+    const bundle = BUNDLE_SIZES[bundleSize as keyof typeof BUNDLE_SIZES];
+    if (!bundle.stripePriceId) {
+      throw new ConfigurationError('STRIPE_PRICE_ID_BUNDLE_' + bundleSize.toUpperCase());
+    }
 
-    // Use admin client to bypass RLS
+    // Get user
     const { data: user } = await supabaseAdmin
       .from('users')
       .select('id, stripe_customer_id, email')
@@ -88,30 +78,13 @@ export async function POST(request: NextRequest) {
 
       customerId = customer.id;
 
-      // Use admin client to update user
       await supabaseAdmin
         .from('users')
         .update({ stripe_customer_id: customerId })
         .eq('id', user.id);
     }
 
-    // Use frontend plan name for PLAN_PRICES lookup
-    const frontendPlanName =
-      plan === 'basic'
-        ? 'starter'
-        : plan === 'pro'
-          ? 'professional'
-          : plan === 'enterprise'
-            ? 'business'
-            : plan;
-
-    const planPrices = PLAN_PRICES[frontendPlanName as keyof typeof PLAN_PRICES];
-    const stripePriceId = planPrices?.stripePriceId;
-
-    if (!stripePriceId) {
-      throw new ValidationError('Invalid plan selected', { plan });
-    }
-
+    // Create checkout session for one-time payment
     let session;
     try {
       session = await stripe.checkout.sessions.create({
@@ -119,18 +92,20 @@ export async function POST(request: NextRequest) {
         payment_method_types: ['card'],
         line_items: [
           {
-            price: stripePriceId,
+            price: bundle.stripePriceId,
             quantity: 1,
           },
         ],
-        mode: 'subscription',
-        success_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing?success=true`,
-        cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing?canceled=true`,
+        mode: 'payment', // One-time payment, not subscription
+        success_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing?success=bundle`,
+        cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing?canceled=bundle`,
         client_reference_id: user.id,
         metadata: {
           clerk_user_id: userId,
           supabase_user_id: user.id,
-          plan_tier: dbPlanTier, // Store in database format
+          bundle_size: bundleSize,
+          analyses_count: bundle.analyses.toString(),
+          purchase_type: 'bundle',
         },
       });
     } catch (stripeError) {
@@ -138,9 +113,9 @@ export async function POST(request: NextRequest) {
       throw new ExternalServiceError('Stripe', error);
     }
 
-    requestLogger.info('Checkout session created', {
+    requestLogger.info('Bundle purchase checkout session created', {
       userId,
-      plan,
+      bundleSize,
       sessionId: session.id,
     });
 

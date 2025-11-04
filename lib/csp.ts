@@ -21,9 +21,11 @@ export function generateNonce(): string {
 export function buildCSP(nonce: string): string {
   // In development, allow unsafe-eval for Next.js React refresh
   const isDevelopment = process.env.NODE_ENV === 'development';
+  // Note: We don't use nonce in script-src because it conflicts with 'unsafe-inline'
+  // Next.js and Clerk require 'unsafe-inline' for their scripts to work
+  // Security is maintained through domain restrictions instead
   const scriptSrcParts = [
     "'self'",
-    `'nonce-${nonce}'`,
     "'unsafe-inline'",
     ...(isDevelopment ? ["'unsafe-eval'"] : []),
     'https://challenges.cloudflare.com',
@@ -33,8 +35,9 @@ export function buildCSP(nonce: string): string {
 
   const directives = [
     "default-src 'self'",
-    // Scripts: Allow self, nonce, unsafe-inline (for Next.js), and specific trusted domains
+    // Scripts: Allow self, unsafe-inline (for Next.js), and specific trusted domains
     // Note: Next.js requires 'unsafe-inline' and 'unsafe-eval' (dev only) for hydration scripts and React refresh.
+    // Note: Nonce is not used in script-src because it conflicts with 'unsafe-inline' (when nonce is present, unsafe-inline is ignored)
     `script-src ${scriptSrcParts.join(' ')}`,
     // Styles: Allow self, unsafe-inline (required for Clerk), and Google Fonts
     // Note: Clerk requires unsafe-inline for styles. Nonce is not compatible with Clerk's dynamic styles.

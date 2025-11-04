@@ -14,6 +14,8 @@ export interface UsageInfo {
   analyses_limit: number;
   percentage: number;
   remaining: number;
+  bundle_credits?: number; // Remaining bundle analyses
+  total_available?: number; // subscription limit + bundle credits
 }
 
 export async function getUserSubscription(userId: string): Promise<SubscriptionInfo | null> {
@@ -55,21 +57,53 @@ export async function getUserUsage(userId: string): Promise<UsageInfo | null> {
 
   if (!usage) return null;
 
+  // Get remaining bundle credits (analyses purchased but not yet used)
+  // Gracefully handle if bundle_purchases table doesn't exist yet
+  let bundleCredits = 0;
+  try {
+    const { data: bundles, error: bundleError } = await supabase
+      .from('bundle_purchases')
+      .select('analyses_remaining')
+      .eq('user_id', user.id)
+      .gt('analyses_remaining', 0);
+
+    if (bundleError) {
+      // Table might not exist yet - silently fail and return 0 credits
+      console.warn('Bundle purchases query failed (table may not exist):', bundleError);
+    } else {
+      bundleCredits = bundles?.reduce((sum, b) => sum + b.analyses_remaining, 0) || 0;
+    }
+  } catch (err) {
+    // Table doesn't exist or other error - return 0 credits
+    console.warn('Bundle purchases query error:', err);
+  }
+
+  // Total available = subscription limit + bundle credits
+  const totalAvailable =
+    usage.analyses_limit === -1 ? Infinity : usage.analyses_limit + bundleCredits;
+
+  // Calculate percentage based on subscription limit (not including bundles)
   const percentage =
     usage.analyses_limit === -1
       ? 0
       : Math.round((usage.analyses_used / usage.analyses_limit) * 100);
 
-  const remaining =
+  // Remaining = subscription limit - used + bundle credits
+  const subscriptionRemaining =
     usage.analyses_limit === -1
       ? Infinity
       : Math.max(0, usage.analyses_limit - usage.analyses_used);
+
+  const totalRemaining =
+    subscriptionRemaining === Infinity ? Infinity : subscriptionRemaining + bundleCredits;
 
   return {
     analyses_used: usage.analyses_used,
     analyses_limit: usage.analyses_limit,
     percentage,
-    remaining: remaining === Infinity ? -1 : remaining,
+    remaining: subscriptionRemaining === Infinity ? -1 : subscriptionRemaining,
+    bundle_credits: bundleCredits,
+    total_available: totalAvailable === Infinity ? -1 : totalAvailable,
   };
 }
 
@@ -86,8 +120,16 @@ export async function canUserAnalyze(
     return { canAnalyze: true };
   }
 
+  // Check if subscription limit is reached
   if (usage.analyses_used >= usage.analyses_limit) {
-    return { canAnalyze: false, reason: 'Monthly analysis limit reached' };
+    // Check if user has bundle credits
+    if (usage.bundle_credits && usage.bundle_credits > 0) {
+      return { canAnalyze: true }; // Can use bundle credits
+    }
+    return {
+      canAnalyze: false,
+      reason: 'Monthly analysis limit reached. Purchase an analysis bundle or upgrade your plan.',
+    };
   }
 
   return { canAnalyze: true };

@@ -4,7 +4,10 @@ import Link from 'next/link';
 import { Camera, History, CreditCard, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/lib/supabase';
+import { getSubscriptionStatus, getUserUsage } from '@/lib/subscription-helpers';
+import { FreeTrialStatus } from '@/components/FreeTrialStatus';
 
 export default async function DashboardPage() {
   const { userId } = await auth();
@@ -12,6 +15,11 @@ export default async function DashboardPage() {
   if (!userId) {
     redirect('/sign-in');
   }
+
+  // Get subscription status and usage for Free Trial display
+  const subscriptionStatus = await getSubscriptionStatus(userId);
+  const usage = await getUserUsage(userId);
+  const isOnFreeTrial = !subscriptionStatus.hasActiveSubscription;
 
   // Get internal Supabase user ID from Clerk user ID
   const { data: user, error } = await supabase
@@ -49,6 +57,39 @@ export default async function DashboardPage() {
           <h1 className="text-4xl font-bold text-slate-900 mb-2">Dashboard</h1>
           <p className="text-slate-600">Welcome back!</p>
         </div>
+
+        {/* Free Trial Status Banner */}
+        {isOnFreeTrial && usage && (
+          <div className="mb-8">
+            <FreeTrialStatus
+              analysesUsed={usage.analyses_used}
+              analysesLimit={usage.analyses_limit}
+              remaining={usage.remaining}
+            />
+          </div>
+        )}
+
+        {/* Bundle Credits Display */}
+        {usage && usage.bundle_credits && usage.bundle_credits > 0 && (
+          <div className="mb-8">
+            <Card className="border-orange-200 bg-orange-50">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold text-slate-900 mb-1">Bundle Credits</h3>
+                    <p className="text-sm text-slate-600">
+                      You have {usage.bundle_credits} bundle{' '}
+                      {usage.bundle_credits === 1 ? 'credit' : 'credits'} available
+                    </p>
+                  </div>
+                  <Badge className="bg-orange-100 text-orange-700 border-orange-300">
+                    {usage.bundle_credits} Remaining
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           <Card className="border-slate-200 hover:shadow-lg transition-shadow">

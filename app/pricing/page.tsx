@@ -11,8 +11,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Check, Loader2 } from 'lucide-react';
-import { PLAN_LIMITS, PLAN_PRICES } from '@/lib/constants';
+import { Check, Loader2, ShoppingCart } from 'lucide-react';
+import { PLAN_LIMITS, PLAN_PRICES, BUNDLE_OPTIONS } from '@/lib/constants';
 import { useUser } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
 import { clientLogger } from '@/lib/client-logger';
@@ -22,6 +22,7 @@ export default function PricingPage() {
   const { isSignedIn } = useUser();
   const { toast } = useToast();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [loadingBundle, setLoadingBundle] = useState<string | null>(null);
 
   const plans = [
     {
@@ -102,6 +103,49 @@ export default function PricingPage() {
         variant: 'destructive',
       });
       setLoadingPlan(null);
+    }
+  };
+
+  const handlePurchaseBundle = async (bundleSize: string) => {
+    if (!isSignedIn) {
+      window.location.href = '/sign-up';
+      return;
+    }
+
+    setLoadingBundle(bundleSize);
+
+    try {
+      const formData = new FormData();
+      formData.append('bundleSize', bundleSize);
+
+      const response = await fetch('/api/purchase-bundle', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create bundle purchase');
+      }
+
+      const data = await response.json();
+
+      if (!data.url) {
+        clientLogger.error('No checkout URL in response', { data, bundleSize });
+        throw new Error('No checkout URL received');
+      }
+
+      // Redirect to Stripe checkout
+      window.location.href = data.url;
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      clientLogger.error('Bundle purchase failed', { error, bundleSize });
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to start bundle purchase. Please try again.',
+        variant: 'destructive',
+      });
+      setLoadingBundle(null);
     }
   };
 
@@ -203,6 +247,79 @@ export default function PricingPage() {
             ))}
           </div>
 
+          {/* Analysis Bundles Section */}
+          <div className="mt-16 max-w-4xl mx-auto">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">Need Extra Analyses?</h2>
+              <p className="text-lg text-gray-600">
+                Purchase one-time analysis bundles that roll over until used
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-6">
+              {BUNDLE_OPTIONS.map((bundle) => {
+                const pricePerAnalysis = bundle.price / bundle.analyses;
+                return (
+                  <Card key={bundle.size} className="border-2 border-orange-200">
+                    <CardHeader>
+                      <CardTitle className="text-xl">{bundle.analyses} Analyses</CardTitle>
+                      <CardDescription>One-time purchase, roll over until used</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="mb-4">
+                        <span className="text-3xl font-bold">${bundle.price}</span>
+                        <span className="text-gray-600"> / bundle</span>
+                        <p className="text-sm text-gray-500 mt-1">
+                          ${pricePerAnalysis.toFixed(2)} per analysis
+                        </p>
+                      </div>
+                      <ul className="space-y-2 mb-4">
+                        <li className="flex items-start gap-2 text-sm text-gray-600">
+                          <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                          <span>{bundle.analyses} analyses added to your account</span>
+                        </li>
+                        <li className="flex items-start gap-2 text-sm text-gray-600">
+                          <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                          <span>Rolls over until used</span>
+                        </li>
+                        <li className="flex items-start gap-2 text-sm text-gray-600">
+                          <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                          <span>No expiration date</span>
+                        </li>
+                      </ul>
+                    </CardContent>
+                    <CardFooter>
+                      <Button
+                        onClick={() => handlePurchaseBundle(bundle.size)}
+                        className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+                        disabled={loadingBundle !== null}
+                      >
+                        {loadingBundle === bundle.size ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Loading...
+                          </>
+                        ) : (
+                          <>
+                            <ShoppingCart className="mr-2 h-4 w-4" />
+                            Purchase Bundle
+                          </>
+                        )}
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                );
+              })}
+            </div>
+
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-600">
+                💡 <strong>Better value:</strong> Upgrade to Professional plan for $149/month and
+                get 50 analyses/month at $2.98 each (vs $5.25 per bundle analysis)
+              </p>
+            </div>
+          </div>
+
           <div className="mt-16 max-w-3xl mx-auto">
             <h2 className="text-2xl font-bold text-center mb-8">Frequently Asked Questions</h2>
 
@@ -216,10 +333,35 @@ export default function PricingPage() {
               </div>
 
               <div>
+                <h3 className="font-semibold mb-2">
+                  Do unused analyses roll over to the next month?
+                </h3>
+                <p className="text-gray-600 text-sm">
+                  No. Your monthly subscription limit resets at the beginning of each calendar
+                  month. Unused analyses from your subscription don't carry over. However, if you
+                  purchase an analysis bundle (one-time purchase), those analyses do roll over until
+                  used.
+                </p>
+              </div>
+
+              <div>
                 <h3 className="font-semibold mb-2">What happens if I exceed my analysis limit?</h3>
                 <p className="text-gray-600 text-sm">
-                  You'll be notified when you're approaching your limit. You can upgrade your plan
-                  to continue analyzing labels, or wait until the next billing cycle.
+                  You'll be notified when you're approaching your limit. You can purchase an
+                  analysis bundle (10, 25, or 50 analyses) as a one-time add-on, or upgrade your
+                  plan for better value if you consistently need more analyses. For example, a
+                  Professional plan gives you 50 analyses per month for $149 (just $2.98 per
+                  analysis) vs. buying bundles at $5.25 per analysis.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold mb-2">When does my monthly limit reset?</h3>
+                <p className="text-gray-600 text-sm">
+                  Your subscription limit resets on the first day of each calendar month. If you
+                  upgrade mid-month, you'll get your remaining trial analyses added to your new
+                  subscription limit for that month only. In subsequent months, you'll receive just
+                  your subscription plan's limit.
                 </p>
               </div>
 

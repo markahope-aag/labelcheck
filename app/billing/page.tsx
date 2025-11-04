@@ -4,8 +4,16 @@ import { Check, CreditCard, Calendar, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/lib/supabase';
 import { PLAN_LIMITS, PLAN_PRICES } from '@/lib/constants';
+import {
+  getUserUsage,
+  getSubscriptionStatus,
+  getUserSubscription,
+} from '@/lib/subscription-helpers';
+import { FreeTrialStatus } from '@/components/FreeTrialStatus';
+import { BundlePurchase } from '@/components/BundlePurchase';
 
 export default async function BillingPage() {
   const { userId } = await auth();
@@ -14,15 +22,62 @@ export default async function BillingPage() {
     redirect('/sign-in');
   }
 
-  const { data: user } = await supabase
-    .from('users')
-    .select('*')
-    .eq('clerk_user_id', userId)
-    .maybeSingle();
+  // Get subscription status and usage
+  let subscriptionStatus;
+  let usage;
+  let subscription;
 
-  const currentPlan = user?.subscription_tier || 'starter';
-  const planLimits = PLAN_LIMITS[currentPlan as keyof typeof PLAN_LIMITS];
-  const planPrices = PLAN_PRICES[currentPlan as keyof typeof PLAN_PRICES];
+  try {
+    subscriptionStatus = await getSubscriptionStatus(userId);
+    usage = await getUserUsage(userId);
+    subscription = await getUserSubscription(userId);
+  } catch (error) {
+    console.error('Error loading billing data:', error);
+    // Return error page or fallback
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+        <div className="container mx-auto px-4 py-12">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center py-12">
+              <h1 className="text-2xl font-bold text-slate-900 mb-4">Error Loading Billing</h1>
+              <p className="text-slate-600 mb-4">
+                There was an error loading your billing information. Please try refreshing the page.
+              </p>
+              <p className="text-sm text-slate-500">
+                If this persists, the database migration may need to be run.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const hasActiveSubscription = subscriptionStatus?.hasActiveSubscription || false;
+  const isOnFreeTrial = !hasActiveSubscription;
+
+  // Map subscription plan_tier to constants format
+  // Database uses: 'basic' | 'pro' | 'enterprise'
+  // Constants use: 'starter' | 'professional' | 'business'
+  const planTierMap: Record<string, keyof typeof PLAN_LIMITS> = {
+    basic: 'starter',
+    pro: 'professional',
+    enterprise: 'business',
+    starter: 'starter',
+    professional: 'professional',
+    business: 'business',
+  };
+
+  const currentPlan = subscription?.plan_tier
+    ? planTierMap[subscription.plan_tier] || 'starter'
+    : 'starter';
+  const planLimits = PLAN_LIMITS[currentPlan];
+  const planPrices = PLAN_PRICES[currentPlan];
+
+  // Use actual usage data from usage_tracking table
+  const analysesUsed = usage?.analyses_used || 0;
+  const analysesLimit = usage?.analyses_limit || 10;
+  const remaining = usage?.remaining ?? analysesLimit - analysesUsed;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
@@ -35,12 +90,35 @@ export default async function BillingPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-6">
+              {/* Free Trial Status Banner */}
+              {isOnFreeTrial && usage && (
+                <FreeTrialStatus
+                  analysesUsed={analysesUsed}
+                  analysesLimit={analysesLimit}
+                  remaining={remaining}
+                />
+              )}
+
+              {/* Bundle Purchase Section */}
+              {/* Always show for free trial users, or show for subscribed users who are near limit or have bundle credits */}
+              {usage && (
+                <BundlePurchase
+                  currentPlan={currentPlan}
+                  analysesUsed={analysesUsed}
+                  analysesLimit={analysesLimit}
+                  bundleCredits={usage.bundle_credits || 0}
+                  isOnFreeTrial={isOnFreeTrial}
+                />
+              )}
+
               <Card className="border-slate-200">
                 <CardHeader>
                   <CardTitle className="text-xl font-semibold text-slate-900">
-                    Current Plan
+                    {isOnFreeTrial ? 'Free Trial' : 'Current Plan'}
                   </CardTitle>
-                  <CardDescription>Your active subscription details</CardDescription>
+                  <CardDescription>
+                    {isOnFreeTrial ? 'Your free trial details' : 'Your active subscription details'}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-6">
@@ -48,23 +126,31 @@ export default async function BillingPage() {
                       <div>
                         <div className="flex items-center gap-3 mb-2">
                           <h3 className="text-2xl font-bold text-slate-900 capitalize">
-                            {currentPlan} Plan
+                            {isOnFreeTrial ? 'Free Trial' : `${currentPlan} Plan`}
                           </h3>
                           <Badge
                             className={
-                              currentPlan === 'business'
-                                ? 'bg-purple-100 text-purple-700 border-purple-200'
-                                : currentPlan === 'professional'
-                                  ? 'bg-blue-100 text-blue-700 border-blue-200'
-                                  : 'bg-slate-100 text-slate-700 border-slate-200'
+                              isOnFreeTrial
+                                ? 'bg-blue-100 text-blue-700 border-blue-200'
+                                : currentPlan === 'business'
+                                  ? 'bg-purple-100 text-purple-700 border-purple-200'
+                                  : currentPlan === 'professional'
+                                    ? 'bg-blue-100 text-blue-700 border-blue-200'
+                                    : 'bg-slate-100 text-slate-700 border-slate-200'
                             }
                           >
-                            Subscribed
+                            {isOnFreeTrial ? 'Trial' : 'Subscribed'}
                           </Badge>
                         </div>
                         <p className="text-3xl font-bold text-slate-900">
-                          ${planPrices.monthly}
-                          <span className="text-lg text-slate-600 font-normal">/month</span>
+                          {isOnFreeTrial ? (
+                            <span className="text-lg text-slate-600 font-normal">Free</span>
+                          ) : (
+                            <>
+                              ${planPrices.monthly}
+                              <span className="text-lg text-slate-600 font-normal">/month</span>
+                            </>
+                          )}
                         </p>
                       </div>
                       <div className="bg-blue-100 p-3 rounded-full">
@@ -84,21 +170,23 @@ export default async function BillingPage() {
                       </ul>
                     </div>
 
-                    <div className="border-t border-slate-200 pt-6">
-                      <div className="flex items-center gap-2 text-sm text-slate-600 mb-4">
-                        <Calendar className="h-4 w-4" />
-                        <span>
-                          Next billing date:{' '}
-                          {new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}
-                        </span>
+                    {!isOnFreeTrial && subscription && (
+                      <div className="border-t border-slate-200 pt-6">
+                        <div className="flex items-center gap-2 text-sm text-slate-600 mb-4">
+                          <Calendar className="h-4 w-4" />
+                          <span>
+                            Next billing date:{' '}
+                            {new Date(subscription.current_period_end).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <Button
+                          variant="outline"
+                          className="w-full border-red-300 text-red-600 hover:bg-red-50"
+                        >
+                          Cancel Subscription
+                        </Button>
                       </div>
-                      <Button
-                        variant="outline"
-                        className="w-full border-red-300 text-red-600 hover:bg-red-50"
-                      >
-                        Cancel Subscription
-                      </Button>
-                    </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -108,44 +196,75 @@ export default async function BillingPage() {
                   <CardTitle className="text-xl font-semibold text-slate-900">
                     Usage Statistics
                   </CardTitle>
-                  <CardDescription>Your current month activity</CardDescription>
+                  <CardDescription>
+                    {isOnFreeTrial ? 'Your free trial usage' : 'Your current month activity'}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="bg-blue-100 p-2 rounded-lg">
-                          <TrendingUp className="h-5 w-5 text-blue-600" />
+                    {usage ? (
+                      <>
+                        <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <div className="bg-blue-100 p-2 rounded-lg">
+                              <TrendingUp className="h-5 w-5 text-blue-600" />
+                            </div>
+                            <div>
+                              <p className="text-sm text-slate-600">Analyses Used</p>
+                              <p className="text-xl font-bold text-slate-900">
+                                {analysesUsed}{' '}
+                                <span className="text-sm font-normal text-slate-600">
+                                  / {analysesLimit}
+                                  {usage.bundle_credits && usage.bundle_credits > 0 && (
+                                    <span className="text-orange-600 ml-1">
+                                      {' '}
+                                      + {usage.bundle_credits} bundle
+                                    </span>
+                                  )}
+                                </span>
+                              </p>
+                              {usage.total_available && usage.total_available > analysesLimit && (
+                                <p className="text-xs text-slate-500 mt-1">
+                                  {usage.total_available} total available
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-2xl font-bold text-slate-900">
+                              {usage.percentage}
+                              <span className="text-sm text-slate-600">%</span>
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm text-slate-600">Analyses Used</p>
-                          <p className="text-xl font-bold text-slate-900">
-                            {user?.analyses_count || 0}{' '}
-                            <span className="text-sm font-normal text-slate-600">
-                              / {planLimits.analyses}
-                            </span>
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-slate-900">
-                          {Math.min(
-                            100,
-                            Math.round(((user?.analyses_count || 0) / planLimits.analyses) * 100)
-                          )}
-                          <span className="text-sm text-slate-600">%</span>
-                        </p>
-                      </div>
-                    </div>
 
-                    {currentPlan === 'starter' && (
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <p className="text-sm text-blue-900 font-medium mb-2">
-                          Upgrade for more analyses
-                        </p>
-                        <p className="text-sm text-blue-800">
-                          Get more analyses and priority support with Professional or Business plans
-                        </p>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-slate-600">Progress</span>
+                            <span className="text-slate-600">
+                              {remaining} {remaining === 1 ? 'remaining' : 'remaining'}
+                            </span>
+                          </div>
+                          <Progress value={usage.percentage} className="h-3" />
+                        </div>
+
+                        {(isOnFreeTrial || currentPlan === 'starter') && (
+                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <p className="text-sm text-blue-900 font-medium mb-2">
+                              {isOnFreeTrial
+                                ? 'Upgrade to continue after your trial'
+                                : 'Upgrade for more analyses'}
+                            </p>
+                            <p className="text-sm text-blue-800">
+                              Get more analyses and priority support with Professional or Business
+                              plans
+                            </p>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="text-center py-8 text-slate-500">
+                        <p>Usage data not available</p>
                       </div>
                     )}
                   </div>
@@ -163,7 +282,9 @@ export default async function BillingPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {(Object.keys(PLAN_LIMITS) as Array<keyof typeof PLAN_LIMITS>).map((key) => {
-                    if (key === currentPlan) return null;
+                    // For free trial users, show all plans including Starter
+                    // For subscribed users, hide their current plan
+                    if (!isOnFreeTrial && key === currentPlan) return null;
                     const limits = PLAN_LIMITS[key];
                     const prices = PLAN_PRICES[key];
                     return (
