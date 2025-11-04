@@ -82,18 +82,11 @@ export function BundlePurchase({
     }
   };
 
-  // Calculate better value messaging
-  const getBetterValueMessage = (bundleSize: string) => {
+  // Simple purchase message for bundles
+  const getPurchaseMessage = (bundleSize: string) => {
     const bundle = BUNDLE_OPTIONS.find((b) => b.size === bundleSize);
     if (!bundle) return null;
-
-    const pricePerAnalysis = bundle.price / bundle.analyses;
-    const professionalPricePerAnalysis = PLAN_PRICES.professional.monthly / 50; // $2.98
-
-    if (pricePerAnalysis > professionalPricePerAnalysis) {
-      return `Upgrade to Professional for ${bundle.analyses} analyses/month at $${professionalPricePerAnalysis.toFixed(2)} each (vs $${pricePerAnalysis.toFixed(2)} here)`;
-    }
-    return null;
+    return `Need more analyses now? Purchase ${bundle.analyses} here - they'll be added to your account one time.`;
   };
 
   // Show bundle purchase section if:
@@ -138,7 +131,6 @@ export function BundlePurchase({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           {BUNDLE_OPTIONS.map((bundle) => {
             const pricePerAnalysis = bundle.price / bundle.analyses;
-            const betterValue = getBetterValueMessage(bundle.size);
 
             return (
               <div
@@ -156,9 +148,9 @@ export function BundlePurchase({
                   </p>
                 </div>
 
-                {betterValue && (
-                  <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-900">
-                    💡 {betterValue}
+                {getPurchaseMessage(bundle.size) && (
+                  <div className="mb-3 p-2 bg-slate-50 border border-slate-200 rounded text-sm text-slate-700">
+                    {getPurchaseMessage(bundle.size)}
                   </div>
                 )}
 
