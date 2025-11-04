@@ -89,7 +89,9 @@ export function Navigation() {
                 <Button variant="ghost" size="sm" asChild>
                   <Link href="/billing">Billing</Link>
                 </Button>
-                <UserButton afterSignOutUrl="/" />
+                <div className="flex items-center h-8 w-8">
+                  <UserButton afterSignOutUrl="/" />
+                </div>
               </>
             ) : (
               <>
