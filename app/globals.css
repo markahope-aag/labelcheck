@@ -73,8 +73,7 @@
 }
 
 @layer base {
-  /* Apply border color to all elements except Clerk components */
-  *:not([class*='cl-']) {
+  * {
     @apply border-border;
   }
   body {

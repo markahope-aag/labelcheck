@@ -24,8 +24,8 @@ export function buildCSP(nonce: string): string {
     // Scripts: Allow self, nonce, unsafe-inline (for Next.js), and specific trusted domains
     // Note: Next.js requires 'unsafe-inline' for hydration scripts. 'nonce' takes precedence in modern browsers.
     `script-src 'self' 'nonce-${nonce}' 'unsafe-inline' https://challenges.cloudflare.com https://*.clerk.accounts.dev https://js.stripe.com https://js.stripe.com`,
-    // Styles: Allow self, nonce, unsafe-inline, Google Fonts, and Clerk CDN
-    `style-src 'self' 'nonce-${nonce}' 'unsafe-inline' https://fonts.googleapis.com https://*.clerk.accounts.dev https://*.clerk.com`,
+    // Styles: Allow self, nonce, unsafe-inline, and Google Fonts
+    `style-src 'self' 'nonce-${nonce}' 'unsafe-inline' https://fonts.googleapis.com`,
     // Images: Allow self, data URIs, blob, and HTTPS images (needed for user uploads and external images)
     "img-src 'self' data: blob: https: https://img.clerk.com",
     // Fonts: Allow self, data URIs, and Google Fonts
