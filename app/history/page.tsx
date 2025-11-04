@@ -19,6 +19,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { clientLogger } from '@/lib/client-logger';
+import {
+  getSummary,
+  getIngredients,
+  hasNutritionFacts,
+  getNutritionFactsLegacy,
+} from '@/lib/analysis-compat';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -539,83 +545,77 @@ function HistoryContent() {
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-4">
-                          {(result.overall_assessment?.summary || (result as any).summary) && (
+                          {getSummary(result) && (
                             <div>
                               <h4 className="text-sm font-semibold text-slate-700 mb-2">Summary</h4>
-                              <p className="text-slate-600 leading-relaxed">
-                                {result.overall_assessment?.summary || (result as any).summary}
-                              </p>
+                              <p className="text-slate-600 leading-relaxed">{getSummary(result)}</p>
                             </div>
                           )}
 
-                          {(
-                            result.ingredient_labeling?.ingredients_list ||
-                            (result as any).ingredients
-                          )?.length > 0 && (
-                            <div>
-                              <h4 className="text-sm font-semibold text-slate-700 mb-2">
-                                Ingredients
-                              </h4>
-                              <div className="flex flex-wrap gap-2">
-                                {(
-                                  result.ingredient_labeling?.ingredients_list ||
-                                  (result as any).ingredients
-                                )
-                                  .slice(0, 8)
-                                  .map((ingredient: string, index: number) => (
-                                    <Badge
-                                      key={index}
-                                      variant="secondary"
-                                      className="bg-slate-100 text-slate-700 hover:bg-slate-200"
-                                    >
-                                      {ingredient}
-                                    </Badge>
-                                  ))}
-                                {(
-                                  result.ingredient_labeling?.ingredients_list ||
-                                  (result as any).ingredients
-                                ).length > 8 && (
-                                  <Badge
-                                    variant="secondary"
-                                    className="bg-slate-100 text-slate-700"
-                                  >
-                                    +
-                                    {(
-                                      result.ingredient_labeling?.ingredients_list ||
-                                      (result as any).ingredients
-                                    ).length - 8}{' '}
-                                    more
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                          )}
-
-                          {(result as any).nutrition_facts &&
-                            Object.keys((result as any).nutrition_facts).length > 0 && (
-                              <div>
-                                <h4 className="text-sm font-semibold text-slate-700 mb-2">
-                                  Key Nutrition Facts
-                                </h4>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                  {Object.entries((result as any).nutrition_facts)
-                                    .slice(0, 4)
-                                    .map(([key, value]) => (
-                                      <div
-                                        key={key}
-                                        className="bg-slate-50 rounded-lg p-3 border border-slate-200"
+                          {(() => {
+                            const ingredients = getIngredients(result);
+                            return (
+                              ingredients &&
+                              ingredients.length > 0 && (
+                                <div>
+                                  <h4 className="text-sm font-semibold text-slate-700 mb-2">
+                                    Ingredients
+                                  </h4>
+                                  <div className="flex flex-wrap gap-2">
+                                    {ingredients
+                                      .slice(0, 8)
+                                      .map((ingredient: string, index: number) => (
+                                        <Badge
+                                          key={index}
+                                          variant="secondary"
+                                          className="bg-slate-100 text-slate-700 hover:bg-slate-200"
+                                        >
+                                          {ingredient}
+                                        </Badge>
+                                      ))}
+                                    {ingredients.length > 8 && (
+                                      <Badge
+                                        variant="secondary"
+                                        className="bg-slate-100 text-slate-700"
                                       >
-                                        <p className="text-xs text-slate-600 capitalize mb-1">
-                                          {key.replace('_', ' ')}
-                                        </p>
-                                        <p className="text-sm font-semibold text-slate-900">
-                                          {value as string}
-                                        </p>
-                                      </div>
-                                    ))}
+                                        +{ingredients.length - 8} more
+                                      </Badge>
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
-                            )}
+                              )
+                            );
+                          })()}
+
+                          {(() => {
+                            const nutritionFacts = getNutritionFactsLegacy(result);
+                            return (
+                              nutritionFacts && (
+                                <div>
+                                  <h4 className="text-sm font-semibold text-slate-700 mb-2">
+                                    Key Nutrition Facts
+                                  </h4>
+                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                    {Object.entries(nutritionFacts)
+                                      .slice(0, 4)
+                                      .map(([key, value]) => (
+                                        <div
+                                          key={key}
+                                          className="bg-slate-50 rounded-lg p-3 border border-slate-200"
+                                        >
+                                          <p className="text-xs text-slate-600 capitalize mb-1">
+                                            {key.replace('_', ' ')}
+                                          </p>
+                                          <p className="text-sm font-semibold text-slate-900">
+                                            {value as string}
+                                          </p>
+                                        </div>
+                                      ))}
+                                  </div>
+                                </div>
+                              )
+                            );
+                          })()}
 
                           {result.recommendations && result.recommendations.length > 0 && (
                             <div>

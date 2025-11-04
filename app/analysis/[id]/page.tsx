@@ -21,6 +21,14 @@ import { AnalysisChat } from '@/components/AnalysisChat';
 import { clientLogger } from '@/lib/client-logger';
 import { PrintReadyCertification } from '@/components/PrintReadyCertification';
 import { formatComplianceStatus } from '@/lib/formatting';
+import {
+  getClaimsStatus,
+  getStructureFunctionClaimsArray,
+  getNutrientContentClaimsArray,
+  getHealthClaimsArray,
+  getProhibitedClaimsArray,
+  hasAnyClaims,
+} from '@/lib/analysis-compat';
 import type {
   Analysis,
   AnalysisIteration,
@@ -820,79 +828,58 @@ export default function AnalysisDetailPage() {
                         <h4 className="font-semibold text-slate-900">Claims Compliance</h4>
                         <span
                           className={`px-2 py-1 rounded text-xs font-semibold ${
-                            (result.claims as any).status === 'compliant' ||
-                            result.claims.prohibited_claims?.status === 'compliant'
+                            getClaimsStatus(result.claims) === 'compliant'
                               ? 'bg-green-100 text-green-800'
-                              : (result.claims as any).status === 'non_compliant' ||
-                                  result.claims.prohibited_claims?.status === 'non_compliant'
+                              : getClaimsStatus(result.claims) === 'non_compliant'
                                 ? 'bg-red-100 text-red-800'
                                 : 'bg-gray-100 text-gray-800'
                           }`}
                         >
-                          {formatComplianceStatus(
-                            (result.claims as any).status ||
-                              result.claims.prohibited_claims?.status ||
-                              'compliant'
-                          )}
+                          {formatComplianceStatus(getClaimsStatus(result.claims))}
                         </span>
                       </div>
-                      {result.claims.structure_function_claims &&
-                        (Array.isArray(result.claims.structure_function_claims)
-                          ? result.claims.structure_function_claims.length > 0
-                          : (result.claims.structure_function_claims as any).claims_found?.length >
-                            0) && (
-                          <div className="mb-3 p-3 bg-slate-100 border border-slate-300 rounded">
-                            <p className="text-xs font-semibold text-slate-700 mb-1">
-                              Structure/Function Claims:
-                            </p>
-                            <ul className="text-sm text-slate-800 space-y-1">
-                              {(Array.isArray(result.claims.structure_function_claims)
-                                ? result.claims.structure_function_claims
-                                : (result.claims.structure_function_claims as any).claims_found ||
-                                  []
-                              ).map((claim: string, idx: number) => (
-                                <li key={idx}>• {claim}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      {result.claims.nutrient_content_claims &&
-                        (Array.isArray(result.claims.nutrient_content_claims)
-                          ? result.claims.nutrient_content_claims.length > 0
-                          : (result.claims.nutrient_content_claims as any).claims_found?.length >
-                            0) && (
-                          <div className="mb-3 p-3 bg-slate-100 border border-slate-300 rounded">
-                            <p className="text-xs font-semibold text-slate-700 mb-1">
-                              Nutrient Content Claims:
-                            </p>
-                            <ul className="text-sm text-slate-800 space-y-1">
-                              {(Array.isArray(result.claims.nutrient_content_claims)
-                                ? result.claims.nutrient_content_claims
-                                : (result.claims.nutrient_content_claims as any).claims_found || []
-                              ).map((claim: string, idx: number) => (
-                                <li key={idx}>• {claim}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      {result.claims.health_claims &&
-                        (Array.isArray(result.claims.health_claims)
-                          ? result.claims.health_claims.length > 0
-                          : (result.claims.health_claims as any).claims_found?.length > 0) && (
-                          <div className="mb-3 p-3 bg-slate-100 border border-slate-300 rounded">
-                            <p className="text-xs font-semibold text-slate-700 mb-1">
-                              Health Claims:
-                            </p>
-                            <ul className="text-sm text-slate-800 space-y-1">
-                              {(Array.isArray(result.claims.health_claims)
-                                ? result.claims.health_claims
-                                : (result.claims.health_claims as any).claims_found || []
-                              ).map((claim: string, idx: number) => (
-                                <li key={idx}>• {claim}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
+                      {hasAnyClaims(result.claims.structure_function_claims) && (
+                        <div className="mb-3 p-3 bg-slate-100 border border-slate-300 rounded">
+                          <p className="text-xs font-semibold text-slate-700 mb-1">
+                            Structure/Function Claims:
+                          </p>
+                          <ul className="text-sm text-slate-800 space-y-1">
+                            {getStructureFunctionClaimsArray(
+                              result.claims.structure_function_claims
+                            ).map((claim, idx) => (
+                              <li key={idx}>
+                                • {typeof claim === 'string' ? claim : claim.claim_text}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {hasAnyClaims(result.claims.nutrient_content_claims) && (
+                        <div className="mb-3 p-3 bg-slate-100 border border-slate-300 rounded">
+                          <p className="text-xs font-semibold text-slate-700 mb-1">
+                            Nutrient Content Claims:
+                          </p>
+                          <ul className="text-sm text-slate-800 space-y-1">
+                            {getNutrientContentClaimsArray(
+                              result.claims.nutrient_content_claims
+                            ).map((claim, idx) => (
+                              <li key={idx}>• {claim.claim_text}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {hasAnyClaims(result.claims.health_claims) && (
+                        <div className="mb-3 p-3 bg-slate-100 border border-slate-300 rounded">
+                          <p className="text-xs font-semibold text-slate-700 mb-1">
+                            Health Claims:
+                          </p>
+                          <ul className="text-sm text-slate-800 space-y-1">
+                            {getHealthClaimsArray(result.claims.health_claims).map((claim, idx) => (
+                              <li key={idx}>• {claim.claim_text}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                       {result.claims.prohibited_claims &&
                         (Array.isArray(result.claims.prohibited_claims)
                           ? result.claims.prohibited_claims.length > 0
@@ -902,14 +889,13 @@ export default function AnalysisDetailPage() {
                               ⚠️ Prohibited Claims Detected:
                             </p>
                             <ul className="text-sm text-red-800 space-y-1">
-                              {(Array.isArray(result.claims.prohibited_claims)
-                                ? result.claims.prohibited_claims
-                                : result.claims.prohibited_claims.claims_found || []
-                              ).map((claim: any, idx: number) => (
-                                <li key={idx}>
-                                  • {typeof claim === 'string' ? claim : claim.claim_text}
-                                </li>
-                              ))}
+                              {getProhibitedClaimsArray(result.claims.prohibited_claims).map(
+                                (claim, idx) => (
+                                  <li key={idx}>
+                                    • {typeof claim === 'string' ? claim : claim.claim_text}
+                                  </li>
+                                )
+                              )}
                             </ul>
                           </div>
                         )}

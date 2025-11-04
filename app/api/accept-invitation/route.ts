@@ -8,6 +8,17 @@ import {
   NotFoundError,
   handleSupabaseError,
 } from '@/lib/error-handler';
+import type { PendingInvitation } from '@/types';
+
+/**
+ * Type for pending invitation with joined organization data from Supabase query
+ */
+interface InvitationWithOrganization extends PendingInvitation {
+  organizations: {
+    id: string;
+    name: string;
+  } | null;
+}
 
 export async function POST(req: NextRequest) {
   const requestLogger = createRequestLogger({ endpoint: '/api/accept-invitation' });
@@ -52,7 +63,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Find the pending invitation
-    const { data: invitation, error: invitationError } = await supabaseAdmin
+    const { data: invitation, error: invitationError } = (await supabaseAdmin
       .from('pending_invitations')
       .select(
         `
@@ -71,7 +82,7 @@ export async function POST(req: NextRequest) {
       `
       )
       .eq('invitation_token', token)
-      .maybeSingle();
+      .maybeSingle()) as { data: InvitationWithOrganization | null; error: any };
 
     if (invitationError) {
       throw handleSupabaseError(invitationError, 'fetch invitation');
@@ -121,7 +132,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           message: 'You are already a member of this organization',
-          organizationName: (invitation.organizations as any)?.name,
+          organizationName: invitation.organizations?.name,
           role: invitation.role,
         },
         { status: 200 }
@@ -170,14 +181,14 @@ export async function POST(req: NextRequest) {
     requestLogger.info('Invitation accepted successfully', {
       userId: currentUser.id,
       organizationId: invitation.organization_id,
-      organizationName: (invitation.organizations as any)?.name,
+      organizationName: invitation.organizations?.name,
       role: invitation.role,
     });
 
     return NextResponse.json(
       {
         message: 'Successfully joined the organization!',
-        organizationName: (invitation.organizations as any)?.name,
+        organizationName: invitation.organizations?.name,
         role: invitation.role,
       },
       { status: 200 }

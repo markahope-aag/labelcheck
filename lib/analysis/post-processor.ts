@@ -53,6 +53,12 @@ export interface AnalysisData {
     }>;
   };
   allergen_database_check?: AllergenDatabase;
+  allergen_labeling?: {
+    status?: string;
+    // Allow any additional properties from the AI response
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    [key: string]: any;
+  };
 }
 
 /**
@@ -310,7 +316,7 @@ export async function processAllergenCompliance(analysisData: AnalysisData): Pro
       };
 
       // Check AI analysis for allergen compliance
-      const aiAllergenSection = (analysisData as any).allergen_labeling;
+      const aiAllergenSection = analysisData.allergen_labeling;
       const aiAllergenStatus = aiAllergenSection?.status;
 
       // Cross-reference database findings with AI analysis
