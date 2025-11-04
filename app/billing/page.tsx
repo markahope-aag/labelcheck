@@ -166,32 +166,32 @@ export default async function BillingPage() {
                   <CardTitle className="text-xl font-semibold text-slate-900">
                     {isOnFreeTrial ? 'Free Trial' : 'Current Plan'}
                   </CardTitle>
-                  <CardDescription>
-                    {isOnFreeTrial ? 'Your free trial details' : 'Your active subscription details'}
-                  </CardDescription>
+                  {!isOnFreeTrial && (
+                    <CardDescription>Your active subscription details</CardDescription>
+                  )}
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-2xl font-bold text-slate-900 capitalize">
-                            {isOnFreeTrial ? 'Free Trial' : `${currentPlan} Plan`}
-                          </h3>
-                          <Badge
-                            className={
-                              isOnFreeTrial
-                                ? 'bg-blue-100 text-blue-700 border-blue-200'
-                                : currentPlan === 'business'
+                        {!isOnFreeTrial && (
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="text-2xl font-bold text-slate-900 capitalize">
+                              {`${currentPlan} Plan`}
+                            </h3>
+                            <Badge
+                              className={
+                                currentPlan === 'business'
                                   ? 'bg-purple-100 text-purple-700 border-purple-200'
                                   : currentPlan === 'professional'
                                     ? 'bg-blue-100 text-blue-700 border-blue-200'
                                     : 'bg-slate-100 text-slate-700 border-slate-200'
-                            }
-                          >
-                            {isOnFreeTrial ? 'Trial' : 'Subscribed'}
-                          </Badge>
-                        </div>
+                              }
+                            >
+                              Subscribed
+                            </Badge>
+                          </div>
+                        )}
                         <p className="text-3xl font-bold text-slate-900">
                           {isOnFreeTrial ? (
                             <span className="text-lg text-slate-600 font-normal">Free</span>
