@@ -56,6 +56,14 @@ npm run pre-deploy   # Runs TypeScript, ESLint, formatting, build checks
 - All authenticated routes are protected via `middleware.ts` using `clerkMiddleware`
 - Public routes: `/`, `/pricing`, `/sign-in`, `/sign-up`, `/share/[token]`, and webhook endpoints
 
+**Content Security Policy (CSP) for Clerk:**
+The application uses a strict CSP configured in `lib/csp.ts` with specific allowances for Clerk:
+- `worker-src 'self' blob:` - Required for Clerk's web workers (background auth tasks)
+- `style-src 'unsafe-inline'` - Required for Clerk's dynamic inline styles (nonce incompatible)
+- `connect-src` includes `https://clerk-telemetry.com` - For Clerk analytics/telemetry
+- `'unsafe-eval'` in `script-src` during development only - For Next.js React refresh
+- Sign-in/sign-up pages use simple wrapper components following Clerk's official documentation
+
 ### Database Architecture (Supabase)
 The database uses PostgreSQL with Row Level Security (RLS) enabled on all tables:
 
@@ -640,10 +648,12 @@ const { data: user } = await supabase
 13. **Invitation Email Validation**: Invitation acceptance does NOT enforce strict email matching between the invitation email and the signed-in user's email. The invitation token is the authorization mechanism, allowing email aliases to work correctly.
 14. **Team Member API**: Always use `/api/organizations/members` GET endpoint (which uses `supabaseAdmin`) instead of client-side Supabase queries to fetch team members, as RLS policies prevent cross-user data access.
 15. **Net Quantity Declaration Order**: FDA regulations (21 CFR 101.7) do NOT mandate a specific order for US customary vs metric units. Either order is acceptable: "15 oz (425 g)" OR "425 g (15 oz)" are both compliant. The secondary measurement should appear in parentheses. This applies to all food categories (conventional foods, dietary supplements, beverages).
+16. **CSP and Clerk Compatibility**: The Content Security Policy must allow specific directives for Clerk to function: `worker-src 'self' blob:` for web workers, `style-src 'unsafe-inline'` for dynamic styles (nonce is incompatible), and `connect-src` must include `clerk-telemetry.com`. If you see CSP violation errors in the browser console, check `lib/csp.ts` and ensure all Clerk-required domains are whitelisted. Sign-in/sign-up pages should use simple wrapper components without unnecessary `'use client'` directives.
 
 ## Key Files to Reference
 
 - `middleware.ts` - Route protection and public route configuration
+- `lib/csp.ts` - Content Security Policy configuration with Clerk compatibility
 - `app/api/analyze/route.ts` - Core AI analysis logic
 - `app/api/share/route.ts` - Share link generation endpoint
 - `app/share/[token]/page.tsx` - Public share page for viewing shared analyses

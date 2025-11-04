@@ -1,8 +1,192 @@
 # Session Notes - Analysis Sessions Development
 
-**Last Updated:** 2025-11-03 (Session 20 - Phase 2/3 Refactoring Complete)
+**Last Updated:** 2025-11-04 (Session 21 - Clerk CSP Fixes)
 **Branch:** main
 **Status:** Production Ready ✅
+
+---
+
+## Session 21 Summary (2025-11-04) - Clerk Sign-In/Sign-Up CSP Fixes
+
+### ✅ Completed in This Session
+
+**Major Achievement: Fixed Clerk Authentication CSP Violations - Sign-In/Sign-Up Now Working**
+
+This session resolved all Content Security Policy (CSP) violations preventing Clerk sign-in and sign-up pages from functioning correctly. The fixes maintain security while allowing Clerk to function properly.
+
+#### 1. CSP Configuration Fixes (`lib/csp.ts`)
+
+**Problem:** Clerk components were blocked by overly restrictive CSP directives
+- ❌ Web workers blocked (blob: URLs)
+- ❌ Dynamic inline styles blocked (nonce conflicts)
+- ❌ Telemetry connections blocked
+
+**Solution:** Adjusted CSP directives to support Clerk's requirements:
+
+1. **Development Mode Support** (Line 28)
+   - Added `'unsafe-eval'` to `script-src` in development only
+   - Required for Next.js React refresh and hot reload
+   - Excluded from production builds
+
+2. **Inline Styles** (Line 41)
+   - Removed nonce from `style-src`
+   - Kept `'unsafe-inline'` for Clerk's dynamic styling
+   - Note: Clerk needs inline styles for runtime component rendering
+
+3. **Web Workers** (Line 43)
+   - Added `worker-src 'self' blob:`
+   - Allows Clerk to spawn web workers for background tasks
+   - Required for async authentication operations
+
+4. **Telemetry** (Line 50)
+   - Added `https://clerk-telemetry.com` to `connect-src`
+   - Enables Clerk's analytics and error reporting
+   - Non-critical but recommended by Clerk
+
+#### 2. Component Simplification
+
+**Before:**
+- Components had unnecessary `'use client'` directives
+- Complex wrapper components around Clerk components
+- Deviated from Clerk's official documentation
+
+**After:**
+- Simple functional components (8 lines each)
+- Clean flex container for centering
+- Follows Clerk's official documentation exactly
+
+**Files:**
+- `app/sign-in/[[...sign-in]]/page.tsx` - Simplified to basic wrapper
+- `app/sign-up/[[...sign-up]]/page.tsx` - Simplified to basic wrapper
+
+#### 3. CSP Violation Analysis
+
+**Error Messages Resolved:**
+```
+✅ Creating a worker from 'blob:...' violates CSP
+   → Fixed: Added worker-src 'self' blob:
+
+✅ Applying inline style violates CSP
+   → Fixed: Removed nonce from style-src, kept unsafe-inline
+
+✅ Connecting to 'https://clerk-telemetry.com' violates CSP
+   → Fixed: Added clerk-telemetry.com to connect-src
+```
+
+### 📊 Impact Summary
+
+| Aspect | Before | After | Status |
+|--------|--------|-------|--------|
+| **Sign-In Page** | ❌ CSP Blocked | ✅ Working | Fixed |
+| **Sign-Up Page** | ❌ CSP Blocked | ✅ Working | Fixed |
+| **Web Workers** | ❌ Blocked | ✅ Allowed | Fixed |
+| **Inline Styles** | ❌ Blocked | ✅ Allowed | Fixed |
+| **Telemetry** | ❌ Blocked | ✅ Allowed | Fixed |
+| **Security Level** | 🔒 Very Strict | 🔒 Strict | Maintained |
+
+### 🔧 Technical Implementation Details
+
+**CSP Directive Changes:**
+```typescript
+// Development mode script support
+const scriptSrcParts = [
+  "'self'",
+  `'nonce-${nonce}'`,
+  "'unsafe-inline'",
+  ...(isDevelopment ? ["'unsafe-eval'"] : []), // ← Added for dev mode
+  'https://challenges.cloudflare.com',
+  'https://*.clerk.accounts.dev',
+  'https://js.stripe.com',
+];
+
+// Removed nonce, kept unsafe-inline for Clerk
+style-src 'self' 'unsafe-inline' https://fonts.googleapis.com
+
+// Added worker support for Clerk
+worker-src 'self' blob:  // ← Added for web workers
+
+// Added Clerk telemetry domain
+connect-src 'self' ... https://clerk-telemetry.com ...  // ← Added
+```
+
+**Component Structure:**
+```typescript
+// Clean, simple component following Clerk docs
+export default function Page() {
+  return (
+    <div className="flex items-center justify-center min-h-[calc(100vh-200px)] w-full">
+      <SignIn />
+    </div>
+  );
+}
+```
+
+### 📋 Files Modified
+
+1. `lib/csp.ts` - Updated CSP directives for Clerk compatibility
+2. `app/sign-in/[[...sign-in]]/page.tsx` - Simplified component
+3. `app/sign-up/[[...sign-up]]/page.tsx` - Simplified component
+4. `SESSION_NOTES.md` - Added Session 21 summary (this file)
+
+### 🎯 Key Learnings
+
+**CSP Debugging Process:**
+1. Read browser console CSP violation messages carefully
+2. Identify which directive is blocking (script-src, style-src, worker-src, connect-src)
+3. Add specific domains/sources rather than loosening globally
+4. Test in both development and production modes
+5. Verify security remains strong after changes
+
+**Clerk-Specific Requirements:**
+- Needs `worker-src 'self' blob:` for background auth tasks
+- Needs `style-src 'unsafe-inline'` (nonce incompatible)
+- Needs `connect-src` to clerk-telemetry.com for analytics
+- Needs `'unsafe-eval'` in development for Next.js compatibility
+
+**Security Posture:**
+- CSP remains strict (no broad wildcards)
+- Only specific Clerk domains whitelisted
+- `'unsafe-eval'` only in development, not production
+- All changes are minimal and justified
+
+### 🚀 Production Impact
+
+**Before Session:**
+- Users could NOT sign in or sign up
+- Authentication completely broken
+- CSP violations in browser console
+
+**After Session:**
+- ✅ Sign-in page fully functional
+- ✅ Sign-up page fully functional
+- ✅ No CSP violations in console
+- ✅ Security maintained
+
+### 📝 Related Documentation
+
+**Updated Files:**
+- This session note documents the fixes
+- CLAUDE.md includes CSP information in "Authentication & User Flow"
+- `lib/csp.ts` has inline comments explaining each directive
+
+**Git Commit:**
+```
+6a52c0a - Fix Clerk sign-in and sign-up pages - CSP configuration and proper rendering
+```
+
+### 🎉 Session Success
+
+**What We Learned:**
+- How to systematically debug CSP violations
+- Clerk's specific CSP requirements
+- Balance between security and functionality
+- Proper error message interpretation
+
+**Impact:**
+- Authentication completely restored
+- Users can now access the application
+- Security remains strong
+- Clean, maintainable code
 
 ---
 

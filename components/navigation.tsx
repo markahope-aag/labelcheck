@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { UserButton, useUser } from '@clerk/nextjs';
-import { FlaskConical } from 'lucide-react';
+import { FlaskConical, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
 
@@ -11,6 +11,7 @@ export function Navigation() {
   const pathname = usePathname();
   const { isSignedIn, user } = useUser();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     async function checkAdminStatus() {
@@ -81,30 +82,97 @@ export function Navigation() {
           </div>
 
           <div className="flex items-center gap-4">
-            {isSignedIn ? (
-              <>
-                <Button variant="ghost" size="sm" asChild>
-                  <Link href="/settings">Settings</Link>
-                </Button>
-                <Button variant="ghost" size="sm" asChild>
-                  <Link href="/billing">Billing</Link>
-                </Button>
-                <div className="flex items-center h-8 w-8">
-                  <UserButton afterSignOutUrl="/" />
-                </div>
-              </>
-            ) : (
-              <>
-                <Button variant="ghost" size="sm" asChild>
-                  <Link href="/sign-in">Sign In</Link>
-                </Button>
-                <Button size="sm" asChild>
-                  <Link href="/sign-up">Get Started</Link>
-                </Button>
-              </>
-            )}
+            {/* Desktop auth buttons */}
+            <div className="hidden md:flex items-center gap-4">
+              {isSignedIn ? (
+                <>
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link href="/settings">Settings</Link>
+                  </Button>
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link href="/billing">Billing</Link>
+                  </Button>
+                  <div className="flex items-center h-8 w-8">
+                    <UserButton afterSignOutUrl="/" />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link href="/sign-in">Sign In</Link>
+                  </Button>
+                  <Button size="sm" asChild>
+                    <Link href="/sign-up">Get Started</Link>
+                  </Button>
+                </>
+              )}
+            </div>
+
+            {/* Mobile menu button */}
+            <button
+              className="md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t py-4">
+            <div className="flex flex-col gap-2">
+              {navItems
+                .filter((item) => !item.adminOnly || isAdmin)
+                .map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      pathname === item.href
+                        ? 'bg-blue-50 text-blue-600'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    }`}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+
+              {/* Mobile auth buttons */}
+              <div className="flex flex-col gap-2 mt-2 pt-2 border-t">
+                {isSignedIn ? (
+                  <>
+                    <Button variant="ghost" size="sm" asChild className="justify-start">
+                      <Link href="/settings" onClick={() => setMobileMenuOpen(false)}>
+                        Settings
+                      </Link>
+                    </Button>
+                    <Button variant="ghost" size="sm" asChild className="justify-start">
+                      <Link href="/billing" onClick={() => setMobileMenuOpen(false)}>
+                        Billing
+                      </Link>
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button variant="ghost" size="sm" asChild className="justify-start">
+                      <Link href="/sign-in" onClick={() => setMobileMenuOpen(false)}>
+                        Sign In
+                      </Link>
+                    </Button>
+                    <Button size="sm" asChild>
+                      <Link href="/sign-up" onClick={() => setMobileMenuOpen(false)}>
+                        Get Started
+                      </Link>
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </nav>
   );
