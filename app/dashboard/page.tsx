@@ -1,7 +1,15 @@
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { Camera, History, CreditCard, TrendingUp } from 'lucide-react';
+import {
+  Camera,
+  History,
+  CreditCard,
+  TrendingUp,
+  CheckCircle2,
+  AlertCircle,
+  BarChart3,
+} from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -49,6 +57,30 @@ export default async function DashboardPage() {
           .eq('user_id', user.id)
       ).count
     : 0;
+
+  // Get compliance statistics
+  const allAnalyses = user
+    ? (await supabase.from('analyses').select('analysis_result').eq('user_id', user.id)).data
+    : null;
+
+  const compliantCount =
+    allAnalyses?.filter((a) => {
+      const status = a.analysis_result?.overall_assessment?.status || '';
+      return status.toLowerCase() === 'compliant';
+    }).length || 0;
+
+  const issuesCount =
+    allAnalyses?.filter((a) => {
+      const status = a.analysis_result?.overall_assessment?.status || '';
+      return (
+        status.toLowerCase() === 'non-compliant' ||
+        status.toLowerCase() === 'potentially-non-compliant' ||
+        status.toLowerCase() === 'minor-issues'
+      );
+    }).length || 0;
+
+  const complianceRate =
+    totalAnalyses && totalAnalyses > 0 ? Math.round((compliantCount / totalAnalyses) * 100) : 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
@@ -212,47 +244,91 @@ export default async function DashboardPage() {
 
           <Card className="border-slate-200">
             <CardHeader>
-              <CardTitle className="text-xl font-semibold text-slate-900">Get Started</CardTitle>
-              <CardDescription>Make the most of NutriScan AI</CardDescription>
+              <CardTitle className="text-xl font-semibold text-slate-900">
+                Compliance Overview
+              </CardTitle>
+              <CardDescription>Your regulatory compliance at a glance</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-start gap-4 p-4 border border-slate-200 rounded-lg">
-                  <div className="bg-blue-100 p-2 rounded-lg">
-                    <Camera className="h-5 w-5 text-blue-600" />
+              {totalAnalyses && totalAnalyses > 0 ? (
+                <div className="space-y-6">
+                  {/* Stats Grid */}
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="text-center p-4 bg-slate-50 rounded-lg">
+                      <div className="text-2xl font-bold text-slate-900">{totalAnalyses}</div>
+                      <div className="text-xs text-slate-600 mt-1">Total Analyses</div>
+                    </div>
+                    <div className="text-center p-4 bg-green-50 rounded-lg">
+                      <div className="flex items-center justify-center gap-1">
+                        <CheckCircle2 className="h-5 w-5 text-green-600" />
+                        <div className="text-2xl font-bold text-green-700">{compliantCount}</div>
+                      </div>
+                      <div className="text-xs text-green-600 mt-1">Compliant</div>
+                    </div>
+                    <div className="text-center p-4 bg-red-50 rounded-lg">
+                      <div className="flex items-center justify-center gap-1">
+                        <AlertCircle className="h-5 w-5 text-red-600" />
+                        <div className="text-2xl font-bold text-red-700">{issuesCount}</div>
+                      </div>
+                      <div className="text-xs text-red-600 mt-1">With Issues</div>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-slate-900 mb-1">Upload a Label</h4>
-                    <p className="text-sm text-slate-600">
-                      Take a photo or upload an image of any label to get started
-                    </p>
-                  </div>
-                </div>
 
-                <div className="flex items-start gap-4 p-4 border border-slate-200 rounded-lg">
-                  <div className="bg-green-100 p-2 rounded-lg">
-                    <TrendingUp className="h-5 w-5 text-green-600" />
+                  {/* Compliance Rate */}
+                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <BarChart3 className="h-5 w-5 text-blue-600" />
+                        <span className="font-semibold text-slate-900">Compliance Rate</span>
+                      </div>
+                      <span className="text-2xl font-bold text-blue-700">{complianceRate}%</span>
+                    </div>
+                    <div className="w-full bg-blue-200 rounded-full h-2">
+                      <div
+                        className="bg-blue-600 h-2 rounded-full transition-all"
+                        style={{ width: `${complianceRate}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-slate-900 mb-1">Get Instant Analysis</h4>
-                    <p className="text-sm text-slate-600">
-                      Receive detailed nutritional insights and health recommendations
-                    </p>
-                  </div>
-                </div>
 
-                <div className="flex items-start gap-4 p-4 border border-slate-200 rounded-lg">
-                  <div className="bg-purple-100 p-2 rounded-lg">
-                    <History className="h-5 w-5 text-purple-600" />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-slate-900 mb-1">Track Your Progress</h4>
-                    <p className="text-sm text-slate-600">
-                      Review past analyses and make informed dietary choices
-                    </p>
-                  </div>
+                  {/* Usage This Month */}
+                  {usage && (
+                    <div className="p-4 bg-slate-50 rounded-lg">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-medium text-slate-700">Usage This Month</span>
+                        <span className="text-sm font-semibold text-slate-900">
+                          {usage.analyses_used} of{' '}
+                          {usage.analyses_limit === -1 ? '∞' : usage.analyses_limit}
+                        </span>
+                      </div>
+                      {usage.analyses_limit !== -1 && (
+                        <div className="w-full bg-slate-200 rounded-full h-1.5">
+                          <div
+                            className="bg-slate-600 h-1.5 rounded-full transition-all"
+                            style={{
+                              width: `${Math.min((usage.analyses_used / usage.analyses_limit) * 100, 100)}%`,
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-              </div>
+              ) : (
+                <div className="text-center py-12">
+                  <BarChart3 className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                  <p className="text-slate-600 mb-2">No compliance data yet</p>
+                  <p className="text-sm text-slate-500 mb-4">
+                    Analyze your first label to see compliance insights
+                  </p>
+                  <Link href="/analyze">
+                    <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                      <Camera className="h-4 w-4 mr-2" />
+                      Start First Analysis
+                    </Button>
+                  </Link>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
