@@ -306,6 +306,52 @@ The system validates dietary supplement ingredients against FDA NDI (New Dietary
 4. Events processed: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_*`
 5. Subscription changes update `subscriptions` table and trigger `usage_tracking` limit updates
 
+### 14-Day Free Trial System
+The application enforces a comprehensive time-based trial system with automated tracking, enforcement, and reminders.
+
+**Database Schema:**
+- `users.trial_start_date` (timestamptz): Set automatically on account creation via Clerk webhook
+- Cleared when user upgrades to paid subscription
+
+**Trial Enforcement (Dual Limits):**
+- **Time-based limit**: 14 days from account creation
+- **Usage-based limit**: 10 analyses per month
+- Trial expires when EITHER limit is reached (whichever comes first)
+- Enforced at orchestrator level (`lib/analysis/orchestrator.ts`) - cannot be bypassed
+- Error message: "Your free trial has expired. Please upgrade to continue analyzing labels."
+
+**Trial Calculation Logic** (`lib/subscription-helpers.ts`):
+- `getUserUsage()` calculates `trial_days_remaining` (14 - days elapsed)
+- `getUserUsage()` sets `trial_expired` boolean flag
+- `canUserAnalyze()` checks both time and usage limits before allowing analyses
+
+**UI Display** (`components/FreeTrialStatus.tsx`):
+- Shows countdown: "4 days remaining in your trial"
+- Warning indicator when ≤4 days remain (yellow badge)
+- Expired state with "Upgrade Now" call-to-action
+- Disables "Analyze Label" button when trial expired
+- Displayed on dashboard and billing pages
+
+**Automated Email Reminders:**
+- Day 10 reminder sent via cron job (`/api/send-trial-reminders`)
+- Email template in `lib/email-templates.ts`
+- Cron schedule configured in `vercel.json`
+- Message: "You have 4 days left in your free trial"
+
+**Clean Upgrade Flow:**
+- When user subscribes, `trial_start_date` is cleared (Stripe webhook)
+- Trial countdown immediately removed from UI
+- Full subscription benefits activated
+
+**Key Files:**
+- `supabase/migrations/20250115000000_add_trial_start_date.sql` - Database migration
+- `app/api/webhooks/clerk/route.ts` - Sets trial start date on user creation
+- `app/api/webhooks/stripe/route.ts` - Clears trial date on subscription
+- `lib/analysis/orchestrator.ts` - Enforces trial expiration
+- `lib/subscription-helpers.ts` - Trial calculation and validation
+- `components/FreeTrialStatus.tsx` - Trial UI component
+- `app/api/send-trial-reminders/route.ts` - Automated email reminders
+
 ### Helper Libraries Organization
 - `lib/supabase.ts`: Supabase client + TypeScript interfaces (exports both `supabase` and `supabaseAdmin`)
 - `lib/subscription-helpers.ts`: Subscription/usage query helpers
@@ -516,6 +562,21 @@ The application supports team collaboration through organization invitations:
 - Maintains backward compatibility with old and new analysis data formats
 
 ### UI/UX Enhancements
+
+**Dashboard Compliance Overview:**
+The dashboard (`/dashboard`) displays actionable compliance metrics instead of generic onboarding content:
+- **Stats Grid**: Shows total analyses, compliant products (green), and products with issues (red)
+- **Compliance Rate**: Visual progress bar showing percentage of compliant products
+- **Monthly Usage Tracker**: Displays "X of Y analyses used" with progress visualization
+- **Smart Empty State**: For new users, shows clear call-to-action to start first analysis
+- **Color-Coded Metrics**:
+  - Green highlights for compliant products (with CheckCircle2 icon)
+  - Red highlights for products with issues (with AlertCircle icon)
+  - Blue for compliance rate percentage (with BarChart3 icon)
+  - Gray for usage tracking
+- **Trial Integration**: Seamlessly integrates with FreeTrialStatus component showing countdown
+- File: `app/dashboard/page.tsx`
+
 **Compliance Status Formatting:**
 - All status displays use proper capitalization and hyphens (e.g., "Non-Compliant", "Potentially-Non-Compliant")
 - Helper function `formatComplianceStatus()` ensures consistent formatting across all pages
