@@ -267,7 +267,7 @@ export default function PricingPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="mb-4">
-                        <span className="text-3xl font-bold">${bundle.price}</span>
+                        <span className="text-3xl font-bold">${bundle.price.toFixed(2)}</span>
                         <span className="text-gray-600"> / bundle</span>
                         <p className="text-sm text-gray-500 mt-1">
                           ${pricePerAnalysis.toFixed(2)} per analysis

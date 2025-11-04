@@ -148,7 +148,7 @@ export function BundlePurchase({
                 <div className="mb-3">
                   <h3 className="font-semibold text-slate-900 mb-1">{bundle.analyses} Analyses</h3>
                   <p className="text-2xl font-bold text-slate-900">
-                    ${bundle.price}
+                    ${bundle.price.toFixed(2)}
                     <span className="text-sm text-slate-600 font-normal"> / bundle</span>
                   </p>
                   <p className="text-xs text-slate-500 mt-1">
