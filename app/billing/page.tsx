@@ -131,18 +131,27 @@ export default async function BillingPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-6">
-              {/* Free Trial Status Banner */}
-              {isOnFreeTrial && usage ? (
+              {/* Free Trial Status Banner - Always show for free trial users */}
+              {isOnFreeTrial && (
                 <FreeTrialStatus
                   analysesUsed={analysesUsed}
                   analysesLimit={analysesLimit}
                   remaining={remaining}
                 />
-              ) : null}
+              )}
 
               {/* Bundle Purchase Section */}
               {/* Always show for free trial users, or show for subscribed users who are near limit or have bundle credits */}
-              {usage ? (
+              {/* For free trial users, show even if usage is null (will use default values) */}
+              {isOnFreeTrial ? (
+                <BundlePurchase
+                  currentPlan={currentPlan}
+                  analysesUsed={analysesUsed}
+                  analysesLimit={analysesLimit}
+                  bundleCredits={usage?.bundle_credits || 0}
+                  isOnFreeTrial={isOnFreeTrial}
+                />
+              ) : usage ? (
                 <BundlePurchase
                   currentPlan={currentPlan}
                   analysesUsed={analysesUsed}
@@ -150,9 +159,7 @@ export default async function BillingPage() {
                   bundleCredits={usage.bundle_credits || 0}
                   isOnFreeTrial={isOnFreeTrial}
                 />
-              ) : (
-                <div className="text-sm text-slate-500">Usage data is loading...</div>
-              )}
+              ) : null}
 
               <Card className="border-slate-200">
                 <CardHeader>

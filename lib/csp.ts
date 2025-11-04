@@ -31,6 +31,8 @@ export function buildCSP(nonce: string): string {
     'https://challenges.cloudflare.com',
     'https://*.clerk.accounts.dev',
     'https://js.stripe.com',
+    // Allow Vercel live feedback (production preview deployments)
+    'https://vercel.live',
   ];
 
   const directives = [
