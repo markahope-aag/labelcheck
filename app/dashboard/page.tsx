@@ -65,6 +65,8 @@ export default async function DashboardPage() {
               analysesUsed={usage.analyses_used}
               analysesLimit={usage.analyses_limit}
               remaining={usage.remaining}
+              trialDaysRemaining={usage.trial_days_remaining ?? null}
+              trialExpired={usage.trial_expired ?? false}
             />
           </div>
         )}

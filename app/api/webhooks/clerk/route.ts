@@ -68,6 +68,7 @@ export async function POST(req: Request) {
         .insert({
           clerk_user_id: id,
           email: primaryEmail?.email_address || '',
+          trial_start_date: new Date().toISOString(), // Set trial start date on user creation
         })
         .select()
         .single();

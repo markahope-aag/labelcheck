@@ -196,6 +196,38 @@ export async function checkUsageLimits(userId: string, userInternalId: string): 
   // Check if user is an admin - admins have unlimited access
   const isAdmin = await isUserAdmin(userId);
 
+  // Check trial expiration for free trial users
+  if (!isAdmin) {
+    const { data: user } = await supabaseAdmin
+      .from('users')
+      .select('trial_start_date')
+      .eq('id', userInternalId)
+      .maybeSingle();
+
+    // Check if user has active subscription
+    const { data: subscription } = await supabaseAdmin
+      .from('subscriptions')
+      .select('status')
+      .eq('user_id', userInternalId)
+      .eq('status', 'active')
+      .maybeSingle();
+
+    // If no subscription and has trial_start_date, check expiration
+    if (!subscription && user?.trial_start_date) {
+      const trialStart = new Date(user.trial_start_date);
+      const now = new Date();
+      const daysSinceStart = Math.floor(
+        (now.getTime() - trialStart.getTime()) / (1000 * 60 * 60 * 24)
+      );
+
+      if (daysSinceStart > 14) {
+        throw new Error(
+          'Your free trial has expired. Please upgrade to continue analyzing labels.'
+        );
+      }
+    }
+  }
+
   // Check for bundle credits if subscription limit is reached
   if (
     !isAdmin &&

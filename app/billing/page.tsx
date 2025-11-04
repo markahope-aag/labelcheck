@@ -137,6 +137,8 @@ export default async function BillingPage() {
                   analysesUsed={analysesUsed}
                   analysesLimit={analysesLimit}
                   remaining={remaining}
+                  trialDaysRemaining={usage?.trial_days_remaining ?? null}
+                  trialExpired={usage?.trial_expired ?? false}
                 />
               )}
 

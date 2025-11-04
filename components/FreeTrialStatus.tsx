@@ -14,15 +14,27 @@ interface FreeTrialStatusProps {
   analysesUsed: number;
   analysesLimit: number;
   remaining: number;
+  trialDaysRemaining?: number | null;
+  trialExpired?: boolean;
 }
 
-export function FreeTrialStatus({ analysesUsed, analysesLimit, remaining }: FreeTrialStatusProps) {
+export function FreeTrialStatus({
+  analysesUsed,
+  analysesLimit,
+  remaining,
+  trialDaysRemaining,
+  trialExpired,
+}: FreeTrialStatusProps) {
   const { isSignedIn } = useUser();
   const { toast } = useToast();
   const [loadingUpgrade, setLoadingUpgrade] = useState(false);
   const percentage = Math.round((analysesUsed / analysesLimit) * 100);
   const isLow = remaining <= 3;
   const isExhausted = remaining === 0;
+  const isTrialExpired =
+    trialExpired ||
+    (trialDaysRemaining !== null && trialDaysRemaining !== undefined && trialDaysRemaining <= 0);
+  const daysRemaining = trialDaysRemaining ?? null;
 
   const handleUpgradeNow = async () => {
     if (!isSignedIn) {
@@ -71,21 +83,23 @@ export function FreeTrialStatus({ analysesUsed, analysesLimit, remaining }: Free
   return (
     <Card
       className={`border-2 ${
-        isExhausted
+        isTrialExpired
           ? 'border-red-300 bg-red-50'
-          : isLow
-            ? 'border-orange-300 bg-orange-50'
-            : 'border-blue-300 bg-blue-50'
+          : isExhausted
+            ? 'border-red-300 bg-red-50'
+            : isLow
+              ? 'border-orange-300 bg-orange-50'
+              : 'border-blue-300 bg-blue-50'
       }`}
     >
       <CardContent className="pt-6">
         <div className="flex items-start gap-4">
           <div
             className={`p-3 rounded-lg ${
-              isExhausted ? 'bg-red-100' : isLow ? 'bg-orange-100' : 'bg-blue-100'
+              isTrialExpired || isExhausted ? 'bg-red-100' : isLow ? 'bg-orange-100' : 'bg-blue-100'
             }`}
           >
-            {isExhausted ? (
+            {isTrialExpired || isExhausted ? (
               <AlertCircle className="h-6 w-6 text-red-600" />
             ) : (
               <Sparkles className="h-6 w-6 text-blue-600" />
@@ -96,12 +110,21 @@ export function FreeTrialStatus({ analysesUsed, analysesLimit, remaining }: Free
               <div>
                 <h3 className="font-semibold text-slate-900 mb-1">Free Trial</h3>
                 <p className="text-sm text-slate-600">
-                  {isExhausted
-                    ? "You've used all your free analyses"
-                    : isLow
-                      ? `Only ${remaining} free ${remaining === 1 ? 'analysis' : 'analyses'} remaining`
-                      : `${remaining} free ${remaining === 1 ? 'analysis' : 'analyses'} remaining`}
+                  {isTrialExpired
+                    ? 'Your 14-day free trial has expired'
+                    : daysRemaining !== null
+                      ? `${daysRemaining} day${daysRemaining === 1 ? '' : 's'} remaining in your trial`
+                      : isExhausted
+                        ? "You've used all your free analyses"
+                        : isLow
+                          ? `Only ${remaining} free ${remaining === 1 ? 'analysis' : 'analyses'} remaining`
+                          : `${remaining} free ${remaining === 1 ? 'analysis' : 'analyses'} remaining`}
                 </p>
+                {daysRemaining !== null && daysRemaining > 0 && daysRemaining <= 4 && (
+                  <p className="text-xs text-orange-700 mt-1 font-medium">
+                    ⏰ Only {daysRemaining} day{daysRemaining === 1 ? '' : 's'} left!
+                  </p>
+                )}
               </div>
               <div className="text-right">
                 <p className="text-2xl font-bold text-slate-900">
@@ -126,7 +149,16 @@ export function FreeTrialStatus({ analysesUsed, analysesLimit, remaining }: Free
               <p className="text-xs text-slate-500 mt-1">{percentage}% of trial used</p>
             </div>
 
-            {isExhausted ? (
+            {isTrialExpired ? (
+              <div className="bg-white border border-red-200 rounded-lg p-3 mb-3">
+                <p className="text-sm text-red-900 font-medium mb-2">
+                  Your free trial has expired - upgrade to continue analyzing labels
+                </p>
+                <p className="text-xs text-red-800">
+                  Start with 10 analyses/month for $49, or get 50 analyses/month for $149.
+                </p>
+              </div>
+            ) : isExhausted ? (
               <div className="bg-white border border-red-200 rounded-lg p-3 mb-3">
                 <p className="text-sm text-red-900 font-medium mb-2">
                   Upgrade to continue analyzing labels
@@ -161,7 +193,7 @@ export function FreeTrialStatus({ analysesUsed, analysesLimit, remaining }: Free
                   'Upgrade Now'
                 )}
               </Button>
-              {!isExhausted && (
+              {!isExhausted && !isTrialExpired && (
                 <Button asChild variant="outline" className="flex-1">
                   <Link href="/analyze">Analyze Label</Link>
                 </Button>

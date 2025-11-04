@@ -16,6 +16,8 @@ export interface UsageInfo {
   remaining: number;
   bundle_credits?: number; // Remaining bundle analyses
   total_available?: number; // subscription limit + bundle credits
+  trial_days_remaining?: number; // Days remaining in trial (null if not on trial)
+  trial_expired?: boolean; // Whether trial has expired
 }
 
 export async function getUserSubscription(userId: string): Promise<SubscriptionInfo | null> {
@@ -40,7 +42,7 @@ export async function getUserSubscription(userId: string): Promise<SubscriptionI
 export async function getUserUsage(userId: string): Promise<UsageInfo | null> {
   const { data: user } = await supabase
     .from('users')
-    .select('id')
+    .select('id, trial_start_date')
     .eq('clerk_user_id', userId)
     .maybeSingle();
 
@@ -56,6 +58,24 @@ export async function getUserUsage(userId: string): Promise<UsageInfo | null> {
     .maybeSingle();
 
   if (!usage) return null;
+
+  // Check if user has active subscription
+  const subscriptionStatus = await getSubscriptionStatus(userId);
+  const isOnTrial = !subscriptionStatus.hasActiveSubscription;
+
+  // Calculate trial days remaining if on trial
+  let trialDaysRemaining: number | null = null;
+  let trialExpired = false;
+  if (isOnTrial && user.trial_start_date) {
+    const trialStart = new Date(user.trial_start_date);
+    const now = new Date();
+    const daysSinceStart = Math.floor(
+      (now.getTime() - trialStart.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    const daysRemaining = 14 - daysSinceStart;
+    trialDaysRemaining = Math.max(0, daysRemaining);
+    trialExpired = daysRemaining <= 0;
+  }
 
   // Get remaining bundle credits (analyses purchased but not yet used)
   // Gracefully handle if bundle_purchases table doesn't exist yet
@@ -104,6 +124,8 @@ export async function getUserUsage(userId: string): Promise<UsageInfo | null> {
     remaining: subscriptionRemaining === Infinity ? -1 : subscriptionRemaining,
     bundle_credits: bundleCredits,
     total_available: totalAvailable === Infinity ? -1 : totalAvailable,
+    trial_days_remaining: trialDaysRemaining,
+    trial_expired: trialExpired,
   };
 }
 
@@ -114,6 +136,14 @@ export async function canUserAnalyze(
 
   if (!usage) {
     return { canAnalyze: false, reason: 'Usage data not found' };
+  }
+
+  // Check if trial has expired
+  if (usage.trial_expired) {
+    return {
+      canAnalyze: false,
+      reason: 'Your free trial has expired. Please upgrade to continue analyzing labels.',
+    };
   }
 
   if (usage.analyses_limit === -1) {

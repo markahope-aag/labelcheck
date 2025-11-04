@@ -127,6 +127,12 @@ export async function POST(request: NextRequest) {
           });
         }
 
+        // Clear trial_start_date when user upgrades (they're no longer on trial)
+        await supabaseAdmin
+          .from('users')
+          .update({ trial_start_date: null })
+          .eq('id', supabaseUserId);
+
         // Map plan tier from checkout (basic/pro/enterprise) to limits format (starter/professional/business)
         const planTierMap: Record<string, string> = {
           basic: 'starter',
