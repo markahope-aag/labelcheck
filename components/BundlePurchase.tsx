@@ -28,8 +28,21 @@ export function BundlePurchase({
   const [loadingBundle, setLoadingBundle] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const isNearLimit = analysesUsed >= analysesLimit * 0.8;
-  const isAtLimit = analysesUsed >= analysesLimit;
+  const isNearLimit = analysesLimit > 0 && analysesUsed >= analysesLimit * 0.8;
+  const isAtLimit = analysesLimit > 0 && analysesUsed >= analysesLimit;
+
+  // Debug logging for production troubleshooting
+  if (process.env.NODE_ENV === 'development') {
+    console.log('BundlePurchase debug:', {
+      isNearLimit,
+      isAtLimit,
+      bundleCredits,
+      isOnFreeTrial,
+      analysesUsed,
+      analysesLimit,
+      shouldShow: isNearLimit || bundleCredits > 0 || isOnFreeTrial,
+    });
+  }
 
   const handlePurchaseBundle = async (bundleSize: string) => {
     setLoadingBundle(bundleSize);
@@ -87,7 +100,8 @@ export function BundlePurchase({
   // 1. User is near/at limit, OR
   // 2. User has bundle credits, OR
   // 3. User is on free trial (always show for trial users to see upgrade options)
-  if (!isNearLimit && bundleCredits === 0 && !isOnFreeTrial) {
+  // Always show for free trial users regardless of usage
+  if (!isOnFreeTrial && !isNearLimit && bundleCredits === 0) {
     return null;
   }
 

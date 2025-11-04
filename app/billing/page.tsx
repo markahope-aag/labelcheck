@@ -31,6 +31,34 @@ export default async function BillingPage() {
     subscriptionStatus = await getSubscriptionStatus(userId);
     usage = await getUserUsage(userId);
     subscription = await getUserSubscription(userId);
+
+    // If usage is null and user is on free trial, create a default usage record
+    // This ensures the billing page always has data to display
+    if (!usage && subscriptionStatus && !subscriptionStatus.hasActiveSubscription) {
+      // Get user internal ID
+      const { data: user } = await supabase
+        .from('users')
+        .select('id')
+        .eq('clerk_user_id', userId)
+        .maybeSingle();
+
+      if (user) {
+        const currentMonth = new Date().toISOString().slice(0, 7);
+        // Try to create usage record (might fail if it already exists, that's okay)
+        const { error: insertError } = await supabase.from('usage_tracking').insert({
+          user_id: user.id,
+          month: currentMonth,
+          analyses_used: 0,
+          analyses_limit: 10, // Free trial limit
+        });
+
+        // If insert succeeded or failed (already exists), fetch the usage record
+        if (!insertError || insertError.code === '23505') {
+          // Recalculate usage info with bundle credits
+          usage = await getUserUsage(userId);
+        }
+      }
+    }
   } catch (error) {
     console.error('Error loading billing data:', error);
     // Return error page or fallback
@@ -44,7 +72,7 @@ export default async function BillingPage() {
                 There was an error loading your billing information. Please try refreshing the page.
               </p>
               <p className="text-sm text-slate-500">
-                If this persists, the database migration may need to be run.
+                Error: {error instanceof Error ? error.message : 'Unknown error'}
               </p>
             </div>
           </div>
@@ -75,9 +103,22 @@ export default async function BillingPage() {
   const planPrices = PLAN_PRICES[currentPlan];
 
   // Use actual usage data from usage_tracking table
-  const analysesUsed = usage?.analyses_used || 0;
-  const analysesLimit = usage?.analyses_limit || 10;
+  // If usage is null, create default values for free trial users
+  const analysesUsed = usage?.analyses_used ?? 0;
+  const analysesLimit = usage?.analyses_limit ?? (isOnFreeTrial ? 10 : 10);
   const remaining = usage?.remaining ?? analysesLimit - analysesUsed;
+
+  // Debug logging for production troubleshooting
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Billing page debug:', {
+      isOnFreeTrial,
+      hasUsage: !!usage,
+      analysesUsed,
+      analysesLimit,
+      remaining,
+      bundleCredits: usage?.bundle_credits || 0,
+    });
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
@@ -91,17 +132,17 @@ export default async function BillingPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-6">
               {/* Free Trial Status Banner */}
-              {isOnFreeTrial && usage && (
+              {isOnFreeTrial && usage ? (
                 <FreeTrialStatus
                   analysesUsed={analysesUsed}
                   analysesLimit={analysesLimit}
                   remaining={remaining}
                 />
-              )}
+              ) : null}
 
               {/* Bundle Purchase Section */}
               {/* Always show for free trial users, or show for subscribed users who are near limit or have bundle credits */}
-              {usage && (
+              {usage ? (
                 <BundlePurchase
                   currentPlan={currentPlan}
                   analysesUsed={analysesUsed}
@@ -109,6 +150,8 @@ export default async function BillingPage() {
                   bundleCredits={usage.bundle_credits || 0}
                   isOnFreeTrial={isOnFreeTrial}
                 />
+              ) : (
+                <div className="text-sm text-slate-500">Usage data is loading...</div>
               )}
 
               <Card className="border-slate-200">
