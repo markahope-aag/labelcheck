@@ -12,72 +12,50 @@ UPDATE gras_ingredients
 SET synonyms = ARRAY['vitamin B5', 'calcium pantothenate', 'd-calcium pantothenate', 'pantothenate']
 WHERE ingredient_name = 'Pantothenic Acid';
 
--- Add Thiamin (Vitamin B1)
+-- Add Thiamin (Vitamin B1) - only if not exists
 INSERT INTO gras_ingredients (ingredient_name, gras_status, source_reference, category, synonyms, common_name)
-VALUES (
-    'Thiamin',
-    'affirmed',
-    '21 CFR 184.1875',
-    'nutrient',
-    ARRAY['vitamin B1', 'thiamine', 'thiamine hydrochloride', 'thiamine mononitrate', 'thiamin hcl'],
-    'Vitamin B1'
-) ON CONFLICT DO NOTHING;
+SELECT 'Thiamin', 'affirmed', '21 CFR 184.1875', 'nutrient',
+       ARRAY['vitamin B1', 'thiamine', 'thiamine hydrochloride', 'thiamine mononitrate', 'thiamin hcl'], 'Vitamin B1'
+WHERE NOT EXISTS (SELECT 1 FROM gras_ingredients WHERE ingredient_name = 'Thiamin');
 
--- Add Riboflavin (Vitamin B2)
+-- Add Riboflavin (Vitamin B2) - only if not exists
 INSERT INTO gras_ingredients (ingredient_name, gras_status, source_reference, category, synonyms, common_name)
-VALUES (
-    'Riboflavin',
-    'affirmed',
-    '21 CFR 184.1763',
-    'nutrient',
-    ARRAY['vitamin B2', 'riboflavin 5''-phosphate', 'riboflavin-5-phosphate sodium'],
-    'Vitamin B2'
-) ON CONFLICT DO NOTHING;
+SELECT 'Riboflavin', 'affirmed', '21 CFR 184.1763', 'nutrient',
+       ARRAY['vitamin B2', 'riboflavin 5''-phosphate', 'riboflavin-5-phosphate sodium'], 'Vitamin B2'
+WHERE NOT EXISTS (SELECT 1 FROM gras_ingredients WHERE ingredient_name = 'Riboflavin');
 
--- Add Niacin (Vitamin B3)
+-- Add Niacin (Vitamin B3) - only if not exists
 INSERT INTO gras_ingredients (ingredient_name, gras_status, source_reference, category, synonyms, common_name)
-VALUES (
-    'Niacin',
-    'affirmed',
-    '21 CFR 184.1535',
-    'nutrient',
-    ARRAY['vitamin B3', 'niacinamide', 'nicotinamide', 'nicotinic acid'],
-    'Vitamin B3'
-) ON CONFLICT DO NOTHING;
+SELECT 'Niacin', 'affirmed', '21 CFR 184.1535', 'nutrient',
+       ARRAY['vitamin B3', 'niacinamide', 'nicotinamide', 'nicotinic acid'], 'Vitamin B3'
+WHERE NOT EXISTS (SELECT 1 FROM gras_ingredients WHERE ingredient_name = 'Niacin');
 
--- Add Pyridoxine (Vitamin B6)
+-- Add Pyridoxine (Vitamin B6) - only if not exists
 INSERT INTO gras_ingredients (ingredient_name, gras_status, source_reference, category, synonyms, common_name)
-VALUES (
-    'Pyridoxine',
-    'affirmed',
-    '21 CFR 184.1676',
-    'nutrient',
-    ARRAY['vitamin B6', 'pyridoxine hydrochloride', 'pyridoxine hcl', 'pyridoxal', 'pyridoxal-5-phosphate', 'p-5-p', 'pyridoxal 5''-phosphate'],
-    'Vitamin B6'
-) ON CONFLICT DO NOTHING;
+SELECT 'Pyridoxine', 'affirmed', '21 CFR 184.1676', 'nutrient',
+       ARRAY['vitamin B6', 'pyridoxine hydrochloride', 'pyridoxine hcl', 'pyridoxal', 'pyridoxal-5-phosphate', 'p-5-p', 'pyridoxal 5''-phosphate'], 'Vitamin B6'
+WHERE NOT EXISTS (SELECT 1 FROM gras_ingredients WHERE ingredient_name = 'Pyridoxine');
 
--- Add Ascorbic Acid (Vitamin C) - update if exists, insert if not
-INSERT INTO gras_ingredients (ingredient_name, gras_status, source_reference, category, synonyms, common_name)
-VALUES (
-    'Ascorbic Acid',
-    'affirmed',
-    '21 CFR 182.3013',
-    'nutrient',
-    ARRAY['vitamin C', 'ascorbate', 'sodium ascorbate', 'calcium ascorbate', 'l-ascorbic acid'],
-    'Vitamin C'
-) ON CONFLICT (ingredient_name) DO UPDATE
-SET synonyms = EXCLUDED.synonyms;
+-- Add/Update Ascorbic Acid (Vitamin C)
+-- First check if it exists, if so update, otherwise insert
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM gras_ingredients WHERE ingredient_name = 'Ascorbic Acid') THEN
+        UPDATE gras_ingredients
+        SET synonyms = ARRAY['vitamin C', 'ascorbate', 'sodium ascorbate', 'calcium ascorbate', 'l-ascorbic acid']
+        WHERE ingredient_name = 'Ascorbic Acid';
+    ELSE
+        INSERT INTO gras_ingredients (ingredient_name, gras_status, source_reference, category, synonyms, common_name)
+        VALUES ('Ascorbic Acid', 'affirmed', '21 CFR 182.3013', 'nutrient',
+                ARRAY['vitamin C', 'ascorbate', 'sodium ascorbate', 'calcium ascorbate', 'l-ascorbic acid'], 'Vitamin C');
+    END IF;
+END $$;
 
--- Add Vitamin E
+-- Add Vitamin E - only if not exists
 INSERT INTO gras_ingredients (ingredient_name, gras_status, source_reference, category, synonyms, common_name)
-VALUES (
-    'Vitamin E',
-    'affirmed',
-    '21 CFR 182.5892',
-    'nutrient',
-    ARRAY['tocopherol', 'd-alpha tocopherol', 'dl-alpha tocopherol', 'tocopheryl acetate', 'd-alpha tocopheryl acetate', 'mixed tocopherols', 'tocotrienols'],
-    'Vitamin E'
-) ON CONFLICT DO NOTHING;
+SELECT 'Vitamin E', 'affirmed', '21 CFR 182.5892', 'nutrient',
+       ARRAY['tocopherol', 'd-alpha tocopherol', 'dl-alpha tocopherol', 'tocopheryl acetate', 'd-alpha tocopheryl acetate', 'mixed tocopherols', 'tocotrienols'], 'Vitamin E'
+WHERE NOT EXISTS (SELECT 1 FROM gras_ingredients WHERE ingredient_name = 'Vitamin E');
 
 -- Update Calcium with comprehensive forms
 UPDATE gras_ingredients
