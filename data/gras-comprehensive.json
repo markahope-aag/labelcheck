@@ -164,7 +164,7 @@
     "gras_status": "affirmed",
     "source_reference": "21 CFR 184.1945",
     "category": "nutrient",
-    "synonyms": ["cobalamin", "cyanocobalamin"],
+    "synonyms": ["cobalamin", "cyanocobalamin", "methylcobalamin", "adenosylcobalamin", "hydroxocobalamin", "vitamin b-12"],
     "common_name": "Vitamin B12"
   },
   {
@@ -204,15 +204,63 @@
     "gras_status": "affirmed",
     "source_reference": "21 CFR 184.1604",
     "category": "nutrient",
-    "synonyms": ["vitamin B5", "calcium pantothenate"],
+    "synonyms": ["vitamin B5", "calcium pantothenate", "d-calcium pantothenate", "pantothenate"],
     "common_name": "Vitamin B5"
+  },
+  {
+    "ingredient_name": "Thiamin",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1875",
+    "category": "nutrient",
+    "synonyms": ["vitamin B1", "thiamine", "thiamine hydrochloride", "thiamine mononitrate", "thiamin hcl"],
+    "common_name": "Vitamin B1"
+  },
+  {
+    "ingredient_name": "Riboflavin",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1763",
+    "category": "nutrient",
+    "synonyms": ["vitamin B2", "riboflavin 5'-phosphate", "riboflavin-5-phosphate sodium"],
+    "common_name": "Vitamin B2"
+  },
+  {
+    "ingredient_name": "Niacin",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1535",
+    "category": "nutrient",
+    "synonyms": ["vitamin B3", "niacinamide", "nicotinamide", "nicotinic acid"],
+    "common_name": "Vitamin B3"
+  },
+  {
+    "ingredient_name": "Pyridoxine",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 184.1676",
+    "category": "nutrient",
+    "synonyms": ["vitamin B6", "pyridoxine hydrochloride", "pyridoxine hcl", "pyridoxal", "pyridoxal-5-phosphate", "p-5-p", "pyridoxal 5'-phosphate"],
+    "common_name": "Vitamin B6"
+  },
+  {
+    "ingredient_name": "Ascorbic Acid",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 182.3013",
+    "category": "nutrient",
+    "synonyms": ["vitamin C", "ascorbate", "sodium ascorbate", "calcium ascorbate", "l-ascorbic acid"],
+    "common_name": "Vitamin C"
+  },
+  {
+    "ingredient_name": "Vitamin E",
+    "gras_status": "affirmed",
+    "source_reference": "21 CFR 182.5892",
+    "category": "nutrient",
+    "synonyms": ["tocopherol", "d-alpha tocopherol", "dl-alpha tocopherol", "tocopheryl acetate", "d-alpha tocopheryl acetate", "mixed tocopherols", "tocotrienols"],
+    "common_name": "Vitamin E"
   },
   {
     "ingredient_name": "Calcium",
     "gras_status": "affirmed",
     "source_reference": "21 CFR 184.1191",
     "category": "nutrient",
-    "synonyms": ["calcium supplement", "elemental calcium"],
+    "synonyms": ["calcium supplement", "elemental calcium", "calcium carbonate", "calcium citrate", "calcium gluconate", "calcium lactate", "tricalcium phosphate", "dicalcium phosphate"],
     "common_name": "Calcium"
   },
   {
@@ -220,7 +268,7 @@
     "gras_status": "affirmed",
     "source_reference": "21 CFR 184.1375",
     "category": "nutrient",
-    "synonyms": ["ferrous sulfate", "ferrous fumarate", "ferric orthophosphate"],
+    "synonyms": ["ferrous sulfate", "ferrous fumarate", "ferric orthophosphate", "ferrous gluconate", "ferric pyrophosphate", "carbonyl iron", "elemental iron"],
     "common_name": "Iron"
   },
   {
@@ -228,7 +276,7 @@
     "gras_status": "affirmed",
     "source_reference": "21 CFR 184.1426",
     "category": "nutrient",
-    "synonyms": ["magnesium oxide", "magnesium citrate"],
+    "synonyms": ["magnesium oxide", "magnesium citrate", "magnesium glycinate", "magnesium gluconate", "magnesium chloride", "magnesium sulfate", "magnesium malate", "elemental magnesium"],
     "common_name": "Magnesium"
   },
   {
@@ -244,7 +292,7 @@
     "gras_status": "affirmed",
     "source_reference": "21 CFR 184.1613",
     "category": "nutrient",
-    "synonyms": ["potassium supplement"],
+    "synonyms": ["potassium supplement", "potassium chloride", "potassium citrate", "potassium gluconate", "elemental potassium"],
     "common_name": "Potassium"
   },
   {
