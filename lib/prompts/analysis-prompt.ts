@@ -1102,8 +1102,12 @@ Return your response as a JSON object with the following structure:
     "manufacturer_address": {
       "status": "compliant|non_compliant|not_applicable",
       "address_found": "The complete manufacturer/distributor address as it appears on the label, including street, city, state, ZIP code",
-      "details": "Explanation of whether the address is correctly provided per 21 CFR 101.5 (must include street address unless listed in directory, city, state, ZIP)",
-      "regulation_citation": "21 CFR 101.5"
+      "phone_number_present": true|false,
+      "phone_number_found": "The phone number if present (e.g., '1-800-555-1234'), or null if not present",
+      "is_foreign_manufacturer": true|false,
+      "country_if_foreign": "Country name if foreign (e.g., 'Italy', 'Canada'), or null if U.S.",
+      "details": "Explanation of whether the address is correctly provided per 21 CFR 101.5. For foreign manufacturers, note FDA facility registration requirement. For phone numbers: Note that phone is optional for conventional foods but required for dietary supplements.",
+      "regulation_citation": "21 CFR 101.5, 21 CFR Part 1 Subpart H (if foreign)"
     }
   },
   "ingredient_labeling": {
