@@ -810,8 +810,18 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
      • Example: "High" requires ≥20% DV, "Good Source" requires 10-19% DV
    - **Health Claims**: Check for FDA-authorized health claims (e.g., "calcium reduces risk of osteoporosis")
      • Verify claim is authorized and properly worded
-   - **Structure/Function Claims**: Generally not allowed on conventional foods (only supplements)
-     • If found, flag as potential violation
+   - **Structure/Function Claims**:
+     • **CRITICAL FOR CONVENTIONAL FOODS/BEVERAGES**: Structure/function claims are PROHIBITED on conventional foods and beverages
+     • **IF** product_category is CONVENTIONAL_FOOD, NON_ALCOHOLIC_BEVERAGE, or ALCOHOLIC_BEVERAGE:
+       - Any structure/function claim = **CRITICAL VIOLATION** (not "potential violation")
+       - Status = **NON-COMPLIANT**
+       - In compliance_table, use rationale: "Structure/function claims prohibited on conventional foods"
+       - **DO NOT recommend adding FDA disclaimer** (disclaimer is ONLY for dietary supplements)
+       - **CORRECT RECOMMENDATION**: "CRITICAL: Structure/function claims are prohibited on conventional foods per 21 CFR 101.93. This type of claim is ONLY permitted on dietary supplements. You must either: (1) Remove the claim: '[exact claim text]', OR (2) Reclassify product as dietary supplement (requires Supplement Facts panel and required disclaimer). Regulation: 21 CFR 101.93, FD&C Act Section 403(r)(6)"
+     • **IF** product_category is DIETARY_SUPPLEMENT:
+       - Structure/function claims ARE permitted WITH required FDA disclaimer
+       - Check if disclaimer is present (see Section 7 for supplements)
+       - In compliance_table, if disclaimer missing, use rationale: "Claims require disclaimer not present"
    - **Prohibited Claims**: Flag any disease treatment/cure claims (illegal)
 
 6. **Additional Regulatory Considerations**: Evaluate any other applicable requirements
