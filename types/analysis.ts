@@ -338,12 +338,18 @@ export interface CategoryRecommendation {
 }
 
 export interface CategoryAmbiguity {
-  is_ambiguous: boolean;
-  ambiguity_reason: string;
-  alternative_categories?: ProductCategory[]; // Alternative categories to consider
+  detected: boolean;
+  reason: string;
+  current_category: string;
+  alternative_category: string;
+  recommendation: string;
+  // Legacy fields for backward compatibility
+  is_ambiguous?: boolean;
+  ambiguity_reason?: string;
+  alternative_categories?: ProductCategory[];
   label_conflicts?: string[];
   category_options?: Record<string, CategoryOption>;
-  recommendation?: CategoryRecommendation;
+  recommendation_obj?: CategoryRecommendation;
 }
 
 // ============================================================================

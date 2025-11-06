@@ -265,15 +265,16 @@ export default function AnalyzePage() {
     if (
       analysis.analysisData?.category_ambiguity?.detected &&
       !session.showComparison &&
-      !session.showCategorySelector
+      !analysis.showCategorySelector
     ) {
       // Automatically show category comparison for ambiguous products
-      session.setShowComparison(true);
+      session.openComparison();
     }
   }, [
     analysis.analysisData?.category_ambiguity,
     session.showComparison,
-    session.showCategorySelector,
+    analysis.showCategorySelector,
+    session.openComparison,
   ]);
 
   if (!userId) {
@@ -360,7 +361,7 @@ export default function AnalyzePage() {
                   violation: conflict as string,
                   severity: 'medium' as const,
                 }))}
-                recommendation={analysis.analysisData.category_ambiguity?.recommendation}
+                recommendation={analysis.analysisData.category_ambiguity?.recommendation_obj}
                 onSelect={handleCategorySelect}
                 onBack={handleBackToSelector}
               />
@@ -381,7 +382,7 @@ export default function AnalyzePage() {
                   severity: 'medium' as const,
                 })
               )}
-              recommendation={analysis.analysisData.category_ambiguity?.recommendation}
+              recommendation={analysis.analysisData.category_ambiguity?.recommendation_obj}
               onSelect={handleCategorySelect}
               onCompare={handleCompare}
             />

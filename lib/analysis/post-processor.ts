@@ -12,15 +12,7 @@ import { checkGRASCompliance } from '@/lib/gras-helpers';
 import { checkNDICompliance } from '@/lib/ndi-helpers';
 import { checkIngredientsForAllergens } from '@/lib/allergen-helpers';
 import { logger } from '@/lib/logger';
-import type { GRASCompliance, AllergenDatabase } from '@/types';
-
-export interface CategoryAmbiguity {
-  detected: boolean;
-  reason: string;
-  current_category: string;
-  alternative_category: string;
-  recommendation: string;
-}
+import type { GRASCompliance, AllergenDatabase, CategoryAmbiguity } from '@/types';
 
 export interface AnalysisData {
   product_name?: string;
