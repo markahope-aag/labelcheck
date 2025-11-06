@@ -1446,3 +1446,201 @@ All immediate TypeScript cleanup tasks are complete. The codebase now has:
 - ✅ All tests passing (103 unit tests)
 
 ---
+
+## Session 23 (Continued) - November 5, 2025
+
+### 🎯 Objective
+Fix L-Selenomethionine false positive error and add comprehensive mineral compound synonyms to GRAS database.
+
+### 📋 Tasks Completed
+
+1. ✅ **Added Selenium Compound Synonyms**
+   - Issue: "L-SELENOMETHIONINE 0.5%" showing CRITICAL false positive
+   - Root cause: Selenium only had 2 synonyms (sodium selenite, selenium yeast)
+   - Solution: Added 12 comprehensive selenium compound forms:
+     - L-selenomethionine
+     - selenomethionine
+     - selenium methionine
+     - selenious acid
+     - sodium selenate
+     - seleno-L-methionine
+     - selenium amino acid chelate
+     - selenium proteinate
+     - high-selenium yeast
+     - selenium-enriched yeast
+
+2. ✅ **Added Comprehensive Mineral Compound Forms**
+   - Updated 5 minerals with expanded synonyms:
+     - **Zinc**: 3 → 11 synonyms (added citrate, picolinate, acetate, monomethionine, amino acid chelate, aspartate, bisglycinate)
+     - **Copper**: 2 → 10 synonyms (added sulfate, oxide forms, citrate, amino acid chelate, bisglycinate, acetate)
+     - **Manganese**: 2 → 8 synonyms (added citrate, amino acid chelate, aspartate, bisglycinate)
+     - **Chromium**: 2 → 8 synonyms (added polynicotinate, amino acid chelate, GTF, nicotinate)
+     - **Iodine**: 2 → 7 synonyms (added sodium iodide, kelp, iodate, calcium iodide)
+   - Added new ingredient:
+     - **Molybdenum**: 5 synonyms (sodium molybdate, amino acid chelate, glycinate, ammonium molybdate)
+
+3. ✅ **Created Database Migration**
+   - File: `supabase/migrations/20251105010000_update_mineral_synonyms.sql`
+   - Updates all 7 minerals (Selenium, Zinc, Copper, Manganese, Chromium, Iodine, Molybdenum)
+   - Includes verification block to confirm synonym counts
+
+4. ✅ **Updated GRAS Comprehensive Data**
+   - File: `data/gras-comprehensive.json`
+   - Updated source of truth for GRAS ingredient matching
+   - Created script: `update-mineral-synonyms.js` for automated updates
+
+### 🐛 Pattern Recognition
+This is the **third instance** of the same issue:
+1. **Session 23 (Earlier)**: Methylcobalamin (Vitamin B12) - Fixed with vitamin synonym expansion
+2. **Session 23 (Pagination bug)**: All ingredients beyond position 1000 - Fixed with pagination
+3. **Session 23 (Current)**: L-Selenomethionine (Selenium) - Fixed with mineral synonym expansion
+
+**Root cause pattern:** GRAS database has base nutrients (vitamins, minerals) but missing bioavailable/compound forms used in fortified foods and supplements.
+
+### 📊 Impact
+**Before:**
+- Selenium: 2 synonyms
+- Zinc: 3 synonyms
+- Copper: 2 synonyms
+- Manganese: 2 synonyms
+- Chromium: 2 synonyms
+- Iodine: 2 synonyms
+- Molybdenum: Not in database
+
+**After:**
+- Selenium: 12 synonyms (600% increase)
+- Zinc: 11 synonyms (267% increase)
+- Copper: 10 synonyms (400% increase)
+- Manganese: 8 synonyms (300% increase)
+- Chromium: 8 synonyms (300% increase)
+- Iodine: 7 synonyms (250% increase)
+- Molybdenum: 5 synonyms (NEW)
+
+**Total synonym coverage:** Added 47 new mineral compound forms
+
+**Products benefiting:**
+- Fortified beverages (energy drinks, protein shakes)
+- Dietary supplements
+- Fortified cereals
+- Nutritional powders
+- Meal replacement products
+
+### 🔍 Self-Affirmed GRAS Discovery
+
+After initially questioning whether L-selenomethionine was actually GRAS, discovered:
+
+**Key Regulatory Facts:**
+1. **Self-Affirmed GRAS is LEGAL** - Companies can determine GRAS status through independent expert panels without FDA notification (21 CFR 170.30)
+2. **No FDA Registration Required** - Notification is voluntary, not mandatory
+3. **L-Selenomethionine HAS self-affirmed GRAS** - Sabinsa obtained this in 2008 for food use
+4. **No Public Database** - Self-affirmed GRAS ingredients aren't tracked in a public FDA database
+
+**Impact on Our System:**
+- We can't maintain a complete GRAS database (self-affirmed ingredients aren't publicly listed)
+- "Not found in database" ≠ "Not legal to use"
+- Need to change messaging from "CRITICAL violation" to "Requires verification"
+
+### ✅ Updated GRAS Compliance Logic
+
+**Changed approach to match NDI pattern:**
+
+**For ingredients FOUND in GRAS database:**
+- ✅ Status: "GRAS-compliant"
+- Message: "Found in FDA GRAS database [citation]"
+- No recommendation added
+
+**For ingredients NOT FOUND in GRAS database:**
+- ⚠️ Status: "Requires Verification" (NOT "Non-Compliant")
+- Priority: **MEDIUM** (changed from CRITICAL/HIGH)
+- Message: "Ingredient X is not found in the FDA GRAS database. This does not necessarily indicate a violation. The ingredient may be: (1) self-affirmed GRAS by the manufacturer through independent expert panel review per 21 CFR 170.30, (2) a food additive approved through separate FDA petition, or (3) exempt from GRAS requirements. Manufacturer should maintain documentation supporting the ingredient's regulatory status."
+
+**This matches the existing NDI flow:**
+- NDI database → ODI database → "Requires verification" (MEDIUM)
+- GRAS database → "Requires verification" (MEDIUM)
+
+### 📝 Next Steps
+
+1. **Apply migration in Supabase dashboard**
+   - Run `supabase/migrations/20251105010000_update_mineral_synonyms.sql`
+   - This adds comprehensive mineral synonyms (selenium, zinc, copper, manganese, chromium, iodine, molybdenum)
+
+2. **Invalidate ingredient cache**
+   - Option 1: `npm run cache:invalidate` (if dev server running locally)
+   - Option 2: Deploy to trigger cache refresh
+   - Option 3: Wait 24 hours for automatic cache expiration
+
+3. **Test L-Selenomethionine with new logic**
+   - Re-analyze the user's Italian coffee product
+   - Should see: "Requires Verification" (MEDIUM priority) instead of CRITICAL error
+   - Message should explain self-affirmed GRAS pathway
+
+4. **Monitor for additional mineral compound gaps**
+   - Watch for other selenium forms (e.g., selenium dioxide, selenocysteine)
+   - Consider adding amino acid chelate forms for other minerals
+
+### 🔧 Source Reference Corrections (Option B)
+
+**Critical Issue Discovered:**
+Original mineral entries used incorrect or incomplete CFR references. For example:
+- Selenium referenced "21 CFR 172.350" which is actually **fumaric acid**, not selenium!
+- Molybdenum referenced "21 CFR 172.350" but doesn't exist in database yet
+- Other minerals listed single CFR sections but included compound forms NOT in those sections
+
+**Solution - Accurate Attribution:**
+Updated all minerals to show which forms are CFR-listed vs self-affirmed GRAS:
+
+**Examples:**
+- **Zinc**: `21 CFR 182.8988 (gluconate), 21 CFR 182.8991 (oxide), 21 CFR 182.8997 (sulfate), Self-affirmed GRAS (citrate, picolinate, other chelated forms)`
+- **Selenium**: `GRN 353 (selenium yeast), Self-affirmed GRAS (various forms)`
+- **Chromium**: `21 CFR 172.379 (chromic chloride), Self-affirmed GRAS (picolinate, polynicotinate, other forms)`
+- **Molybdenum**: `Self-affirmed GRAS (various molybdenum salts)`
+
+**Why This Matters:**
+- Users can now lookup accurate regulatory citations
+- Clear distinction between FDA-affirmed and self-affirmed forms
+- Transparent about which compound forms are commonly used but not CFR-listed
+- Prevents misleading claims about regulatory status
+
+### 📋 Files Modified
+
+**New Files:**
+- `supabase/migrations/20251105010000_update_mineral_synonyms.sql` - Database migration for mineral synonyms with corrected source references
+- `update-mineral-synonyms.js` - Automated synonym update script (deleted after use)
+- `update-mineral-references.js` - Source reference correction script (deleted after use)
+
+**Updated Files:**
+- `data/gras-comprehensive.json` - Added 47 mineral compound synonyms + corrected all source references
+- `lib/analysis/post-processor.ts` - Changed GRAS compliance logic:
+  - "Not found" ingredients now MEDIUM priority (was CRITICAL/HIGH)
+  - Changed status from "Non-Compliant" to "Requires Verification"
+  - Updated messaging to explain self-affirmed GRAS pathway
+  - Removed automatic compliance status override for GRAS issues
+- `SESSION_NOTES.md` - Documented self-affirmed GRAS discovery and logic changes
+
+### 🔍 Technical Details
+
+**Migration Verification Block:**
+The migration includes a PostgreSQL verification block that confirms synonym counts:
+```sql
+DO $$
+DECLARE
+  selenium_count INTEGER;
+  zinc_count INTEGER;
+  -- ... other minerals
+BEGIN
+  SELECT array_length(synonyms, 1) INTO selenium_count FROM gras_ingredients WHERE ingredient_name = 'Selenium';
+  -- ... check all minerals
+  RAISE NOTICE 'Migration complete:';
+  RAISE NOTICE 'Selenium: % synonyms', selenium_count;
+  -- ... report all counts
+END $$;
+```
+
+**Cache Invalidation Required:**
+After running the migration, must invalidate the 24-hour ingredient cache using one of:
+- POST `/api/admin/invalidate-cache`
+- `npm run cache:invalidate`
+- Redeploy application
+- Wait 24 hours
+
+---

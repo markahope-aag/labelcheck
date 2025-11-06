@@ -25,6 +25,8 @@ import {
   hasNutritionFacts,
   getNutritionFactsLegacy,
 } from '@/lib/analysis-compat';
+import { formatComplianceStatus } from '@/lib/formatting';
+import { supabase } from '@/lib/supabase';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -53,7 +55,6 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
-import { supabase } from '@/lib/supabase';
 import type { Analysis, Recommendation } from '@/types';
 import {
   exportAnalysesAsCSV,
@@ -136,73 +137,44 @@ function HistoryContent() {
     setPageLoading(true);
 
     try {
-      const { data: userData } = await supabase
-        .from('users')
-        .select('id')
-        .eq('clerk_user_id', user.id)
-        .maybeSingle();
+      // Build query parameters for API route
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        pageSize: PAGE_SIZE.toString(),
+        status: statusFilter,
+        sort: sortBy,
+      });
 
-      if (!userData) return;
-
-      // Build query with filters
-      let query = supabase
-        .from('analyses')
-        .select('*', { count: 'exact' })
-        .eq('user_id', userData.id);
-
-      // Apply date range filter
+      // Add date range filters if set
       if (dateRange?.from) {
-        query = query.gte('created_at', dateRange.from.toISOString());
+        params.set('dateFrom', dateRange.from.toISOString());
       }
       if (dateRange?.to) {
-        query = query.lte('created_at', dateRange.to.toISOString());
+        params.set('dateTo', dateRange.to.toISOString());
       }
 
-      // Apply status filter
-      if (statusFilter !== 'all') {
-        if (statusFilter === 'compliant') {
-          // Match both compliance_status field and nested status
-          query = query.or(
-            'compliance_status.eq.compliant,analysis_result->overall_assessment->>primary_compliance_status.eq.compliant,analysis_result->overall_assessment->>primary_compliance_status.eq.likely_compliant'
-          );
-        } else if (statusFilter === 'non-compliant') {
-          query = query.or(
-            'compliance_status.eq.major_violations,analysis_result->overall_assessment->>primary_compliance_status.eq.non_compliant,analysis_result->overall_assessment->>primary_compliance_status.eq.potentially_non_compliant'
-          );
-        } else {
-          query = query.eq('compliance_status', statusFilter);
-        }
+      // Fetch from API route (uses supabaseAdmin with Clerk auth)
+      const response = await fetch(`/api/analyses?${params.toString()}`);
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch analyses');
       }
 
-      // Apply sorting
-      if (sortBy === 'date-desc') {
-        query = query.order('created_at', { ascending: false });
-      } else if (sortBy === 'date-asc') {
-        query = query.order('created_at', { ascending: true });
-      }
-      // Note: Name sorting will be done client-side for now as it requires accessing JSON field
+      const { analyses: fetchedAnalyses, totalCount } = await response.json();
 
-      // Apply pagination
-      const { data, error, count } = await query.range(
-        currentPage * PAGE_SIZE,
-        (currentPage + 1) * PAGE_SIZE - 1
-      );
+      let results = fetchedAnalyses || [];
 
-      if (error) throw error;
-
-      let results = data || [];
-
-      // Client-side search (for now - could move to DB with proper indexing)
+      // Client-side search (for now - could move to API with proper indexing)
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();
-        results = results.filter((analysis) => {
+        results = results.filter((analysis: Analysis) => {
           const result = analysis.analysis_result;
           const labelName = (analysis.label_name || '').toLowerCase();
           const productName = (result.product_name || '').toLowerCase();
           const productType = (result.product_type || '').toLowerCase();
           const summary = (
             result.overall_assessment?.summary ||
-            result.summary ||
+            (result as any).summary ||
             ''
           ).toLowerCase();
 
@@ -217,7 +189,7 @@ function HistoryContent() {
 
       // Client-side name sorting
       if (sortBy === 'name') {
-        results.sort((a, b) => {
+        results.sort((a: Analysis, b: Analysis) => {
           const nameA = (a.label_name || a.analysis_result.product_name || '').toLowerCase();
           const nameB = (b.label_name || b.analysis_result.product_name || '').toLowerCase();
           return nameA.localeCompare(nameB);
@@ -225,7 +197,7 @@ function HistoryContent() {
       }
 
       setAnalyses(results);
-      setTotalCount(count || 0);
+      setTotalCount(totalCount || 0);
     } catch (error) {
       clientLogger.error('Failed to load analyses', { error, currentPage, statusFilter, sortBy });
       toast({
@@ -261,9 +233,14 @@ function HistoryContent() {
     if (!analysisToDelete) return;
 
     try {
-      const { error } = await supabase.from('analyses').delete().eq('id', analysisToDelete.id);
+      // Call API route to delete analysis
+      const response = await fetch(`/api/analyses?id=${analysisToDelete.id}`, {
+        method: 'DELETE',
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to delete analysis');
+      }
 
       toast({
         title: 'Analysis Deleted',
@@ -535,9 +512,9 @@ function HistoryContent() {
                                         : 'bg-red-100 text-red-800 border-red-200 border'
                                 }`}
                               >
-                                {result.overall_assessment.primary_compliance_status
-                                  .replace(/_/g, ' ')
-                                  .toUpperCase()}
+                                {formatComplianceStatus(
+                                  result.overall_assessment.primary_compliance_status
+                                )}
                               </span>
                             </div>
                           )}

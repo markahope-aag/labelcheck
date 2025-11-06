@@ -121,9 +121,9 @@ export async function processGRASCompliance(analysisData: AnalysisData): Promise
         critical_issues: grasCompliance.criticalIssues,
       };
 
-      // If non-GRAS ingredients found, add critical recommendations
+      // If non-GRAS ingredients found, flag for verification (not automatic violation)
       if (!grasCompliance.overallCompliant && grasCompliance.nonGRASIngredients.length > 0) {
-        logger.warn('Non-GRAS ingredients detected', {
+        logger.info('Ingredients not in GRAS database - require verification', {
           nonGRASIngredients: grasCompliance.nonGRASIngredients,
           productCategory: analysisData.product_category,
         });
@@ -133,50 +133,25 @@ export async function processGRASCompliance(analysisData: AnalysisData): Promise
           analysisData.recommendations = [];
         }
 
-        // Determine severity based on number of non-GRAS ingredients
         const nonGRASCount = grasCompliance.nonGRASIngredients.length;
-        const isSingleIngredient = nonGRASCount === 1;
-        const priority = isSingleIngredient ? 'high' : 'critical';
-        const complianceStatus = isSingleIngredient ? 'potentially_non_compliant' : 'non_compliant';
-        const statusLabel = isSingleIngredient ? 'Potentially Non-Compliant' : 'Non-Compliant';
 
-        // Add recommendations for each non-GRAS ingredient
+        // Add verification recommendations for each ingredient not in database
         grasCompliance.nonGRASIngredients.forEach((ingredient: string) => {
-          analysisData.recommendations!.unshift({
-            priority,
-            recommendation: `${priority === 'critical' ? 'CRITICAL' : 'IMPORTANT'}: Ingredient "${ingredient}" is NOT found in the FDA GRAS (Generally Recognized as Safe) database. If this ingredient is being used, it must be the subject of a GRAS determination in accordance with 21 CFR 170.30(b), or it may require FDA pre-market approval through a food additive petition. Provide documentation of GRAS self-determination or obtain proper FDA approval before marketing this product.`,
-            regulation: '21 CFR 170.30(b) (GRAS self-determination)',
+          analysisData.recommendations!.push({
+            priority: 'medium',
+            recommendation: `Ingredient "${ingredient}" is not found in the FDA GRAS (Generally Recognized as Safe) database. This does not necessarily indicate a violation. The ingredient may be: (1) self-affirmed GRAS by the manufacturer through independent expert panel review per 21 CFR 170.30, (2) a food additive approved through separate FDA petition, or (3) exempt from GRAS requirements. Manufacturer should maintain documentation supporting the ingredient's regulatory status. Note: FDA notification of self-affirmed GRAS status is voluntary but recommended for transparency.`,
+            regulation: '21 CFR 170.30 (GRAS self-determination)',
           });
         });
 
-        // Update overall compliance status to reflect GRAS violations
-        if (analysisData.overall_assessment) {
-          analysisData.overall_assessment.primary_compliance_status = complianceStatus;
-
-          // Update summary to reflect GRAS non-compliance
-          if (isSingleIngredient) {
-            analysisData.overall_assessment.summary = `The ${analysisData.product_name || 'product'} label is POTENTIALLY NON-COMPLIANT with FDA regulations due to the use of an ingredient not found in the FDA GRAS (Generally Recognized as Safe) database. This ingredient may be subject to industry self-affirmation of GRAS status. If this ingredient is being used, it must be the subject of a GRAS determination in accordance with 21 CFR 170.30(b), or may require FDA pre-market approval through a food additive petition.`;
-          } else {
-            analysisData.overall_assessment.summary = `The ${analysisData.product_name || 'product'} label is NON-COMPLIANT with FDA regulations due to the use of multiple ingredients not found in the FDA GRAS (Generally Recognized as Safe) database. If these ingredients are being used, they must be the subject of a GRAS determination in accordance with 21 CFR 170.30(b), or may require FDA pre-market approval through a food additive petition.`;
-          }
-
-          // Add GRAS violation to key findings
-          if (!analysisData.overall_assessment.key_findings) {
-            analysisData.overall_assessment.key_findings = [];
-          }
-          analysisData.overall_assessment.key_findings.unshift(
-            `${priority === 'critical' ? 'CRITICAL' : 'IMPORTANT'}: ${nonGRASCount} ingredient(s) not in FDA GRAS database: ${grasCompliance.nonGRASIngredients.join(', ')}`
-          );
-        }
-
-        // Add to compliance table
+        // Add to compliance table as "Requires Verification" not "Non-Compliant"
         if (!analysisData.compliance_table) {
           analysisData.compliance_table = [];
         }
-        analysisData.compliance_table.unshift({
-          element: 'GRAS Ingredient Compliance',
-          status: statusLabel,
-          rationale: `${nonGRASCount} ingredient(s) not in FDA GRAS database: ${grasCompliance.nonGRASIngredients.join(', ')}. ${isSingleIngredient ? 'May be subject to industry self-affirmation.' : 'Requires FDA approval or GRAS determination.'}`,
+        analysisData.compliance_table.push({
+          element: 'GRAS Ingredient Verification',
+          status: 'Requires Verification',
+          rationale: `${nonGRASCount} ingredient(s) not found in FDA GRAS database: ${grasCompliance.nonGRASIngredients.join(', ')}. These ingredients may be self-affirmed GRAS or approved through other regulatory pathways. Manufacturer should maintain supporting documentation.`,
         });
       } else {
         // All ingredients are GRAS-compliant
