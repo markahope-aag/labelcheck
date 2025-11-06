@@ -1,16 +1,71 @@
 # Session Notes - Analysis Sessions Development
 
-**Last Updated:** 2025-11-05 (Session 23 - GRAS Expansion + Category Ambiguity Detection)
-**Branch:** main
-**Status:** Production Ready ✅
+**Last Updated:** 2025-11-05 (Session 23 - GRAS Expansion + Simplified Category Logic)
+**Branch:** feature/session-23-gras-and-ambiguity
+**Status:** Testing in Progress 🔄
 
 ---
 
-## Session 23 Part 2 Summary (2025-11-05) - Category Ambiguity Detection for Fortified Foods
+## Session 23 Part 3 Summary (2025-11-05) - Simplified Category Decision Logic ⚡
 
 ### ✅ Completed in This Session
 
-**Major Achievement:** Implemented automatic category ambiguity detection and side-by-side comparison for products that violate fortification policy.
+**Major Achievement:** Removed auto-trigger ambiguity detection in favor of simple, clear logic: trust the AI's confident decision and show violations for the chosen path.
+
+#### Problem with Part 2 Implementation
+
+After implementing auto-trigger category ambiguity detection, user pointed out we were **overthinking the choice**:
+
+**User's Clarification:**
+> "What I am saying is that we are either confident it is a food, confident it is a supplement, or not confident at all - in which case we ask the user which they had in mind."
+
+**Three Clear Paths:**
+1. **AI Confident → Food**: Analyze as food, show violations as violations
+2. **AI Confident → Supplement**: Analyze as supplement, show violations as violations
+3. **AI NOT Confident**: Ask user via CategorySelector
+
+**The Problem:** We were second-guessing high-confidence AI decisions by auto-triggering ambiguity based on violations (fortification policy). This undermined the AI's confident categorization.
+
+#### Solution: Option A - Trust the AI
+
+**Removed:**
+- ❌ `detectCategoryAmbiguity()` function from post-processor
+- ❌ Auto-trigger `useEffect` in analyze page
+- ❌ Orange warning banner for detected ambiguity
+- ❌ Complex alternatives logic based on fortification violations
+
+**Result:**
+- ✅ Fortification violations are just violations (CRITICAL recommendations)
+- ✅ User can fix by removing fortification (stay as food) OR re-analyze as supplement
+- ✅ User can manually use "Check Different Category" button anytime
+- ✅ No confusing "maybe it's the wrong category" messages after confident analysis
+
+### 🎯 Simplified User Workflow
+
+**Scenario 1: AI is Confident**
+```
+Upload Label → AI: "I'm confident this is a food" → Analysis runs
+→ Results show violations (e.g., fortification policy)
+→ User fixes violations OR uses "Check Different Category" to see supplement requirements
+```
+
+**Scenario 2: AI is NOT Confident**
+```
+Upload Label → AI: "I'm not sure, low confidence"
+→ CategorySelector appears: "Which did you intend?"
+→ User picks category OR clicks "Compare" for side-by-side
+→ Analysis runs for chosen category
+```
+
+This matches user's mental model: **Make the decision, then show the violations.**
+
+---
+
+## Session 23 Part 2 Summary (2025-11-05) - Category Ambiguity Detection [REMOVED]
+
+### ❌ This approach was removed in Part 3
+
+**Why it was removed:** We were second-guessing the AI's confident decisions. Fortification violations should just be violations, not triggers for category ambiguity.
 
 #### Problem Identified
 
