@@ -453,7 +453,11 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
 
      **IMPORTANT**: Even if you don't see obvious compliance issues elsewhere, you MUST still scan for and flag these marketing terms. They are violations regardless of how compliant the rest of the label is.
    - Net Quantity of Contents: Is it properly declared in both US Customary and metric units? Is it in the bottom 30% of the display panel? **IMPORTANT:** Either US customary OR metric may appear first - both orders are FDA compliant (e.g., "15 oz (425 g)" OR "425 g (15 oz)" are both acceptable). The secondary measurement should appear in parentheses.
-   - Name and Address of Manufacturer/Distributor: Is the manufacturer or distributor clearly listed with complete address? Are qualifying phrases like "distributed by" used correctly?
+   - Name and Address of Manufacturer/Distributor (21 CFR 101.5):
+     • MUST include: Name and place of business (street address OR city/state/ZIP if listed in current directory)
+     • **FOREIGN MANUFACTURERS - CRITICAL CHECK:** If the address shows a foreign country (non-U.S.), the facility MUST be registered with FDA under 21 CFR Part 1, Subpart H (Foreign Facility Registration). Flag this as HIGH priority with recommendation: "This product is manufactured in [country name]. Foreign facilities that manufacture, process, pack, or hold food for U.S. consumption must register with FDA (21 CFR 1.225). Verify that this facility is registered and provides registration number in prior notice before importation. Registration must be renewed every 2 years. Visit FDA.gov/furls to register or verify registration status."
+     • Qualifying phrases ("Manufactured for", "Distributed by", "Packed by") must be used correctly
+     • **TELEPHONE NUMBER:** Not required for conventional foods (optional per 21 CFR 101.5(d)). Only REQUIRED for dietary supplements (must have domestic phone OR address for adverse event reporting per 21 USC §343(y)). If absent on conventional food → flag as LOW priority "recommended for customer service" not "required".
 
 2. **Ingredient Labeling**: Review ingredient declaration compliance
    - **🚨 CRITICAL FOR DIETARY SUPPLEMENTS**: For supplements, extract ALL active ingredients from the Supplement Facts panel (including proprietary blends) IN ADDITION TO the separate ingredient list. Both sources must be included in ingredients_list array.
@@ -806,8 +810,18 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
      • Example: "High" requires ≥20% DV, "Good Source" requires 10-19% DV
    - **Health Claims**: Check for FDA-authorized health claims (e.g., "calcium reduces risk of osteoporosis")
      • Verify claim is authorized and properly worded
-   - **Structure/Function Claims**: Generally not allowed on conventional foods (only supplements)
-     • If found, flag as potential violation
+   - **Structure/Function Claims**:
+     • **CRITICAL FOR CONVENTIONAL FOODS/BEVERAGES**: Structure/function claims are PROHIBITED on conventional foods and beverages
+     • **IF** product_category is CONVENTIONAL_FOOD, NON_ALCOHOLIC_BEVERAGE, or ALCOHOLIC_BEVERAGE:
+       - Any structure/function claim = **CRITICAL VIOLATION** (not "potential violation")
+       - Status = **NON-COMPLIANT**
+       - In compliance_table, use rationale: "Structure/function claims prohibited on conventional foods"
+       - **DO NOT recommend adding FDA disclaimer** (disclaimer is ONLY for dietary supplements)
+       - **CORRECT RECOMMENDATION**: "CRITICAL: Structure/function claims are prohibited on conventional foods per 21 CFR 101.93. This type of claim is ONLY permitted on dietary supplements. You must either: (1) Remove the claim: '[exact claim text]', OR (2) Reclassify product as dietary supplement (requires Supplement Facts panel and required disclaimer). Regulation: 21 CFR 101.93, FD&C Act Section 403(r)(6)"
+     • **IF** product_category is DIETARY_SUPPLEMENT:
+       - Structure/function claims ARE permitted WITH required FDA disclaimer
+       - Check if disclaimer is present (see Section 7 for supplements)
+       - In compliance_table, if disclaimer missing, use rationale: "Claims require disclaimer not present"
    - **Prohibited Claims**: Flag any disease treatment/cure claims (illegal)
 
 6. **Additional Regulatory Considerations**: Evaluate any other applicable requirements
@@ -915,8 +929,118 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
    - If claim is made but level doesn't meet definition = NON-COMPLIANT
    - List ALL NCCs found and whether they meet regulatory definitions
 
-   F. **Other Special Labeling:**
-   - Date labeling, caffeine disclosure, organic claims, etc.
+   F. **Organic, Natural, and GMO-Free Claims - CRITICAL COMPLIANCE AREA:**
+
+   **1. USDA ORGANIC CLAIMS (7 CFR Part 205) - STRICTLY REGULATED:**
+
+   If you see ANY organic claim on the label, you MUST validate the following:
+
+   **Four Organic Claim Categories:**
+   - **"100% Organic"**: Requires 100% organic ingredients (excluding water/salt)
+     • May display USDA organic seal
+     • MUST display certifier name: "Certified organic by [certifier name]"
+     • MUST have valid USDA organic certification
+     • If missing certifier info → CRITICAL violation
+
+   - **"Organic"**: Requires 95%+ organic ingredients (excluding water/salt)
+     • May display USDA organic seal
+     • MUST display certifier name: "Certified organic by [certifier name]"
+     • MUST have valid USDA organic certification
+     • If missing certifier info → CRITICAL violation
+
+   - **"Made with Organic [specific ingredients]"**: Requires 70-94% organic content
+     • CANNOT display USDA organic seal (if seal present → CRITICAL violation)
+     • Can list up to 3 organic ingredients
+     • MUST be certified
+     • MUST display certifier name
+
+   - **Less than 70% organic**: Can only list organic ingredients in ingredient panel
+     • CANNOT use "organic" on principal display panel
+     • CANNOT display USDA organic seal
+     • If "organic" appears on PDP → CRITICAL violation
+
+   **Common Violations to Flag:**
+   - Using "organic" without USDA certification → CRITICAL (cite: 7 CFR 205.300)
+   - Missing certifier information ("Certified organic by [name]") → CRITICAL
+   - Using USDA organic seal on "Made with Organic" products → CRITICAL
+   - Using "organic" on PDP when <70% organic → CRITICAL
+   - Wrong percentage category (e.g., claiming "Organic" when only 80%) → CRITICAL
+
+   **FOREIGN ORGANIC PRODUCTS - ADDITIONAL REQUIREMENTS:**
+
+   If the manufacturer address shows a FOREIGN country (non-U.S.) AND the product makes organic claims:
+
+   **Two Pathways for Foreign Organic:**
+
+   **PATH 1: Equivalency Arrangement Countries (Most Common)**
+   - EU Countries (including Italy, France, Germany, etc.), Canada, Japan, Korea, Switzerland, Taiwan, UK
+   - Products certified under these countries' organic standards MAY be sold as "organic" in U.S.
+   - MUST have valid NOP Import Certificate for each shipment (required as of March 19, 2024 under Strengthening Organic Enforcement rule)
+   - Certificate must include attestation: "Certified in compliance with the terms of the U.S.-[Country] Organic Equivalence Arrangement"
+   - Exporters and importers must be certified organic to be listed on NOP Import Certificate
+   - **FLAG AS HIGH PRIORITY:** "This product is manufactured in [country name] and makes organic claims. Foreign organic products from [country] fall under the U.S.-[Country/EU] Organic Equivalence Arrangement and must be accompanied by a valid NOP Import Certificate for each shipment (7 CFR 205.511). Verify that your importer and exporter are certified organic and that NOP Import Certificates are issued for all shipments. Visit USDA AMS International Trade page for equivalency arrangement details."
+
+   **PATH 2: Non-Equivalency Countries**
+   - Countries WITHOUT equivalency arrangements (e.g., China, India, most of Asia, South America, Africa)
+   - Products MUST be certified to USDA organic standards by USDA-accredited certifying agent
+   - CANNOT use foreign organic certification alone
+   - **FLAG AS CRITICAL:** "This product is manufactured in [country name] which does NOT have an organic equivalency arrangement with the United States. To use 'organic' claims or the USDA organic seal in the U.S., this product must be certified to USDA organic standards (7 CFR Part 205) by a USDA-accredited certifying agent. Foreign organic certifications from [country] are not recognized in the U.S. Contact a USDA-accredited certifier to obtain proper certification."
+
+   **Equivalency Arrangement Exceptions:**
+   - Animal products treated with antibiotics (not covered under equivalency)
+   - Aquatic products (fish, crustaceans, molluscs) (not covered under equivalency)
+   - If product falls into these categories → Must be USDA certified, not equivalency
+
+   **How to Check:**
+   1. Identify manufacturer country from address
+   2. Check if organic claim is present
+   3. Verify if country has equivalency arrangement (EU, Canada, Japan, Korea, Switzerland, Taiwan, UK)
+   4. Flag appropriate requirement based on pathway
+
+   **2. "NATURAL" CLAIMS - HIGH RISK / UNDEFINED:**
+
+   **FDA Policy**: FDA has NO formal definition for "natural" (as of 2024)
+   - FDA does not restrict "natural" except for added color, synthetic substances, or flavors
+   - "Natural" is NOT regulated like "organic" - no certification required
+   - However, "natural" is HIGH RISK for false advertising lawsuits
+
+   **When you see "Natural" claim:**
+   - Flag as MEDIUM priority concern
+   - Explanation: "The term 'natural' is not defined by FDA. While FDA does not restrict its use (except for added color, synthetic substances, or flavors), this claim carries high litigation risk if the product contains artificial ingredients, preservatives, or highly processed components. Many class-action lawsuits have challenged 'natural' claims."
+   - Recommendation: "Consider whether this product truly contains nothing artificial or synthetic. If the product contains any artificial flavors, colors, preservatives, or highly processed ingredients, remove the 'natural' claim to reduce litigation risk. Alternatively, use more specific claims like 'No Artificial Flavors' or 'No Artificial Colors' if substantiated."
+   - Cite: "FDA Policy on 'Natural' - No formal definition (2015 Request for Information concluded without new guidance)"
+
+   **3. NON-GMO / GMO-FREE CLAIMS - REGULATED BY FDA + USDA:**
+
+   **FDA Guidance (Voluntary labeling for absence of bioengineered content):**
+   - FDA recommends AGAINST "GMO-free" or "free of GMOs" (implies 100% free, which is not achievable)
+   - FDA prefers: "Not bioengineered" or "Not genetically engineered"
+   - May use "non-GMO" but must be substantiated with testing/documentation
+
+   **USDA Bioengineered Food Disclosure Standard (Mandatory as of Jan 1, 2022):**
+   - Products containing bioengineered ingredients MUST disclose this
+   - Can use text, symbol, or QR code
+   - If product makes "non-GMO" claim but doesn't meet USDA bioengineered threshold → potential inconsistency
+
+   **When you see GMO-related claims:**
+   - **"GMO-free"** → Flag as MEDIUM priority: Recommend changing to "Not bioengineered" per FDA guidance
+   - **"Non-GMO Project Verified"** or **"USDA Organic"** → These are acceptable (third-party certified)
+   - **"Non-GMO" without certification** → Flag as MEDIUM: Must have documentation/testing to substantiate
+   - **No bioengineered disclosure when required** → Flag as HIGH: Check if product should have USDA bioengineered disclosure
+
+   **Recommendation text for non-certified GMO claims:**
+   "This product makes a non-GMO claim but does not display third-party certification (e.g., Non-GMO Project Verified or USDA Organic). Per FDA guidance, you must maintain documentation proving ingredients are not bioengineered, including testing results or supplier affidavits. Consider obtaining third-party certification (Non-GMO Project Verified) to strengthen this claim and reduce challenge risk. FDA recommends using 'Not bioengineered' instead of 'GMO-free'."
+
+   **4. OTHER MARKETING CLAIMS - CONTEXT-DEPENDENT:**
+
+   - **"Free-Range" (poultry/eggs)**: USDA requires "access to outside" - vague definition, potential litigation risk
+   - **"Grass-Fed" (beef)**: USDA AMS standard requires 99% grass/forage diet - must be substantiated
+   - **"Pasture-Raised"**: NO official USDA definition - high litigation risk unless defined on label
+   - **"Cage-Free"**: Defined by USDA for eggs - must meet specific housing requirements
+   - **"Humanely Raised"**: No official definition - requires third-party certification (e.g., Certified Humane)
+
+   G. **Other Special Labeling:**
+   - Date labeling, caffeine disclosure, country of origin, etc.
    - Product-Specific Requirements: Based on product type (beverage, coffee, meat, etc.)
 
 6. **Summary Compliance Table**: Provide a structured summary
@@ -988,8 +1112,12 @@ Return your response as a JSON object with the following structure:
     "manufacturer_address": {
       "status": "compliant|non_compliant|not_applicable",
       "address_found": "The complete manufacturer/distributor address as it appears on the label, including street, city, state, ZIP code",
-      "details": "Explanation of whether the address is correctly provided per 21 CFR 101.5 (must include street address unless listed in directory, city, state, ZIP)",
-      "regulation_citation": "21 CFR 101.5"
+      "phone_number_present": true|false,
+      "phone_number_found": "The phone number if present (e.g., '1-800-555-1234'), or null if not present",
+      "is_foreign_manufacturer": true|false,
+      "country_if_foreign": "Country name if foreign (e.g., 'Italy', 'Canada'), or null if U.S.",
+      "details": "Explanation of whether the address is correctly provided per 21 CFR 101.5. For foreign manufacturers, note FDA facility registration requirement. For phone numbers: Note that phone is optional for conventional foods but required for dietary supplements.",
+      "regulation_citation": "21 CFR 101.5, 21 CFR Part 1 Subpart H (if foreign)"
     }
   },
   "ingredient_labeling": {

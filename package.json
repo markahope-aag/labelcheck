@@ -23,6 +23,14 @@
     "post-pull": "node scripts/post-pull.js",
     "status": "node scripts/status.js",
     "pre-deploy": "node scripts/pre-deploy-check.js",
+    "vercel:deploy": "vercel --prod",
+    "vercel:preview": "vercel",
+    "vercel:logs": "vercel logs",
+    "vercel:logs:production": "vercel logs --prod",
+    "vercel:env": "vercel env ls",
+    "vercel:inspect": "vercel inspect",
+    "cache:invalidate": "curl -X POST http://localhost:3000/api/admin/invalidate-cache",
+    "cache:stats": "curl -X GET http://localhost:3000/api/admin/invalidate-cache",
     "prepare": "husky"
   },
   "dependencies": {
@@ -120,7 +128,8 @@
     "pino": "^10.1.0",
     "pino-pretty": "^13.1.2",
     "prettier": "^3.6.2",
-    "undici": "^7.16.0"
+    "undici": "^7.16.0",
+    "vercel": "^48.8.2"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [

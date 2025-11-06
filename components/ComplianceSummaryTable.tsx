@@ -13,6 +13,7 @@
  */
 
 import type { ComplianceTableRow } from '@/types';
+import { formatComplianceStatus } from '@/lib/formatting';
 
 interface ComplianceSummaryTableProps {
   complianceTable: ComplianceTableRow[];
@@ -117,16 +118,17 @@ export function ComplianceSummaryTable({ complianceTable }: ComplianceSummaryTab
                 <td className="border border-slate-300 px-4 py-2 text-sm">
                   <span
                     className={`px-2 py-1 rounded text-xs font-semibold ${
-                      row.status === 'Compliant'
+                      row.status.toLowerCase().includes('compliant') &&
+                      !row.status.toLowerCase().includes('non')
                         ? 'bg-green-100 text-green-800'
-                        : row.status === 'Potentially Non-compliant'
+                        : row.status.toLowerCase().includes('potentially')
                           ? 'bg-yellow-100 text-yellow-800'
-                          : row.status === 'Non-compliant'
+                          : row.status.toLowerCase().includes('non')
                             ? 'bg-red-100 text-red-800'
                             : 'bg-gray-100 text-gray-800'
                     }`}
                   >
-                    {row.status}
+                    {formatComplianceStatus(row.status)}
                   </span>
                 </td>
                 <td className="border border-slate-300 px-4 py-2 text-sm text-slate-700">

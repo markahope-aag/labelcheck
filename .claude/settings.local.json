@@ -90,7 +90,9 @@
       "Bash(cmd /c \"timeout /t 10\")",
       "Bash(npx jest --passWithNoTests)",
       "Bash(npx jest --listTests)",
-      "Bash(npm run build)"
+      "Bash(npm run build)",
+      "Bash(test:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []

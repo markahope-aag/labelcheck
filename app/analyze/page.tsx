@@ -282,25 +282,29 @@ export default function AnalyzePage() {
           )}
 
           {session.showComparison && analysis.analysisData ? (
-            // Show Category Comparison when user clicks "Compare All Options Side-by-Side"
-            <CategoryComparison
-              aiCategory={analysis.analysisData.product_category}
-              confidence={analysis.analysisData.category_confidence || 'medium'}
-              categoryRationale={analysis.analysisData.category_rationale || ''}
-              alternatives={analysis.analysisData.category_ambiguity?.alternative_categories || []}
-              categoryOptions={analysis.analysisData.category_ambiguity?.category_options || {}}
-              labelConflicts={(analysis.analysisData.category_ambiguity?.label_conflicts || []).map(
-                (conflict) => ({
+            <>
+              {/* Show Category Comparison when user clicks "Compare All Options Side-by-Side" */}
+              <CategoryComparison
+                aiCategory={analysis.analysisData.product_category}
+                confidence={analysis.analysisData.category_confidence || 'medium'}
+                categoryRationale={analysis.analysisData.category_rationale || ''}
+                alternatives={
+                  analysis.analysisData.category_ambiguity?.alternative_categories || []
+                }
+                categoryOptions={analysis.analysisData.category_ambiguity?.category_options || {}}
+                labelConflicts={(
+                  analysis.analysisData.category_ambiguity?.label_conflicts || []
+                ).map((conflict) => ({
                   conflict: conflict as string,
                   current_category: analysis.analysisData?.product_category || '',
                   violation: conflict as string,
                   severity: 'medium' as const,
-                })
-              )}
-              recommendation={analysis.analysisData.category_ambiguity?.recommendation}
-              onSelect={handleCategorySelect}
-              onBack={handleBackToSelector}
-            />
+                }))}
+                recommendation={analysis.analysisData.category_ambiguity?.recommendation_obj}
+                onSelect={handleCategorySelect}
+                onBack={handleBackToSelector}
+              />
+            </>
           ) : analysis.showCategorySelector && analysis.analysisData ? (
             // Show Category Selector when ambiguity is detected
             <CategorySelector
@@ -317,7 +321,7 @@ export default function AnalyzePage() {
                   severity: 'medium' as const,
                 })
               )}
-              recommendation={analysis.analysisData.category_ambiguity?.recommendation}
+              recommendation={analysis.analysisData.category_ambiguity?.recommendation_obj}
               onSelect={handleCategorySelect}
               onCompare={handleCompare}
             />

@@ -1,10 +1,609 @@
 # Session Notes - Analysis Sessions Development
 
-**Last Updated:** 2025-11-04 (Session 22 - Free Trial & Dashboard Improvements)
+**Last Updated:** 2025-11-05 (Session 24 - Production Fixes: Dashboard, Status Formatting, Claims Logic)
 **Branch:** main
 **Status:** Production Ready ✅
 
 ---
+
+## Session 24 Summary (2025-11-05) - Critical Production Fixes 🚨
+
+### ✅ Completed in This Session
+
+This session focused on fixing critical production issues discovered during testing:
+
+#### 1. Dashboard & History Data Visibility Fix
+
+**Problem:**
+- Dashboard showed "Total Analyses = 0" despite user testing labels for hours
+- History page was completely blank
+- Data was being saved but was invisible to users
+
+**Root Cause:**
+- RLS (Row Level Security) policy on `analyses` table expected Clerk JWT claims
+- Server-side Next.js queries and client-side Supabase queries don't include Clerk JWT
+- Analyses were saved using `supabaseAdmin` (bypasses RLS) but reads used regular `supabase` client (blocked by RLS)
+
+**Solution:**
+1. **Dashboard** (`app/dashboard/page.tsx`): Changed to use `supabaseAdmin` directly (server component, already Clerk-authenticated)
+2. **New API Route** (`app/api/analyses/route.ts`): Created authenticated endpoint for history page data
+   - GET endpoint with filters (status, date range, pagination)
+   - DELETE endpoint for removing analyses
+   - Verifies Clerk authentication, then uses `supabaseAdmin`
+3. **History Page** (`app/history/page.tsx`): Updated to call API route instead of direct Supabase queries
+
+**Files Modified:**
+- `app/dashboard/page.tsx` - Fixed import path, use supabaseAdmin
+- `app/api/analyses/route.ts` - NEW authenticated API route
+- `app/history/page.tsx` - Use API route, add missing imports, fix type annotations
+- `docs/DASHBOARD_FIX_SUMMARY.md` - NEW comprehensive documentation
+
+#### 2. Status Formatting Consistency Fix
+
+**Problem:**
+- Inconsistent compliance status display across UI:
+  - "Non-Compliant" vs "Non-compliant" (mixed capitalization)
+  - "non_compliant" with underscores (poor UX)
+  - Some statuses displayed as "NON COMPLIANT" (all uppercase)
+
+**Solution:**
+Applied existing `formatComplianceStatus()` utility consistently across all components:
+- `components/ComplianceSummaryTable.tsx` - Apply formatting to status badges
+- `app/history/page.tsx` - Replace `.replace(/_/g, ' ').toUpperCase()` with proper formatting
+- `app/share/[token]/page.tsx` - Replace `.replace('_', ' ').toUpperCase()` with proper formatting
+
+**Result:**
+- ✅ Consistent proper capitalization: "Non-Compliant"
+- ✅ Hyphens for readability: "Potentially-Non-Compliant"
+- ✅ No underscores in UI display
+
+**Files Modified:**
+- `components/ComplianceSummaryTable.tsx`
+- `app/history/page.tsx`
+- `app/share/[token]/page.tsx`
+- `docs/STATUS_FORMATTING_FIX.md` - NEW comprehensive documentation
+
+#### 3. GRAS Database Mineral Synonym Updates
+
+**Problem:**
+- L-Selenomethionine and other mineral compounds flagged as CRITICAL violations
+- Source references were incorrect (e.g., selenium pointing to fumaric acid regulation)
+- Mineral forms didn't match source citations
+
+**Solution:**
+1. Added 47 mineral compound synonyms across 7 minerals:
+   - Selenium: 12 forms (sodium selenite, selenium yeast, L-selenomethionine, etc.)
+   - Zinc: 11 forms (gluconate, picolinate, citrate, etc.)
+   - Copper: 10 forms
+   - Manganese: 8 forms
+   - Chromium: 8 forms
+   - Iodine: 7 forms
+   - Molybdenum: 5 forms (NEW ingredient)
+
+2. Corrected source references with accurate CFR + self-affirmed attribution:
+   - Format: "21 CFR XXX (specific forms), Self-affirmed GRAS (other forms)"
+   - Example: Selenium - "GRN 353 (selenium yeast), Self-affirmed GRAS (various forms)"
+
+3. Changed GRAS compliance logic from CRITICAL to MEDIUM priority:
+   - Not finding ingredient in database = "requires verification" (not automatic violation)
+   - Provides explanation of three valid pathways: self-affirmed GRAS, food additive petition, or exempt
+
+**Files Modified:**
+- `data/gras-comprehensive.json` - Mineral synonym additions with corrected references
+- `supabase/migrations/20251105010000_update_mineral_synonyms.sql` - NEW migration
+- `lib/analysis/post-processor.ts` - Changed GRAS logic to MEDIUM priority verification
+
+#### 4. Structure/Function Claims Logic Fix 🎯
+
+**Problem:**
+- AI flagged structure/function claims on conventional foods with: "Add FDA-required disclaimer"
+- This implied adding disclaimer would fix it (WRONG - disclaimer only for supplements)
+- Summary table showed: "Structure/Function Claims - Non-compliant - Claims require disclaimer not present"
+- The claim itself is illegal on conventional foods, not just missing a disclaimer
+
+**Solution:**
+Strengthened `lib/prompts/analysis-prompt.ts` with explicit IF/THEN logic:
+
+**For Conventional Foods/Beverages:**
+- Structure/function claims = **CRITICAL VIOLATION** (not "potential violation")
+- Status = **NON-COMPLIANT**
+- Compliance table rationale: "Structure/function claims prohibited on conventional foods"
+- **DO NOT recommend disclaimer** (only for supplements)
+- **CORRECT recommendation**: "Remove claim OR reclassify as dietary supplement"
+
+**For Dietary Supplements:**
+- Structure/function claims ARE permitted WITH required FDA disclaimer
+- Check if disclaimer is present
+- If missing, rationale: "Claims require disclaimer not present"
+
+**Files Modified:**
+- `lib/prompts/analysis-prompt.ts` - Added explicit category-based logic for structure/function claims
+
+**Regulation:** 21 CFR 101.93, FD&C Act Section 403(r)(6)
+
+### 📊 Session Metrics
+
+**Commits:** 2 major commits
+- `1e8af90` - Dashboard/history fixes + status formatting + GRAS updates (11 files, +1257/-205 lines)
+- `9cd206a` - Structure/function claims logic fix (1 file, +12/-2 lines)
+
+**Files Modified:** 12 files
+- 3 core pages (dashboard, history, share)
+- 1 component (ComplianceSummaryTable)
+- 1 NEW API route (analyses)
+- 1 prompt file (analysis-prompt)
+- 1 data file (gras-comprehensive.json)
+- 1 post-processor (analysis/post-processor)
+- 1 NEW migration (update_mineral_synonyms.sql)
+- 3 NEW documentation files
+
+**Total Lines Changed:** +1,269 / -207
+
+### 🚀 Production Readiness
+
+**Testing Completed:**
+- ✅ TypeScript compilation (0 errors)
+- ✅ Production build success
+- ✅ Git history clean (2 commits pushed to main)
+
+**Ready for Deployment:**
+1. Dashboard will now show correct analysis counts
+2. History page will load and display all user analyses
+3. Status badges will show consistent formatting
+4. Structure/function claims on foods will show correct violation
+5. GRAS mineral compounds will pass validation
+
+**Migration Required:**
+- ✅ Migration `20251105010000_update_mineral_synonyms.sql` already applied in Supabase
+
+**Cache Note:**
+- Ingredient cache (24-hour TTL) will auto-expire or can be manually invalidated via `/api/admin/invalidate-cache`
+
+### 🔄 Next Priorities (Performance Improvements)
+
+1. **Add progress indicators** for analysis steps (Analyzing → Extracting → Checking → Validating → Finalizing)
+2. **Parallelize database checks** (run GRAS + Allergen + NDI concurrently instead of sequentially)
+3. **Optimize database queries** (batch ingredient lookups with IN clause instead of pagination loop)
+4. **Consider streaming response** (return initial analysis immediately, stream compliance results as they complete)
+
+### 📝 Technical Notes
+
+**RLS Bypass Pattern:**
+- Server components: Use `supabaseAdmin` directly (user already authenticated by Clerk middleware)
+- Client components: Create API routes that verify Clerk auth, then use `supabaseAdmin`
+- Maintains user isolation (queries still filter by `user_id`)
+
+**Status Formatting Pattern:**
+- Single source of truth: `formatComplianceStatus()` in `lib/formatting.ts`
+- Handles snake_case → Proper-Case-With-Hyphens
+- Easy to maintain - change formatting in one place
+
+**GRAS Attribution Pattern:**
+- Show both CFR-listed forms AND self-affirmed forms
+- Format: "21 CFR XXX (specific), Self-affirmed GRAS (other)"
+- Transparent about regulatory status of each form
+
+**Claims Analysis Pattern:**
+- Check product category FIRST
+- Apply category-specific claim rules
+- Never cross-apply supplement rules to foods or vice versa
+
+---
+
+## Session 23 Part 3 Summary (2025-11-05) - Simplified Category Decision Logic ⚡
+
+### ✅ Completed in This Session
+
+**Major Achievement:** Removed auto-trigger ambiguity detection in favor of simple, clear logic: trust the AI's confident decision and show violations for the chosen path.
+
+#### Problem with Part 2 Implementation
+
+After implementing auto-trigger category ambiguity detection, user pointed out we were **overthinking the choice**:
+
+**User's Clarification:**
+> "What I am saying is that we are either confident it is a food, confident it is a supplement, or not confident at all - in which case we ask the user which they had in mind."
+
+**Three Clear Paths:**
+1. **AI Confident → Food**: Analyze as food, show violations as violations
+2. **AI Confident → Supplement**: Analyze as supplement, show violations as violations
+3. **AI NOT Confident**: Ask user via CategorySelector
+
+**The Problem:** We were second-guessing high-confidence AI decisions by auto-triggering ambiguity based on violations (fortification policy). This undermined the AI's confident categorization.
+
+#### Solution: Option A - Trust the AI
+
+**Removed:**
+- ❌ `detectCategoryAmbiguity()` function from post-processor
+- ❌ Auto-trigger `useEffect` in analyze page
+- ❌ Orange warning banner for detected ambiguity
+- ❌ Complex alternatives logic based on fortification violations
+
+**Result:**
+- ✅ Fortification violations are just violations (CRITICAL recommendations)
+- ✅ User can fix by removing fortification (stay as food) OR re-analyze as supplement
+- ✅ User can manually use "Check Different Category" button anytime
+- ✅ No confusing "maybe it's the wrong category" messages after confident analysis
+
+### 🎯 Simplified User Workflow
+
+**Scenario 1: AI is Confident**
+```
+Upload Label → AI: "I'm confident this is a food" → Analysis runs
+→ Results show violations (e.g., fortification policy)
+→ User fixes violations OR uses "Check Different Category" to see supplement requirements
+```
+
+**Scenario 2: AI is NOT Confident**
+```
+Upload Label → AI: "I'm not sure, low confidence"
+→ CategorySelector appears: "Which did you intend?"
+→ User picks category OR clicks "Compare" for side-by-side
+→ Analysis runs for chosen category
+```
+
+This matches user's mental model: **Make the decision, then show the violations.**
+
+---
+
+## Session 23 Part 2 Summary (2025-11-05) - Category Ambiguity Detection [REMOVED]
+
+### ❌ This approach was removed in Part 3
+
+**Why it was removed:** We were second-guessing the AI's confident decisions. Fortification violations should just be violations, not triggers for category ambiguity.
+
+#### Problem Identified
+
+User's fortified coffee analysis showed:
+- Analyzed as "Food/Beverage Product" ✅
+- GRAS checking passed (methylcobalamin recognized) ✅
+- Fortification Policy: "Non-Compliant" ✅
+- **BUT**: No indication that product might be mis-categorized
+
+**User Insight:** "This product label is not compliant for either food or supplement. The user must choose which they want to pursue."
+
+#### Solution Implemented
+
+**Auto-trigger Category Comparison when fortification policy violated:**
+
+1. **Backend Detection (Post-Processor)**
+   - Added `CategoryAmbiguity` interface to track ambiguity details
+   - Added `detectCategoryAmbiguity()` function in `lib/analysis/post-processor.ts`
+   - Detects when food/beverage violates fortification policy (21 CFR 104)
+   - Adds `category_ambiguity` object to analysis results
+
+2. **Frontend Auto-Trigger (Analyze Page)**
+   - Added `useEffect` to detect `category_ambiguity.detected`
+   - Automatically sets `showComparison = true`
+   - Shows side-by-side comparison of Food vs Supplement paths
+
+3. **Prominent Warning UI**
+   - Orange warning banner with alert icon
+   - Explains the ambiguity clearly
+   - Shows both regulatory paths available
+   - Appears above CategoryComparison component
+
+### 🎯 How It Works
+
+**Detection Logic:**
+```typescript
+if (
+  product_category !== 'DIETARY_SUPPLEMENT' &&
+  fortification.status === 'non_compliant'
+) {
+  // Product has vitamins/minerals not allowed for this food type
+  // Might be intended as supplement with wrong label panel
+  category_ambiguity = {
+    detected: true,
+    reason: "Contains fortification that violates FDA fortification policy...",
+    current_category: "CONVENTIONAL_FOOD", // or NON_ALCOHOLIC_BEVERAGE
+    alternative_category: "DIETARY_SUPPLEMENT",
+    recommendation: "Choose which regulatory path to pursue..."
+  };
+}
+```
+
+**User Workflow:**
+```
+User uploads fortified coffee
+         ↓
+System analyzes as Food/Beverage
+         ↓
+Post-processor detects fortification violation
+         ↓
+category_ambiguity.detected = true
+         ↓
+🔥 CategoryComparison AUTO-SHOWS
+         ↓
+Prominent warning explains the issue
+         ↓
+Side-by-side comparison:
+  LEFT: As Food (Non-compliant - remove fortification)
+  RIGHT: As Supplement (Change to Supplement Facts panel)
+         ↓
+User selects "Analyze as Supplement"
+         ↓
+New analysis with correct category
+         ↓
+Iterative improvement continues...
+```
+
+### 📊 Files Modified
+
+**Backend:**
+1. `lib/analysis/post-processor.ts`
+   - Added `CategoryAmbiguity` interface
+   - Added `detectCategoryAmbiguity()` function
+   - Integrated into `postProcessAnalysis()` workflow
+
+**Frontend:**
+2. `app/analyze/page.tsx`
+   - Added `useEffect` for auto-triggering comparison
+   - Added prominent orange warning banner
+   - Updated `alternatives` array to include `alternative_category`
+
+**Documentation:**
+3. `SESSION_NOTES.md` - This session summary
+
+### 🎯 Warning Message Content
+
+**Banner Text:**
+```
+⚠️ Category Ambiguity Detected
+
+This [product type] contains vitamin/mineral fortification that violates
+FDA fortification policy (21 CFR 104). The fortification suggests this
+might be intended as a dietary supplement rather than a conventional food.
+
+YOUR PRODUCT LABEL IS NON-COMPLIANT FOR BOTH CATEGORIES:
+
+You must choose which regulatory path to pursue:
+
+1. FOOD PATH: Remove vitamin/mineral fortification (not permitted for this food type)
+2. SUPPLEMENT PATH: Change to Supplement Facts panel and follow DSHEA regulations
+
+Use the side-by-side comparison below to see requirements for each option
+and decide which path best fits your product goals.
+```
+
+### 🔍 Why This Matters
+
+**Real-World Problem:**
+- Functional beverages (fortified coffee, energy drinks, wellness water)
+- Often contain supplement-level vitamins/minerals
+- Manufacturers unsure if product is food or supplement
+- Wrong categorization = FDA warning letter
+
+**Without This Feature:**
+- User sees "fortification non-compliant" but doesn't understand implications
+- No guidance on alternative regulatory paths
+- Unclear what changes are needed
+- May continue with non-compliant product
+
+**With This Feature:**
+- ✅ Automatic detection of category ambiguity
+- ✅ Clear explanation of the regulatory issue
+- ✅ Side-by-side comparison of both paths
+- ✅ User makes informed decision
+- ✅ Can test both paths and choose best fit
+
+### 📋 Next Steps for User
+
+**When They See This Warning:**
+1. Review side-by-side comparison
+2. Decide: Remove fortification OR reformulate as supplement
+3. If supplement path: Click "Select Dietary Supplement"
+4. Get new analysis with supplement regulations
+5. Upload revised label (Supplement Facts panel)
+6. Iterate until compliant
+
+**Perfect for:**
+- Fortified coffee (like user's product)
+- Energy drinks with vitamins
+- Wellness waters
+- Functional beverages
+- Protein waters
+- Any food with supplement-level nutrients
+
+### 🎉 Impact
+
+**User Experience:**
+- No more confusion about fortification violations
+- Clear guidance on regulatory options
+- Side-by-side comparison aids decision-making
+- Iterative workflow supports label revision
+
+**Compliance Accuracy:**
+- Catches products in regulatory gray area
+- Prevents mis-categorization
+- Helps manufacturers choose correct path
+- Reduces risk of FDA enforcement
+
+---
+
+
+
+## Session 23 Summary (2025-11-05) - GRAS Database Vitamin/Mineral Synonym Expansion
+
+### ✅ Completed in This Session
+
+**Major Achievement:** Fixed methylcobalamin false positive and expanded GRAS database with comprehensive vitamin/mineral coverage for fortified food products.
+
+#### Problem Discovered
+
+User analyzed fortified coffee product and received CRITICAL false positive warning:
+```
+CRITICAL: Ingredient "METHYLCOBALAMIN 1%" is NOT found in the FDA GRAS database.
+```
+
+This was flagged as non-GRAS when it should have been recognized as Vitamin B12.
+
+#### Root Cause Analysis
+
+1. ✅ **Product correctly categorized** as Food/Beverage (fortified coffee with Nutrition Facts panel)
+2. ✅ **GRAS checking correctly applied** (not a dietary supplement, so GRAS applies instead of NDI)
+3. ❌ **GRAS database had gaps** - Missing many common vitamin/mineral forms used in fortified foods
+
+**The Issue:**
+- Vitamin B12 entry only had 2 synonyms: "cobalamin", "cyanocobalamin"
+- Missing bioavailable forms: methylcobalamin, adenosylcobalamin, hydroxocobalamin
+- Missing many other B vitamins (B1, B2, B3, B6) entirely
+- Missing Vitamin C and Vitamin E entries entirely
+- Mineral entries missing common supplement forms (citrate, glycinate, gluconate, etc.)
+
+#### 1. GRAS Comprehensive JSON Updates
+
+**File:** `data/gras-comprehensive.json`
+
+**Vitamins Added/Enhanced:**
+- ✅ **Vitamin B12** - Added 4 new forms: methylcobalamin, adenosylcobalamin, hydroxocobalamin, vitamin b-12
+- ✅ **Vitamin B1 (Thiamin)** - NEW ENTRY: thiamine, thiamine hydrochloride, thiamine mononitrate, thiamin hcl
+- ✅ **Vitamin B2 (Riboflavin)** - NEW ENTRY: riboflavin 5'-phosphate, riboflavin-5-phosphate sodium
+- ✅ **Vitamin B3 (Niacin)** - NEW ENTRY: niacinamide, nicotinamide, nicotinic acid
+- ✅ **Vitamin B5 (Pantothenic Acid)** - Enhanced: d-calcium pantothenate, pantothenate
+- ✅ **Vitamin B6 (Pyridoxine)** - NEW ENTRY: pyridoxine hcl, pyridoxal, pyridoxal-5-phosphate, p-5-p
+- ✅ **Vitamin C (Ascorbic Acid)** - NEW ENTRY: ascorbate, sodium ascorbate, calcium ascorbate, l-ascorbic acid
+- ✅ **Vitamin E** - NEW ENTRY: tocopherol, d-alpha tocopherol, tocopheryl acetate, mixed tocopherols, tocotrienols
+
+**Minerals Enhanced:**
+- ✅ **Calcium** - Added 6 new forms: calcium citrate, calcium gluconate, calcium lactate, tricalcium phosphate, dicalcium phosphate
+- ✅ **Iron** - Added 4 new forms: ferrous gluconate, ferric pyrophosphate, carbonyl iron, elemental iron
+- ✅ **Magnesium** - Added 6 new forms: magnesium glycinate, magnesium gluconate, magnesium chloride, magnesium sulfate, magnesium malate, elemental magnesium
+- ✅ **Potassium** - Added 3 new forms: potassium chloride, potassium citrate, potassium gluconate, elemental potassium
+
+#### 2. Database Migration Created
+
+**File:** `supabase/migrations/20251105000000_update_vitamin_mineral_synonyms.sql`
+
+**Migration Actions:**
+- ✅ Updates existing Vitamin B12 entry with all bioavailable forms
+- ✅ Updates Pantothenic Acid (B5) with additional forms
+- ✅ Inserts 6 new vitamin entries (B1, B2, B3, B6, C, E) with ON CONFLICT DO NOTHING
+- ✅ Updates Calcium, Iron, Magnesium, Potassium with comprehensive forms
+- ✅ Handles conflicts gracefully (won't fail if entries already exist)
+
+#### 3. Impact Analysis
+
+**Before This Fix:**
+- Vitamin B12: 2 synonyms → **Now: 6 synonyms** (+200%)
+- B vitamins coverage: 2 vitamins (B5, B7, B9, B12) → **Now: 7 vitamins** (B1, B2, B3, B5, B6, B7, B9, B12)
+- Vitamin C: Missing → **Now: 5 forms**
+- Vitamin E: Missing → **Now: 7 forms**
+- Calcium: 2 forms → **Now: 8 forms** (+300%)
+- Iron: 3 forms → **Now: 7 forms** (+133%)
+- Magnesium: 2 forms → **Now: 8 forms** (+300%)
+- Potassium: 1 form → **Now: 5 forms** (+400%)
+
+**Total New Synonyms Added:** 50+ vitamin/mineral forms
+
+**Products That Will Benefit:**
+- ✅ Fortified coffee (like the user's example with methylcobalamin)
+- ✅ Energy drinks with B-vitamin complexes
+- ✅ Protein shakes with added vitamins/minerals
+- ✅ Fortified cereals
+- ✅ Nutritional beverages (Ensure, Boost, etc.)
+- ✅ Vitamin water products
+- ✅ Meal replacement drinks
+
+#### 4. Testing Plan
+
+**Manual Test:**
+1. Re-analyze the fortified coffee product with methylcobalamin
+2. Verify methylcobalamin now matches as GRAS via synonym
+3. Verify no CRITICAL warning generated
+4. Check that other vitamin/mineral forms are recognized
+
+**Expected Result:**
+- ✅ Methylcobalamin 1% should be recognized as Vitamin B12
+- ✅ Match type: "synonym"
+- ✅ No CRITICAL warning about non-GRAS ingredient
+- ✅ Green GRAS-compliant tag in UI
+
+### 📊 Files Modified
+
+**Data Files:**
+1. `data/gras-comprehensive.json` - Enhanced with 50+ new vitamin/mineral synonyms
+
+**Migration Files:**
+2. `supabase/migrations/20251105000000_update_vitamin_mineral_synonyms.sql` - Database update script
+
+**Documentation:**
+3. `SESSION_NOTES.md` - This session summary
+
+### 🎯 Technical Details
+
+**Vitamin/Mineral Forms Added by Category:**
+
+**B-Complex Vitamins:**
+- B1: Thiamin, thiamine, thiamine HCl, thiamine mononitrate
+- B2: Riboflavin, riboflavin 5'-phosphate (active form)
+- B3: Niacin, niacinamide, nicotinamide, nicotinic acid
+- B5: D-calcium pantothenate, pantothenate
+- B6: Pyridoxine HCl, pyridoxal-5-phosphate (P-5-P active form)
+- B12: Methylcobalamin, adenosylcobalamin, hydroxocobalamin (bioavailable forms)
+
+**Antioxidant Vitamins:**
+- C: Sodium ascorbate, calcium ascorbate, L-ascorbic acid
+- E: D-alpha tocopherol, tocopheryl acetate, mixed tocopherols, tocotrienols
+
+**Mineral Chelates & Forms:**
+- Calcium: Citrate, gluconate, lactate, tricalcium/dicalcium phosphate
+- Magnesium: Glycinate (highly bioavailable), citrate, gluconate, chloride, sulfate, malate
+- Iron: Ferrous gluconate, ferric pyrophosphate, carbonyl iron
+- Potassium: Chloride, citrate, gluconate
+
+### 🔍 Why This Matters
+
+**Fortified Foods Are Common:**
+- Energy drinks routinely use methylcobalamin (not cyanocobalamin)
+- Functional beverages use pyridoxal-5-phosphate (active B6)
+- Premium supplements use magnesium glycinate (better absorption)
+- Sports nutrition uses chelated minerals for bioavailability
+
+**Without This Fix:**
+- System generates false CRITICAL warnings for compliant products
+- Users lose trust in analysis accuracy
+- Premium/functional food formulations flagged incorrectly
+- Natural/bioavailable forms not recognized
+
+**With This Fix:**
+- ✅ Accurate GRAS compliance for fortified foods
+- ✅ Recognizes bioavailable vitamin/mineral forms
+- ✅ Handles premium supplement-grade ingredients in foods
+- ✅ Reduces false positives dramatically
+
+### 📋 Next Steps
+
+**Immediate:**
+1. ✅ Test migration on local Supabase instance
+2. ✅ Re-analyze fortified coffee to verify fix
+3. ✅ Commit changes with descriptive message
+4. ✅ Deploy to production
+
+**Future Enhancements:**
+- Consider adding trace minerals (molybdenum, boron, vanadium)
+- Add amino acid forms (L-lysine HCl, L-arginine HCl, etc.)
+- Add omega-3 forms (EPA, DHA, ALA)
+- Review for other common fortification ingredients
+
+### 🎉 Session Success
+
+**What We Accomplished:**
+- ✅ Fixed methylcobalamin false positive
+- ✅ Added 6 new vitamin entries (B1, B2, B3, B6, C, E)
+- ✅ Enhanced 5 existing entries (B5, B12, Calcium, Iron, Magnesium, Potassium)
+- ✅ Added 50+ new vitamin/mineral synonyms
+- ✅ Created clean, reusable database migration
+- ✅ Improved fortified food analysis accuracy significantly
+
+**Impact:**
+- 🎯 Eliminates major category of false positives for fortified foods
+- 🎯 Supports premium/bioavailable ingredient forms
+- 🎯 Matches industry standard vitamin/mineral nomenclature
+- 🎯 Improves user confidence in analysis accuracy
+
+---
+
+
 
 ## Session 22 Summary (2025-11-04) - 14-Day Free Trial & Dashboard UX Improvements
 
@@ -1029,5 +1628,203 @@ All immediate TypeScript cleanup tasks are complete. The codebase now has:
 - ✅ 66 `any` instances (down from 87, mostly justified)
 - ✅ Backward compatibility with old data formats
 - ✅ All tests passing (103 unit tests)
+
+---
+
+## Session 23 (Continued) - November 5, 2025
+
+### 🎯 Objective
+Fix L-Selenomethionine false positive error and add comprehensive mineral compound synonyms to GRAS database.
+
+### 📋 Tasks Completed
+
+1. ✅ **Added Selenium Compound Synonyms**
+   - Issue: "L-SELENOMETHIONINE 0.5%" showing CRITICAL false positive
+   - Root cause: Selenium only had 2 synonyms (sodium selenite, selenium yeast)
+   - Solution: Added 12 comprehensive selenium compound forms:
+     - L-selenomethionine
+     - selenomethionine
+     - selenium methionine
+     - selenious acid
+     - sodium selenate
+     - seleno-L-methionine
+     - selenium amino acid chelate
+     - selenium proteinate
+     - high-selenium yeast
+     - selenium-enriched yeast
+
+2. ✅ **Added Comprehensive Mineral Compound Forms**
+   - Updated 5 minerals with expanded synonyms:
+     - **Zinc**: 3 → 11 synonyms (added citrate, picolinate, acetate, monomethionine, amino acid chelate, aspartate, bisglycinate)
+     - **Copper**: 2 → 10 synonyms (added sulfate, oxide forms, citrate, amino acid chelate, bisglycinate, acetate)
+     - **Manganese**: 2 → 8 synonyms (added citrate, amino acid chelate, aspartate, bisglycinate)
+     - **Chromium**: 2 → 8 synonyms (added polynicotinate, amino acid chelate, GTF, nicotinate)
+     - **Iodine**: 2 → 7 synonyms (added sodium iodide, kelp, iodate, calcium iodide)
+   - Added new ingredient:
+     - **Molybdenum**: 5 synonyms (sodium molybdate, amino acid chelate, glycinate, ammonium molybdate)
+
+3. ✅ **Created Database Migration**
+   - File: `supabase/migrations/20251105010000_update_mineral_synonyms.sql`
+   - Updates all 7 minerals (Selenium, Zinc, Copper, Manganese, Chromium, Iodine, Molybdenum)
+   - Includes verification block to confirm synonym counts
+
+4. ✅ **Updated GRAS Comprehensive Data**
+   - File: `data/gras-comprehensive.json`
+   - Updated source of truth for GRAS ingredient matching
+   - Created script: `update-mineral-synonyms.js` for automated updates
+
+### 🐛 Pattern Recognition
+This is the **third instance** of the same issue:
+1. **Session 23 (Earlier)**: Methylcobalamin (Vitamin B12) - Fixed with vitamin synonym expansion
+2. **Session 23 (Pagination bug)**: All ingredients beyond position 1000 - Fixed with pagination
+3. **Session 23 (Current)**: L-Selenomethionine (Selenium) - Fixed with mineral synonym expansion
+
+**Root cause pattern:** GRAS database has base nutrients (vitamins, minerals) but missing bioavailable/compound forms used in fortified foods and supplements.
+
+### 📊 Impact
+**Before:**
+- Selenium: 2 synonyms
+- Zinc: 3 synonyms
+- Copper: 2 synonyms
+- Manganese: 2 synonyms
+- Chromium: 2 synonyms
+- Iodine: 2 synonyms
+- Molybdenum: Not in database
+
+**After:**
+- Selenium: 12 synonyms (600% increase)
+- Zinc: 11 synonyms (267% increase)
+- Copper: 10 synonyms (400% increase)
+- Manganese: 8 synonyms (300% increase)
+- Chromium: 8 synonyms (300% increase)
+- Iodine: 7 synonyms (250% increase)
+- Molybdenum: 5 synonyms (NEW)
+
+**Total synonym coverage:** Added 47 new mineral compound forms
+
+**Products benefiting:**
+- Fortified beverages (energy drinks, protein shakes)
+- Dietary supplements
+- Fortified cereals
+- Nutritional powders
+- Meal replacement products
+
+### 🔍 Self-Affirmed GRAS Discovery
+
+After initially questioning whether L-selenomethionine was actually GRAS, discovered:
+
+**Key Regulatory Facts:**
+1. **Self-Affirmed GRAS is LEGAL** - Companies can determine GRAS status through independent expert panels without FDA notification (21 CFR 170.30)
+2. **No FDA Registration Required** - Notification is voluntary, not mandatory
+3. **L-Selenomethionine HAS self-affirmed GRAS** - Sabinsa obtained this in 2008 for food use
+4. **No Public Database** - Self-affirmed GRAS ingredients aren't tracked in a public FDA database
+
+**Impact on Our System:**
+- We can't maintain a complete GRAS database (self-affirmed ingredients aren't publicly listed)
+- "Not found in database" ≠ "Not legal to use"
+- Need to change messaging from "CRITICAL violation" to "Requires verification"
+
+### ✅ Updated GRAS Compliance Logic
+
+**Changed approach to match NDI pattern:**
+
+**For ingredients FOUND in GRAS database:**
+- ✅ Status: "GRAS-compliant"
+- Message: "Found in FDA GRAS database [citation]"
+- No recommendation added
+
+**For ingredients NOT FOUND in GRAS database:**
+- ⚠️ Status: "Requires Verification" (NOT "Non-Compliant")
+- Priority: **MEDIUM** (changed from CRITICAL/HIGH)
+- Message: "Ingredient X is not found in the FDA GRAS database. This does not necessarily indicate a violation. The ingredient may be: (1) self-affirmed GRAS by the manufacturer through independent expert panel review per 21 CFR 170.30, (2) a food additive approved through separate FDA petition, or (3) exempt from GRAS requirements. Manufacturer should maintain documentation supporting the ingredient's regulatory status."
+
+**This matches the existing NDI flow:**
+- NDI database → ODI database → "Requires verification" (MEDIUM)
+- GRAS database → "Requires verification" (MEDIUM)
+
+### 📝 Next Steps
+
+1. **Apply migration in Supabase dashboard**
+   - Run `supabase/migrations/20251105010000_update_mineral_synonyms.sql`
+   - This adds comprehensive mineral synonyms (selenium, zinc, copper, manganese, chromium, iodine, molybdenum)
+
+2. **Invalidate ingredient cache**
+   - Option 1: `npm run cache:invalidate` (if dev server running locally)
+   - Option 2: Deploy to trigger cache refresh
+   - Option 3: Wait 24 hours for automatic cache expiration
+
+3. **Test L-Selenomethionine with new logic**
+   - Re-analyze the user's Italian coffee product
+   - Should see: "Requires Verification" (MEDIUM priority) instead of CRITICAL error
+   - Message should explain self-affirmed GRAS pathway
+
+4. **Monitor for additional mineral compound gaps**
+   - Watch for other selenium forms (e.g., selenium dioxide, selenocysteine)
+   - Consider adding amino acid chelate forms for other minerals
+
+### 🔧 Source Reference Corrections (Option B)
+
+**Critical Issue Discovered:**
+Original mineral entries used incorrect or incomplete CFR references. For example:
+- Selenium referenced "21 CFR 172.350" which is actually **fumaric acid**, not selenium!
+- Molybdenum referenced "21 CFR 172.350" but doesn't exist in database yet
+- Other minerals listed single CFR sections but included compound forms NOT in those sections
+
+**Solution - Accurate Attribution:**
+Updated all minerals to show which forms are CFR-listed vs self-affirmed GRAS:
+
+**Examples:**
+- **Zinc**: `21 CFR 182.8988 (gluconate), 21 CFR 182.8991 (oxide), 21 CFR 182.8997 (sulfate), Self-affirmed GRAS (citrate, picolinate, other chelated forms)`
+- **Selenium**: `GRN 353 (selenium yeast), Self-affirmed GRAS (various forms)`
+- **Chromium**: `21 CFR 172.379 (chromic chloride), Self-affirmed GRAS (picolinate, polynicotinate, other forms)`
+- **Molybdenum**: `Self-affirmed GRAS (various molybdenum salts)`
+
+**Why This Matters:**
+- Users can now lookup accurate regulatory citations
+- Clear distinction between FDA-affirmed and self-affirmed forms
+- Transparent about which compound forms are commonly used but not CFR-listed
+- Prevents misleading claims about regulatory status
+
+### 📋 Files Modified
+
+**New Files:**
+- `supabase/migrations/20251105010000_update_mineral_synonyms.sql` - Database migration for mineral synonyms with corrected source references
+- `update-mineral-synonyms.js` - Automated synonym update script (deleted after use)
+- `update-mineral-references.js` - Source reference correction script (deleted after use)
+
+**Updated Files:**
+- `data/gras-comprehensive.json` - Added 47 mineral compound synonyms + corrected all source references
+- `lib/analysis/post-processor.ts` - Changed GRAS compliance logic:
+  - "Not found" ingredients now MEDIUM priority (was CRITICAL/HIGH)
+  - Changed status from "Non-Compliant" to "Requires Verification"
+  - Updated messaging to explain self-affirmed GRAS pathway
+  - Removed automatic compliance status override for GRAS issues
+- `SESSION_NOTES.md` - Documented self-affirmed GRAS discovery and logic changes
+
+### 🔍 Technical Details
+
+**Migration Verification Block:**
+The migration includes a PostgreSQL verification block that confirms synonym counts:
+```sql
+DO $$
+DECLARE
+  selenium_count INTEGER;
+  zinc_count INTEGER;
+  -- ... other minerals
+BEGIN
+  SELECT array_length(synonyms, 1) INTO selenium_count FROM gras_ingredients WHERE ingredient_name = 'Selenium';
+  -- ... check all minerals
+  RAISE NOTICE 'Migration complete:';
+  RAISE NOTICE 'Selenium: % synonyms', selenium_count;
+  -- ... report all counts
+END $$;
+```
+
+**Cache Invalidation Required:**
+After running the migration, must invalidate the 24-hour ingredient cache using one of:
+- POST `/api/admin/invalidate-cache`
+- `npm run cache:invalidate`
+- Redeploy application
+- Wait 24 hours
 
 ---

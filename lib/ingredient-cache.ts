@@ -31,27 +31,45 @@ export async function getCachedGRASIngredients(): Promise<GRASIngredient[]> {
     return grasCache.data;
   }
 
-  // Cache miss - fetch from database
+  // Cache miss - fetch from database with pagination
   logger.info('GRAS cache miss - fetching from database');
-  const { data, error } = await supabaseAdmin
-    .from('gras_ingredients')
-    .select('*')
-    .eq('is_active', true);
 
-  if (error) {
-    logger.error('Failed to fetch GRAS ingredients', { error });
-    // Return stale cache if available, otherwise empty array
-    return grasCache?.data || [];
+  let allData: GRASIngredient[] = [];
+  let page = 0;
+  const pageSize = 1000;
+  let hasMore = true;
+
+  while (hasMore) {
+    const { data, error } = await supabaseAdmin
+      .from('gras_ingredients')
+      .select('*')
+      .eq('is_active', true)
+      .range(page * pageSize, (page + 1) * pageSize - 1);
+
+    if (error) {
+      logger.error('Failed to fetch GRAS ingredients', { error, page });
+      // Return what we have so far, or stale cache if available
+      return allData.length > 0 ? allData : grasCache?.data || [];
+    }
+
+    if (data && data.length > 0) {
+      allData = allData.concat(data as GRASIngredient[]);
+      hasMore = data.length === pageSize;
+      page++;
+    } else {
+      hasMore = false;
+    }
   }
 
   // Update cache
   grasCache = {
-    data: (data as GRASIngredient[]) || [],
+    data: allData,
     timestamp: now,
   };
 
   logger.info('GRAS cache refreshed', {
     count: grasCache.data.length,
+    pages: page,
     timestamp: new Date(now).toISOString(),
   });
 
@@ -74,24 +92,43 @@ export async function getCachedNDIIngredients(): Promise<NDIIngredient[]> {
     return ndiCache.data;
   }
 
-  // Cache miss - fetch from database
+  // Cache miss - fetch from database with pagination
   logger.info('NDI cache miss - fetching from database');
-  const { data, error } = await supabaseAdmin.from('ndi_ingredients').select('*');
 
-  if (error) {
-    logger.error('Failed to fetch NDI ingredients', { error });
-    // Return stale cache if available, otherwise empty array
-    return ndiCache?.data || [];
+  let allData: NDIIngredient[] = [];
+  let page = 0;
+  const pageSize = 1000;
+  let hasMore = true;
+
+  while (hasMore) {
+    const { data, error } = await supabaseAdmin
+      .from('ndi_ingredients')
+      .select('*')
+      .range(page * pageSize, (page + 1) * pageSize - 1);
+
+    if (error) {
+      logger.error('Failed to fetch NDI ingredients', { error, page });
+      return allData.length > 0 ? allData : ndiCache?.data || [];
+    }
+
+    if (data && data.length > 0) {
+      allData = allData.concat(data as NDIIngredient[]);
+      hasMore = data.length === pageSize;
+      page++;
+    } else {
+      hasMore = false;
+    }
   }
 
   // Update cache
   ndiCache = {
-    data: (data as NDIIngredient[]) || [],
+    data: allData,
     timestamp: now,
   };
 
   logger.info('NDI cache refreshed', {
     count: ndiCache.data.length,
+    pages: page,
     timestamp: new Date(now).toISOString(),
   });
 
@@ -114,24 +151,43 @@ export async function getCachedODIIngredients(): Promise<OldDietaryIngredient[]>
     return odiCache.data;
   }
 
-  // Cache miss - fetch from database
+  // Cache miss - fetch from database with pagination
   logger.info('ODI cache miss - fetching from database');
-  const { data, error } = await supabaseAdmin.from('old_dietary_ingredients').select('*');
 
-  if (error) {
-    logger.error('Failed to fetch ODI ingredients', { error });
-    // Return stale cache if available, otherwise empty array
-    return odiCache?.data || [];
+  let allData: OldDietaryIngredient[] = [];
+  let page = 0;
+  const pageSize = 1000;
+  let hasMore = true;
+
+  while (hasMore) {
+    const { data, error } = await supabaseAdmin
+      .from('old_dietary_ingredients')
+      .select('*')
+      .range(page * pageSize, (page + 1) * pageSize - 1);
+
+    if (error) {
+      logger.error('Failed to fetch ODI ingredients', { error, page });
+      return allData.length > 0 ? allData : odiCache?.data || [];
+    }
+
+    if (data && data.length > 0) {
+      allData = allData.concat(data as OldDietaryIngredient[]);
+      hasMore = data.length === pageSize;
+      page++;
+    } else {
+      hasMore = false;
+    }
   }
 
   // Update cache
   odiCache = {
-    data: (data as OldDietaryIngredient[]) || [],
+    data: allData,
     timestamp: now,
   };
 
   logger.info('ODI cache refreshed', {
     count: odiCache.data.length,
+    pages: page,
     timestamp: new Date(now).toISOString(),
   });
 

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Download, AlertCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { exportSingleAnalysisAsPDF } from '@/lib/export-helpers';
+import { formatComplianceStatus } from '@/lib/formatting';
 import { useToast } from '@/hooks/use-toast';
 import { clientLogger } from '@/lib/client-logger';
 import type { Analysis, ComplianceTableRow, Recommendation } from '@/types';
@@ -166,9 +167,9 @@ export default function SharePage() {
                                     : 'bg-red-100 text-red-800'
                             }`}
                           >
-                            {result.overall_assessment.primary_compliance_status
-                              ?.replace('_', ' ')
-                              .toUpperCase()}
+                            {formatComplianceStatus(
+                              result.overall_assessment.primary_compliance_status
+                            )}
                           </span>
                           <span className="ml-3 text-sm text-blue-700">
                             Confidence: {result.overall_assessment.confidence_level}

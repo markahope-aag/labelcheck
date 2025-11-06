@@ -13,7 +13,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 import { getSubscriptionStatus, getUserUsage } from '@/lib/subscription-helpers';
 import { FreeTrialStatus } from '@/components/FreeTrialStatus';
 
@@ -30,7 +30,7 @@ export default async function DashboardPage() {
   const isOnFreeTrial = !subscriptionStatus.hasActiveSubscription;
 
   // Get internal Supabase user ID from Clerk user ID
-  const { data: user, error } = await supabase
+  const { data: user, error } = await supabaseAdmin
     .from('users')
     .select('id')
     .eq('clerk_user_id', userId)
@@ -40,7 +40,7 @@ export default async function DashboardPage() {
   // (The Clerk webhook should create them soon)
   const analyses = user
     ? (
-        await supabase
+        await supabaseAdmin
           .from('analyses')
           .select('*')
           .eq('user_id', user.id)
@@ -51,7 +51,7 @@ export default async function DashboardPage() {
 
   const totalAnalyses = user
     ? (
-        await supabase
+        await supabaseAdmin
           .from('analyses')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', user.id)
@@ -60,7 +60,7 @@ export default async function DashboardPage() {
 
   // Get compliance statistics
   const allAnalyses = user
-    ? (await supabase.from('analyses').select('analysis_result').eq('user_id', user.id)).data
+    ? (await supabaseAdmin.from('analyses').select('analysis_result').eq('user_id', user.id)).data
     : null;
 
   const compliantCount =
