@@ -260,23 +260,6 @@ export default function AnalyzePage() {
     }
   }, [userId, router]);
 
-  // Auto-trigger category comparison when category ambiguity is detected
-  useEffect(() => {
-    if (
-      analysis.analysisData?.category_ambiguity?.detected &&
-      !session.showComparison &&
-      !analysis.showCategorySelector
-    ) {
-      // Automatically show category comparison for ambiguous products
-      session.openComparison();
-    }
-  }, [
-    analysis.analysisData?.category_ambiguity,
-    session.showComparison,
-    analysis.showCategorySelector,
-    session.openComparison,
-  ]);
-
   if (!userId) {
     return null;
   }
@@ -300,57 +283,13 @@ export default function AnalyzePage() {
 
           {session.showComparison && analysis.analysisData ? (
             <>
-              {/* Show prominent warning when category ambiguity detected */}
-              {analysis.analysisData.category_ambiguity?.detected && (
-                <div className="bg-orange-50 border-2 border-orange-400 rounded-lg p-6 mb-6">
-                  <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0">
-                      <svg
-                        className="w-8 h-8 text-orange-600"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                        />
-                      </svg>
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold text-orange-900 mb-2">
-                        ⚠️ Category Ambiguity Detected
-                      </h3>
-                      <p className="text-orange-800 mb-3 whitespace-pre-line">
-                        {analysis.analysisData.category_ambiguity.reason}
-                      </p>
-                      <div className="bg-white rounded-md p-4 border border-orange-200">
-                        <p className="text-sm text-orange-900 font-medium mb-2">
-                          YOUR PRODUCT LABEL IS NON-COMPLIANT FOR BOTH CATEGORIES:
-                        </p>
-                        <p className="text-sm text-orange-800 whitespace-pre-line">
-                          {analysis.analysisData.category_ambiguity.recommendation}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
               {/* Show Category Comparison when user clicks "Compare All Options Side-by-Side" */}
               <CategoryComparison
                 aiCategory={analysis.analysisData.product_category}
                 confidence={analysis.analysisData.category_confidence || 'medium'}
                 categoryRationale={analysis.analysisData.category_rationale || ''}
                 alternatives={
-                  analysis.analysisData.category_ambiguity?.detected &&
-                  analysis.analysisData.category_ambiguity.alternative_category
-                    ? [
-                        analysis.analysisData.category_ambiguity
-                          .alternative_category as ProductCategory,
-                      ]
-                    : analysis.analysisData.category_ambiguity?.alternative_categories || []
+                  analysis.analysisData.category_ambiguity?.alternative_categories || []
                 }
                 categoryOptions={analysis.analysisData.category_ambiguity?.category_options || {}}
                 labelConflicts={(

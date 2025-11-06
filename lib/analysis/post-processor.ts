@@ -434,49 +434,6 @@ export function addMonitoringRecommendation(analysisData: AnalysisData): void {
 }
 
 /**
- * Detect category ambiguity when a product may be mis-categorized
- *
- * Detects cases where:
- * - Product is categorized as food/beverage BUT violates fortification policy
- * - This suggests it might actually be a dietary supplement with wrong label panel
- *
- * Triggers side-by-side category comparison to help user choose correct path
- */
-export function detectCategoryAmbiguity(analysisData: AnalysisData): void {
-  // Only check for foods/beverages (supplements can't have fortification violations)
-  if (analysisData.product_category === 'DIETARY_SUPPLEMENT') {
-    return;
-  }
-
-  // Check for fortification policy violation
-  const hasFortificationViolation =
-    analysisData.additional_requirements?.fortification?.status === 'non_compliant';
-
-  if (hasFortificationViolation) {
-    const productType =
-      analysisData.product_category?.toLowerCase().replace(/_/g, ' ') || 'product';
-
-    analysisData.category_ambiguity = {
-      detected: true,
-      reason: `This ${productType} contains vitamin/mineral fortification that violates FDA fortification policy (21 CFR 104). The fortification suggests this might be intended as a dietary supplement rather than a conventional food.`,
-      current_category: analysisData.product_category || 'UNKNOWN',
-      alternative_category: 'DIETARY_SUPPLEMENT',
-      recommendation:
-        'Your product label is currently non-compliant for BOTH food and supplement categories. You must choose which regulatory path to pursue:\n\n' +
-        '1. FOOD PATH: Remove vitamin/mineral fortification (not permitted for this food type)\n' +
-        '2. SUPPLEMENT PATH: Change to Supplement Facts panel and follow DSHEA regulations\n\n' +
-        'Use the side-by-side comparison below to see requirements for each option and decide which path best fits your product goals.',
-    };
-
-    logger.info('Category ambiguity detected', {
-      productCategory: analysisData.product_category,
-      reason: 'fortification_policy_violation',
-      fortificationStatus: analysisData.additional_requirements?.fortification?.status,
-    });
-  }
-}
-
-/**
  * Run all post-processing steps
  * Uses parallel execution for compliance checks to improve performance
  */
@@ -517,9 +474,6 @@ export async function postProcessAnalysis(analysisData: AnalysisData): Promise<A
 
   // Add monitoring recommendation
   addMonitoringRecommendation(analysisData);
-
-  // Detect category ambiguity (before status enforcement)
-  detectCategoryAmbiguity(analysisData);
 
   // Enforce status consistency (must be last)
   enforceStatusConsistency(analysisData);
