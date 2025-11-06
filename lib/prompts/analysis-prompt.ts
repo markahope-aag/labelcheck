@@ -915,8 +915,87 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
    - If claim is made but level doesn't meet definition = NON-COMPLIANT
    - List ALL NCCs found and whether they meet regulatory definitions
 
-   F. **Other Special Labeling:**
-   - Date labeling, caffeine disclosure, organic claims, etc.
+   F. **Organic, Natural, and GMO-Free Claims - CRITICAL COMPLIANCE AREA:**
+
+   **1. USDA ORGANIC CLAIMS (7 CFR Part 205) - STRICTLY REGULATED:**
+
+   If you see ANY organic claim on the label, you MUST validate the following:
+
+   **Four Organic Claim Categories:**
+   - **"100% Organic"**: Requires 100% organic ingredients (excluding water/salt)
+     • May display USDA organic seal
+     • MUST display certifier name: "Certified organic by [certifier name]"
+     • MUST have valid USDA organic certification
+     • If missing certifier info → CRITICAL violation
+
+   - **"Organic"**: Requires 95%+ organic ingredients (excluding water/salt)
+     • May display USDA organic seal
+     • MUST display certifier name: "Certified organic by [certifier name]"
+     • MUST have valid USDA organic certification
+     • If missing certifier info → CRITICAL violation
+
+   - **"Made with Organic [specific ingredients]"**: Requires 70-94% organic content
+     • CANNOT display USDA organic seal (if seal present → CRITICAL violation)
+     • Can list up to 3 organic ingredients
+     • MUST be certified
+     • MUST display certifier name
+
+   - **Less than 70% organic**: Can only list organic ingredients in ingredient panel
+     • CANNOT use "organic" on principal display panel
+     • CANNOT display USDA organic seal
+     • If "organic" appears on PDP → CRITICAL violation
+
+   **Common Violations to Flag:**
+   - Using "organic" without USDA certification → CRITICAL (cite: 7 CFR 205.300)
+   - Missing certifier information ("Certified organic by [name]") → CRITICAL
+   - Using USDA organic seal on "Made with Organic" products → CRITICAL
+   - Using "organic" on PDP when <70% organic → CRITICAL
+   - Wrong percentage category (e.g., claiming "Organic" when only 80%) → CRITICAL
+
+   **2. "NATURAL" CLAIMS - HIGH RISK / UNDEFINED:**
+
+   **FDA Policy**: FDA has NO formal definition for "natural" (as of 2024)
+   - FDA does not restrict "natural" except for added color, synthetic substances, or flavors
+   - "Natural" is NOT regulated like "organic" - no certification required
+   - However, "natural" is HIGH RISK for false advertising lawsuits
+
+   **When you see "Natural" claim:**
+   - Flag as MEDIUM priority concern
+   - Explanation: "The term 'natural' is not defined by FDA. While FDA does not restrict its use (except for added color, synthetic substances, or flavors), this claim carries high litigation risk if the product contains artificial ingredients, preservatives, or highly processed components. Many class-action lawsuits have challenged 'natural' claims."
+   - Recommendation: "Consider whether this product truly contains nothing artificial or synthetic. If the product contains any artificial flavors, colors, preservatives, or highly processed ingredients, remove the 'natural' claim to reduce litigation risk. Alternatively, use more specific claims like 'No Artificial Flavors' or 'No Artificial Colors' if substantiated."
+   - Cite: "FDA Policy on 'Natural' - No formal definition (2015 Request for Information concluded without new guidance)"
+
+   **3. NON-GMO / GMO-FREE CLAIMS - REGULATED BY FDA + USDA:**
+
+   **FDA Guidance (Voluntary labeling for absence of bioengineered content):**
+   - FDA recommends AGAINST "GMO-free" or "free of GMOs" (implies 100% free, which is not achievable)
+   - FDA prefers: "Not bioengineered" or "Not genetically engineered"
+   - May use "non-GMO" but must be substantiated with testing/documentation
+
+   **USDA Bioengineered Food Disclosure Standard (Mandatory as of Jan 1, 2022):**
+   - Products containing bioengineered ingredients MUST disclose this
+   - Can use text, symbol, or QR code
+   - If product makes "non-GMO" claim but doesn't meet USDA bioengineered threshold → potential inconsistency
+
+   **When you see GMO-related claims:**
+   - **"GMO-free"** → Flag as MEDIUM priority: Recommend changing to "Not bioengineered" per FDA guidance
+   - **"Non-GMO Project Verified"** or **"USDA Organic"** → These are acceptable (third-party certified)
+   - **"Non-GMO" without certification** → Flag as MEDIUM: Must have documentation/testing to substantiate
+   - **No bioengineered disclosure when required** → Flag as HIGH: Check if product should have USDA bioengineered disclosure
+
+   **Recommendation text for non-certified GMO claims:**
+   "This product makes a non-GMO claim but does not display third-party certification (e.g., Non-GMO Project Verified or USDA Organic). Per FDA guidance, you must maintain documentation proving ingredients are not bioengineered, including testing results or supplier affidavits. Consider obtaining third-party certification (Non-GMO Project Verified) to strengthen this claim and reduce challenge risk. FDA recommends using 'Not bioengineered' instead of 'GMO-free'."
+
+   **4. OTHER MARKETING CLAIMS - CONTEXT-DEPENDENT:**
+
+   - **"Free-Range" (poultry/eggs)**: USDA requires "access to outside" - vague definition, potential litigation risk
+   - **"Grass-Fed" (beef)**: USDA AMS standard requires 99% grass/forage diet - must be substantiated
+   - **"Pasture-Raised"**: NO official USDA definition - high litigation risk unless defined on label
+   - **"Cage-Free"**: Defined by USDA for eggs - must meet specific housing requirements
+   - **"Humanely Raised"**: No official definition - requires third-party certification (e.g., Certified Humane)
+
+   G. **Other Special Labeling:**
+   - Date labeling, caffeine disclosure, country of origin, etc.
    - Product-Specific Requirements: Based on product type (beverage, coffee, meat, etc.)
 
 6. **Summary Compliance Table**: Provide a structured summary
