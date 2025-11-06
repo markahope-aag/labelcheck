@@ -956,6 +956,37 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
    - Using "organic" on PDP when <70% organic → CRITICAL
    - Wrong percentage category (e.g., claiming "Organic" when only 80%) → CRITICAL
 
+   **FOREIGN ORGANIC PRODUCTS - ADDITIONAL REQUIREMENTS:**
+
+   If the manufacturer address shows a FOREIGN country (non-U.S.) AND the product makes organic claims:
+
+   **Two Pathways for Foreign Organic:**
+
+   **PATH 1: Equivalency Arrangement Countries (Most Common)**
+   - EU Countries (including Italy, France, Germany, etc.), Canada, Japan, Korea, Switzerland, Taiwan, UK
+   - Products certified under these countries' organic standards MAY be sold as "organic" in U.S.
+   - MUST have valid NOP Import Certificate for each shipment (required as of March 19, 2024 under Strengthening Organic Enforcement rule)
+   - Certificate must include attestation: "Certified in compliance with the terms of the U.S.-[Country] Organic Equivalence Arrangement"
+   - Exporters and importers must be certified organic to be listed on NOP Import Certificate
+   - **FLAG AS HIGH PRIORITY:** "This product is manufactured in [country name] and makes organic claims. Foreign organic products from [country] fall under the U.S.-[Country/EU] Organic Equivalence Arrangement and must be accompanied by a valid NOP Import Certificate for each shipment (7 CFR 205.511). Verify that your importer and exporter are certified organic and that NOP Import Certificates are issued for all shipments. Visit USDA AMS International Trade page for equivalency arrangement details."
+
+   **PATH 2: Non-Equivalency Countries**
+   - Countries WITHOUT equivalency arrangements (e.g., China, India, most of Asia, South America, Africa)
+   - Products MUST be certified to USDA organic standards by USDA-accredited certifying agent
+   - CANNOT use foreign organic certification alone
+   - **FLAG AS CRITICAL:** "This product is manufactured in [country name] which does NOT have an organic equivalency arrangement with the United States. To use 'organic' claims or the USDA organic seal in the U.S., this product must be certified to USDA organic standards (7 CFR Part 205) by a USDA-accredited certifying agent. Foreign organic certifications from [country] are not recognized in the U.S. Contact a USDA-accredited certifier to obtain proper certification."
+
+   **Equivalency Arrangement Exceptions:**
+   - Animal products treated with antibiotics (not covered under equivalency)
+   - Aquatic products (fish, crustaceans, molluscs) (not covered under equivalency)
+   - If product falls into these categories → Must be USDA certified, not equivalency
+
+   **How to Check:**
+   1. Identify manufacturer country from address
+   2. Check if organic claim is present
+   3. Verify if country has equivalency arrangement (EU, Canada, Japan, Korea, Switzerland, Taiwan, UK)
+   4. Flag appropriate requirement based on pathway
+
    **2. "NATURAL" CLAIMS - HIGH RISK / UNDEFINED:**
 
    **FDA Policy**: FDA has NO formal definition for "natural" (as of 2024)
