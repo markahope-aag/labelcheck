@@ -453,7 +453,11 @@ Your analysis must follow this exact structure and evaluate each regulatory cate
 
      **IMPORTANT**: Even if you don't see obvious compliance issues elsewhere, you MUST still scan for and flag these marketing terms. They are violations regardless of how compliant the rest of the label is.
    - Net Quantity of Contents: Is it properly declared in both US Customary and metric units? Is it in the bottom 30% of the display panel? **IMPORTANT:** Either US customary OR metric may appear first - both orders are FDA compliant (e.g., "15 oz (425 g)" OR "425 g (15 oz)" are both acceptable). The secondary measurement should appear in parentheses.
-   - Name and Address of Manufacturer/Distributor: Is the manufacturer or distributor clearly listed with complete address? Are qualifying phrases like "distributed by" used correctly?
+   - Name and Address of Manufacturer/Distributor (21 CFR 101.5):
+     • MUST include: Name and place of business (street address OR city/state/ZIP if listed in current directory)
+     • **FOREIGN MANUFACTURERS - CRITICAL CHECK:** If the address shows a foreign country (non-U.S.), the facility MUST be registered with FDA under 21 CFR Part 1, Subpart H (Foreign Facility Registration). Flag this as HIGH priority with recommendation: "This product is manufactured in [country name]. Foreign facilities that manufacture, process, pack, or hold food for U.S. consumption must register with FDA (21 CFR 1.225). Verify that this facility is registered and provides registration number in prior notice before importation. Registration must be renewed every 2 years. Visit FDA.gov/furls to register or verify registration status."
+     • Qualifying phrases ("Manufactured for", "Distributed by", "Packed by") must be used correctly
+     • **TELEPHONE NUMBER:** Not required for conventional foods (optional per 21 CFR 101.5(d)). Only REQUIRED for dietary supplements (must have domestic phone OR address for adverse event reporting per 21 USC §343(y)). If absent on conventional food → flag as LOW priority "recommended for customer service" not "required".
 
 2. **Ingredient Labeling**: Review ingredient declaration compliance
    - **🚨 CRITICAL FOR DIETARY SUPPLEMENTS**: For supplements, extract ALL active ingredients from the Supplement Facts panel (including proprietary blends) IN ADDITION TO the separate ingredient list. Both sources must be included in ingredients_list array.
