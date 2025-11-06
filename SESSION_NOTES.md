@@ -1,10 +1,187 @@
 # Session Notes - Analysis Sessions Development
 
-**Last Updated:** 2025-11-05 (Session 23 - GRAS Database Vitamin/Mineral Expansion)
+**Last Updated:** 2025-11-05 (Session 23 - GRAS Expansion + Category Ambiguity Detection)
 **Branch:** main
 **Status:** Production Ready ✅
 
 ---
+
+## Session 23 Part 2 Summary (2025-11-05) - Category Ambiguity Detection for Fortified Foods
+
+### ✅ Completed in This Session
+
+**Major Achievement:** Implemented automatic category ambiguity detection and side-by-side comparison for products that violate fortification policy.
+
+#### Problem Identified
+
+User's fortified coffee analysis showed:
+- Analyzed as "Food/Beverage Product" ✅
+- GRAS checking passed (methylcobalamin recognized) ✅
+- Fortification Policy: "Non-Compliant" ✅
+- **BUT**: No indication that product might be mis-categorized
+
+**User Insight:** "This product label is not compliant for either food or supplement. The user must choose which they want to pursue."
+
+#### Solution Implemented
+
+**Auto-trigger Category Comparison when fortification policy violated:**
+
+1. **Backend Detection (Post-Processor)**
+   - Added `CategoryAmbiguity` interface to track ambiguity details
+   - Added `detectCategoryAmbiguity()` function in `lib/analysis/post-processor.ts`
+   - Detects when food/beverage violates fortification policy (21 CFR 104)
+   - Adds `category_ambiguity` object to analysis results
+
+2. **Frontend Auto-Trigger (Analyze Page)**
+   - Added `useEffect` to detect `category_ambiguity.detected`
+   - Automatically sets `showComparison = true`
+   - Shows side-by-side comparison of Food vs Supplement paths
+
+3. **Prominent Warning UI**
+   - Orange warning banner with alert icon
+   - Explains the ambiguity clearly
+   - Shows both regulatory paths available
+   - Appears above CategoryComparison component
+
+### 🎯 How It Works
+
+**Detection Logic:**
+```typescript
+if (
+  product_category !== 'DIETARY_SUPPLEMENT' &&
+  fortification.status === 'non_compliant'
+) {
+  // Product has vitamins/minerals not allowed for this food type
+  // Might be intended as supplement with wrong label panel
+  category_ambiguity = {
+    detected: true,
+    reason: "Contains fortification that violates FDA fortification policy...",
+    current_category: "CONVENTIONAL_FOOD", // or NON_ALCOHOLIC_BEVERAGE
+    alternative_category: "DIETARY_SUPPLEMENT",
+    recommendation: "Choose which regulatory path to pursue..."
+  };
+}
+```
+
+**User Workflow:**
+```
+User uploads fortified coffee
+         ↓
+System analyzes as Food/Beverage
+         ↓
+Post-processor detects fortification violation
+         ↓
+category_ambiguity.detected = true
+         ↓
+🔥 CategoryComparison AUTO-SHOWS
+         ↓
+Prominent warning explains the issue
+         ↓
+Side-by-side comparison:
+  LEFT: As Food (Non-compliant - remove fortification)
+  RIGHT: As Supplement (Change to Supplement Facts panel)
+         ↓
+User selects "Analyze as Supplement"
+         ↓
+New analysis with correct category
+         ↓
+Iterative improvement continues...
+```
+
+### 📊 Files Modified
+
+**Backend:**
+1. `lib/analysis/post-processor.ts`
+   - Added `CategoryAmbiguity` interface
+   - Added `detectCategoryAmbiguity()` function
+   - Integrated into `postProcessAnalysis()` workflow
+
+**Frontend:**
+2. `app/analyze/page.tsx`
+   - Added `useEffect` for auto-triggering comparison
+   - Added prominent orange warning banner
+   - Updated `alternatives` array to include `alternative_category`
+
+**Documentation:**
+3. `SESSION_NOTES.md` - This session summary
+
+### 🎯 Warning Message Content
+
+**Banner Text:**
+```
+⚠️ Category Ambiguity Detected
+
+This [product type] contains vitamin/mineral fortification that violates
+FDA fortification policy (21 CFR 104). The fortification suggests this
+might be intended as a dietary supplement rather than a conventional food.
+
+YOUR PRODUCT LABEL IS NON-COMPLIANT FOR BOTH CATEGORIES:
+
+You must choose which regulatory path to pursue:
+
+1. FOOD PATH: Remove vitamin/mineral fortification (not permitted for this food type)
+2. SUPPLEMENT PATH: Change to Supplement Facts panel and follow DSHEA regulations
+
+Use the side-by-side comparison below to see requirements for each option
+and decide which path best fits your product goals.
+```
+
+### 🔍 Why This Matters
+
+**Real-World Problem:**
+- Functional beverages (fortified coffee, energy drinks, wellness water)
+- Often contain supplement-level vitamins/minerals
+- Manufacturers unsure if product is food or supplement
+- Wrong categorization = FDA warning letter
+
+**Without This Feature:**
+- User sees "fortification non-compliant" but doesn't understand implications
+- No guidance on alternative regulatory paths
+- Unclear what changes are needed
+- May continue with non-compliant product
+
+**With This Feature:**
+- ✅ Automatic detection of category ambiguity
+- ✅ Clear explanation of the regulatory issue
+- ✅ Side-by-side comparison of both paths
+- ✅ User makes informed decision
+- ✅ Can test both paths and choose best fit
+
+### 📋 Next Steps for User
+
+**When They See This Warning:**
+1. Review side-by-side comparison
+2. Decide: Remove fortification OR reformulate as supplement
+3. If supplement path: Click "Select Dietary Supplement"
+4. Get new analysis with supplement regulations
+5. Upload revised label (Supplement Facts panel)
+6. Iterate until compliant
+
+**Perfect for:**
+- Fortified coffee (like user's product)
+- Energy drinks with vitamins
+- Wellness waters
+- Functional beverages
+- Protein waters
+- Any food with supplement-level nutrients
+
+### 🎉 Impact
+
+**User Experience:**
+- No more confusion about fortification violations
+- Clear guidance on regulatory options
+- Side-by-side comparison aids decision-making
+- Iterative workflow supports label revision
+
+**Compliance Accuracy:**
+- Catches products in regulatory gray area
+- Prevents mis-categorization
+- Helps manufacturers choose correct path
+- Reduces risk of FDA enforcement
+
+---
+
+
 
 ## Session 23 Summary (2025-11-05) - GRAS Database Vitamin/Mineral Synonym Expansion
 
