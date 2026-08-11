@@ -45,3 +45,4 @@ nul
 # Test results
 test-results/
 playwright-report/
+bun.lock
