@@ -2,6 +2,45 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Working Style Preferences
+
+**Communication:**
+- Act autonomously - make changes and explain after, don't ask permission for routine tasks
+- Be direct and action-oriented
+
+**Code Quality:**
+- Write clean code from the start - no "we'll fix it later"
+- NEVER break working code - this is the #1 frustration
+- Match existing patterns in the codebase
+- Run `npm run lint` and `npm run typecheck` frequently during development
+- Auto-fix simple lint/type errors without asking
+
+**Commits:**
+- Run checks frequently, but batch commits into meaningful chunks
+- This reduces CI runs and Vercel preview builds
+- Don't commit after every small change - wait for a logical batch
+
+**Testing:**
+- Write tests after the feature works, not before
+- Focus on critical paths and edge cases
+- Tests should be useful, simple, and non-flaky
+- Avoid complex mocks - prefer simple, realistic test setups
+
+**Debugging:**
+- When bugs occur, investigate root cause before fixing
+- Don't just patch symptoms
+
+**Session Management:**
+- At session start: review what was worked on previously
+- At session end: leave codebase in clean state (tests passing, no lint errors)
+- Document where we left off and next steps
+
+**Documentation:**
+- Maintain comprehensive documentation
+- Update docs when making significant changes
+
+---
+
 ## Project Overview
 
 LabelCheck is a SaaS application for analyzing food packaging labels for FDA and USDA regulatory compliance using AI. The application uses Next.js 14 with TypeScript, Clerk for authentication, Stripe for payments, Supabase for database, and Anthropic's Claude AI for label analysis.
@@ -743,3 +782,49 @@ const { data: user } = await supabase
 - `SESSION_NOTES.md` - Session-by-session development notes and next steps
 - `SETUP_GUIDE.md` - Comprehensive setup and testing documentation
 - Quick Win #3
+
+---
+
+## Session Startup Checklist
+
+When starting a new session on this project, run through these checks:
+
+1. **Verify MCP servers connected:** `/mcp`
+2. **Check git status:** `git status` - review uncommitted changes
+3. **Check for updates:** `git fetch && git log HEAD..origin/main --oneline`
+4. **Run type/lint check:** `npm run lint && npm run typecheck`
+5. **Review recent work:** Check SESSION_NOTES.md or ask "What were we working on?"
+6. **Check GitHub issues:** `gh issue list` or review project board
+
+---
+
+## Custom Agents Available
+
+These agents are available via the Task tool:
+
+| Agent | Purpose | When to Use |
+|-------|---------|-------------|
+| `code-reviewer` | Review code quality | Before commits, PR reviews |
+| `test-creator` | Generate tests | After writing new features |
+| `test-runner` | Run and analyze tests | After code changes |
+| `doc-writer` | Write documentation | For new features/APIs |
+| `ui-reviewer` | Review UI/UX | For frontend changes |
+
+---
+
+## Memory & Context
+
+This project uses the MCP memory server for persistent knowledge.
+
+**To save information:**
+> "Remember that [fact about this project]"
+
+**To recall:**
+> "What do you remember about [topic]?"
+
+**Useful things to remember:**
+- FDA/USDA regulation details and interpretations
+- GRAS/NDI database quirks
+- Clerk/Stripe webhook behaviors
+- Supabase RLS policy patterns
+- AI prompt refinements that worked well

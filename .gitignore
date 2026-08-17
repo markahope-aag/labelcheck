@@ -46,3 +46,7 @@ nul
 test-results/
 playwright-report/
 bun.lock
+
+# Claude Code
+memory.json
+.claude-cache/
