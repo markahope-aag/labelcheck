@@ -1,0 +1,29 @@
+name: CI
+
+# Calls the shared pipeline in markahope-aag/asymmetric-workflows.
+# LabelCheck is a live SaaS and had 13 tests with nothing running them.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    uses: markahope-aag/asymmetric-workflows/.github/workflows/node-ci.yml@main
+    with:
+      typecheck_command: npm run typecheck
+      # test:unit, not test. The `test` script chains Playwright after Jest,
+      # which needs browsers and a running app; that belongs in a separate e2e
+      # job rather than blocking the unit run.
+      test_command: npm run test:unit -- --ci --coverage --maxWorkers=2
+    secrets: inherit
+
+  security:
+    uses: markahope-aag/asymmetric-workflows/.github/workflows/node-security.yml@main
